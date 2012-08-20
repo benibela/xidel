@@ -666,7 +666,7 @@ end;
 
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
 begin
-  if name = 'follow' then begin
+  if (name = 'follow') or ((name = '') and (length(requests[high(requests)].extractions) > 0))  then begin
     writeln(stderr,name,'=',value);
     requests[high(requests)].initFromCommandLine(TCommandLineReader(sender), length(requests) - 1);
     TCommandLineReaderBreaker(sender).clearNameless;
@@ -786,7 +786,7 @@ begin
       end;
 
       with requests[0] do begin
-        urls[0] := trim(urls[0]);
+        urls[0] := htmlparser.replaceVars(trim(urls[0]));
         if urls[0] = '' then begin deleteUrl0; continue; end;
 
         data := urls[0];
