@@ -47,10 +47,10 @@ type
 
 { TExtraction }
 
-TExtraction = record
+TExtraction = object
  extract: string;
  extractExclude, extractInclude: TStringArray;
- extractKind: (ekXPath, ekTemplate, ekCSS, ekMultipage);
+ extractKind: (ekAuto, ekXPath, ekTemplate, ekCSS, ekMultipage);
 
  defaultName: string;
  printVariables: set of (pvLog, pvCondensedLog, pvFinal);
@@ -71,7 +71,7 @@ TExtraction = record
  procedure printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
- procedure pageProcessed(parser: THtmlTemplateParser);
+ procedure pageProcessed(unused: TTemplateReader; parser: THtmlTemplateParser);
 end;
 
  TProcessingRequest = record
@@ -104,7 +104,6 @@ end;
   procedure deleteUrl0;
   procedure addBasicValueUrl(dest: tpxpvalue; baseurl: string);
 
-  procedure pageProcessed(parser: THtmlTemplateParser);
 end;
 
 type EInvalidArgument = Exception;
@@ -114,10 +113,8 @@ type EInvalidArgument = Exception;
 procedure TExtraction.setExtractKind(v: string);
 begin
   if extract = '' then exit;
-  if striEqual(v, 'auto') then begin
-    if extract[1] = '<' then extractKind:=ekTemplate
-    else extractKind:=ekXPath;
-  end else if striEqual(v, 'xpath') then extractKind:=ekXPath
+  if striEqual(v, 'auto') then extractKind := ekAuto
+  else if striEqual(v, 'xpath') then extractKind:=ekXPath
   else if striEqual(v, 'css') then extractKind:=ekCSS
   else if striEqual(v, 'template') then extractKind:=ekTemplate
   else if striEqual(v, 'multipage') then extractKind:=ekMultipage
@@ -126,17 +123,20 @@ end;
 
 
 procedure TExtraction.initFromCommandLine(cmdLine: TCommandLineReader);
+var s: string;
 begin
   if cmdLine.readString('extract-file') <> '' then extract := strLoadFromFile(cmdLine.readString('extract-file'))
   else extract := cmdLine.readString('extract');
   extract := trim(extract);
   extractExclude := strSplit(cmdLine.readString('extract-exclude'), ',', false);
   extractInclude := strSplit(cmdLine.readString('extract-include'), ',', false);
+
   setExtractKind(cmdLine.readString('extract-kind'));
   if cmdLine.readString('template-file') <> '' then begin
     extract := strLoadFromFile(cmdLine.readString('template-file'));
     extractKind := ekMultipage;
   end;
+
 
   defaultName := cmdLine.readString('default-variable-name');
   printTypeAnnotations:=cmdLine.readFlag('print-type-annotations');
@@ -199,9 +199,24 @@ procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; le
 var
   tempSplitted: TStringArray;
   i: Integer;
+  s: string;
 begin
   if length(extractions) > 0 then
     extractions[high(extractions)].initFromCommandLine(cmdLine);
+
+  for i:=0 to high(extractions) do with extractions[i] do begin
+    writeln('>',i);
+    if extract = '-' then begin
+      extract:='';
+      while not EOF(Input) do begin
+        ReadLn(s);
+        extract:=extract+s+LineEnding;
+      end;
+    end;
+    if extractKind = ekAuto then
+      if (extract <> '') and (extract[1] = '<') then extractKind:=ekTemplate
+      else extractKind:=ekXPath;
+  end;
 
   if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFile(cmdLine.readString('follow-file'))
   else follow := cmdLine.readString('follow');
@@ -324,11 +339,6 @@ begin
   end;
 end;
 
-procedure TProcessingRequest.pageProcessed(parser: THtmlTemplateParser);
-begin
-
-end;
-
 procedure TExtraction.printStatus(s: string);
 begin
   if not quiet then writeln(stderr, s);
@@ -387,7 +397,7 @@ end;
 
 procedure followTo(dest: TPXPValue); forward;
 
-procedure TExtraction.pageProcessed(parser: THtmlTemplateParser);
+procedure TExtraction.pageProcessed(unused: TTemplateReader; parser: THtmlTemplateParser);
 var
   i: Integer;
 begin
@@ -533,7 +543,6 @@ end;
    procedure setTemplate(atemplate: TMultiPageTemplate);
    procedure perform;
    procedure selfLog(sender: TTemplateReader; logged: string; debugLevel: integer);
-   procedure selfPageProcessed(sender: TTemplateReader; p: THtmlTemplateParser);
  end;
 
 var htmlparser:THtmlTemplateParserBreaker;
@@ -567,7 +576,6 @@ end;
 constructor TTemplateReaderBreaker.create;
 begin
   onLog:=@selfLog;
-  onPageProcessed:=@selfPageProcessed;
 end;
 
 procedure TTemplateReaderBreaker.setTemplate(atemplate: TMultiPageTemplate);
@@ -591,12 +599,6 @@ begin
   if debugLevel <> 0 then exit;
   writeln(stderr, logged);
 end;
-
-procedure TTemplateReaderBreaker.selfPageProcessed(sender: TTemplateReader; p: THtmlTemplateParser);
-begin
-  requests[0].pageProcessed(parser);
-end;
-
 
 procedure displayError(e: EHTMLParseException);
   procedure sayln(s: string);
@@ -806,7 +808,7 @@ begin
               htmlparser.UnnamedVariableName:=extractions[j].defaultName;
               htmlparser.parseTemplate(extractions[j].extract); //todo reuse existing parser
               htmlparser.parseHTML(data, urls[0]);
-              pageProcessed(htmlparser);
+              extractions[j].pageProcessed(nil,htmlparser);
             end;
             ekXPath, ekCSS: begin
               if firstExtraction then begin
@@ -824,6 +826,7 @@ begin
               writeln;
             end;
             ekMultipage: if assigned (onPrepareInternet) then begin
+              multipage.onPageProcessed:=@extractions[j].pageProcessed;
               multipage.internet := onPrepareInternet(userAgent, proxy);;
               multipagetemp := TMultiPageTemplate.create();
               multipagetemp.loadTemplateFromString(extractions[j].extract);
