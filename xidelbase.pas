@@ -45,13 +45,40 @@ type
 
 { TProcessingRequest }
 
+{ TExtraction }
+
+TExtraction = record
+ extract: string;
+ extractExclude, extractInclude: TStringArray;
+ extractKind: (ekXPath, ekTemplate, ekCSS, ekMultipage);
+
+ defaultName: string;
+ printVariables: set of (pvLog, pvCondensedLog, pvFinal);
+ printTypeAnnotations,  hideVariableNames, printNodeXML: boolean;
+
+ quiet: boolean;
+
+ procedure setExtractKind(v: string);
+
+ procedure initFromCommandLine(cmdLine: TCommandLineReader);
+ procedure mergeWithObject(obj: TPXPValueObject);
+
+ procedure setVariables(v: string);
+
+ procedure printStatus(s: string);
+
+ procedure printExtractedValue(value: TPXPValue);
+ procedure printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
+ procedure printExtractedVariables(parser: THtmlTemplateParser);
+
+ procedure pageProcessed(parser: THtmlTemplateParser);
+end;
+
  TProcessingRequest = record
   urls: TStringArray;
   urlsLevel: bbutils.TLongintArray;
 
-  extract: string;
-  extractExclude, extractInclude: TStringArray;
-  extractKind: (ekXPath, ekTemplate, ekCSS, ekMultipage);
+  extractions: array of TExtraction;
 
   follow: string;
   followExclude, followInclude: TStringArray;
@@ -63,38 +90,42 @@ type
   post: string;
 
   quiet: boolean;
-  defaultName: string;
-  printVariables: set of (pvLog, pvCondensedLog, pvFinal);
-  printVariablesTime: set of (pvtImmediate, pvtFinal);
-  printTypeAnnotations,  hideVariableNames, printNodeXML: boolean;
 
   outputEncoding: TEncoding;
+  printVariablesTime: set of (pvtImmediate, pvtFinal);
+
+  procedure printStatus(s: string);
 
   procedure initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
   procedure mergeWithObject(obj: TPXPValueObject);
 
-  procedure setVariables(v: string);
   procedure setVariablesTime(v: string);
-  procedure setExtractKind(v: string);
 
   procedure deleteUrl0;
   procedure addBasicValueUrl(dest: tpxpvalue; baseurl: string);
-
-  procedure printStatus(s: string);
-  procedure printExtractedValue(value: TPXPValue);
-  procedure printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
-  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
   procedure pageProcessed(parser: THtmlTemplateParser);
 end;
 
 type EInvalidArgument = Exception;
-{ TProcessingRequest }
 
-procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
-var
-  tempSplitted: TStringArray;
-  i: Integer;
+{ TExtraction }
+
+procedure TExtraction.setExtractKind(v: string);
+begin
+  if extract = '' then exit;
+  if striEqual(v, 'auto') then begin
+    if extract[1] = '<' then extractKind:=ekTemplate
+    else extractKind:=ekXPath;
+  end else if striEqual(v, 'xpath') then extractKind:=ekXPath
+  else if striEqual(v, 'css') then extractKind:=ekCSS
+  else if striEqual(v, 'template') then extractKind:=ekTemplate
+  else if striEqual(v, 'multipage') then extractKind:=ekMultipage
+  else raise Exception.Create('Unknown kind for the extract expression: '+v);
+end;
+
+
+procedure TExtraction.initFromCommandLine(cmdLine: TCommandLineReader);
 begin
   if cmdLine.readString('extract-file') <> '' then extract := strLoadFromFile(cmdLine.readString('extract-file'))
   else extract := cmdLine.readString('extract');
@@ -106,6 +137,71 @@ begin
     extract := strLoadFromFile(cmdLine.readString('template-file'));
     extractKind := ekMultipage;
   end;
+
+  defaultName := cmdLine.readString('default-variable-name');
+  printTypeAnnotations:=cmdLine.readFlag('print-type-annotations');
+  hideVariableNames := cmdLine.readFlag('hide-variable-names');
+
+  quiet := cmdLine.readFlag('quiet');
+
+  setVariables(cmdLine.readString('print-variables'));
+
+  if cmdLine.readString('printed-node-format') <> '' then begin
+    if cmdLine.readString('printed-node-format') = 'xml' then printNodeXML:=true
+    else if cmdLine.readString('printed-node-format') = 'text' then printNodeXML:=false
+    else raise EInvalidArgument.create('Unknown option: '+cmdLine.readString('printed-node-format'));
+  end;
+end;
+
+procedure TExtraction.mergeWithObject(obj: TPXPValueObject);
+var
+  temp: TPXPValue;
+begin
+  if obj.hasProperty('extract-file', @temp) then extract := temp.asString
+  else if obj.hasProperty('extract', @temp) then extract := temp.asString;
+  if obj.hasProperty('extract-exclude', @temp) then extractExclude := strSplit(temp.asString, ',', false);
+  if obj.hasProperty('extract-include', @temp) then extractInclude := strSplit(temp.asString, ',', false);
+  if obj.hasProperty('extract-kind', @temp) then setExtractKind(temp.asString);
+  if obj.hasProperty('template-file', @temp)  then begin
+    extract := strLoadFromFile(temp.asString);
+    extractKind := ekMultipage;
+  end;
+
+  if obj.hasProperty('default-variable-name', @temp) then defaultName := temp.asString;
+  if obj.hasProperty('print-type-annotations', @temp) then printTypeAnnotations:=temp.asBoolean;
+  if obj.hasProperty('hide-variable-names', @temp) then hideVariableNames := temp.asBoolean;
+
+  if obj.hasProperty('print-variables', @temp) then setVariables(temp.asString);
+
+  if obj.hasProperty('quiet', @temp) then quiet := temp.asBoolean;
+end;
+
+procedure TExtraction.setVariables(v: string);
+var
+  tempSplitted: TStringArray;
+begin
+  printVariables:=[];
+  tempSplitted := strSplit(v, ',');
+  if arrayIndexOf(tempSplitted, 'log') >= 0 then include(printVariables, pvLog);
+  if arrayIndexOf(tempSplitted, 'condensed-log') >= 0 then include(printVariables, pvCondensedLog);
+  if arrayIndexOf(tempSplitted, 'final') >= 0 then include(printVariables, pvFinal);
+end;
+
+{ TProcessingRequest }
+
+procedure TProcessingRequest.printStatus(s: string);
+begin
+  if length(extractions) = 0 then writeln(stderr, s)
+  else extractions[high(extractions)].printStatus(s);
+end;
+
+procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
+var
+  tempSplitted: TStringArray;
+  i: Integer;
+begin
+  if length(extractions) > 0 then
+    extractions[high(extractions)].initFromCommandLine(cmdLine);
 
   if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFile(cmdLine.readString('follow-file'))
   else follow := cmdLine.readString('follow');
@@ -122,25 +218,13 @@ begin
     post := cmdLine.readString('post');
   end;
 
-  quiet := cmdLine.readFlag('quiet');
-  defaultName := cmdLine.readString('default-variable-name');
-  printTypeAnnotations:=cmdLine.readFlag('print-type-annotations');
-  hideVariableNames := cmdLine.readFlag('hide-variable-names');
-
-  setVariables(cmdLine.readString('print-variables'));
   setVariablesTime(cmdLine.readString('print-variables-time'));
   outputEncoding:=strEncodingFromName(cmdLine.readString('output-encoding'));
 
-
-  if cmdLine.readString('printed-node-format') <> '' then begin
-    if cmdLine.readString('printed-node-format') = 'xml' then printNodeXML:=true
-    else if cmdLine.readString('printed-node-format') = 'text' then printNodeXML:=false
-    else raise EInvalidArgument.create('Unknown option: '+cmdLine.readString('printed-node-format'));
-  end;
-
   urls:=cmdLine.readNamelessFiles();
 
-  if (extractKind = ekMultipage) and (length(urls) = 0) then arrayAdd(urls, '<empty/>');
+  if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
+    arrayAdd(urls, '<empty/>');
 
   if cmdLine.readString('data') <> '' then arrayAdd(urls, cmdLine.readString('data'));
 
@@ -153,15 +237,8 @@ var
   temp: TPXPValue;
   tempSplitted: TStringArray;
 begin
-  if obj.hasProperty('extract-file', @temp) then extract := temp.asString
-  else if obj.hasProperty('extract', @temp) then extract := temp.asString;
-  if obj.hasProperty('extract-exclude', @temp) then extractExclude := strSplit(temp.asString, ',', false);
-  if obj.hasProperty('extract-include', @temp) then extractInclude := strSplit(temp.asString, ',', false);
-  if obj.hasProperty('extract-kind', @temp) then setExtractKind(temp.asString);
-  if obj.hasProperty('template-file', @temp)  then begin
-    extract := strLoadFromFile(temp.asString);
-    extractKind := ekMultipage;
-  end;
+  if length(extractions) > 0 then
+    extractions[high(extractions)].mergeWithObject(obj);
 
   if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFile(temp.asString)
   else if obj.hasProperty('follow', @temp) then follow := temp.asString;
@@ -174,12 +251,6 @@ begin
   if obj.hasProperty('proxy', @temp) then proxy := temp.asString;
   if obj.hasProperty('post', @temp) then post := temp.asString;
 
-  if obj.hasProperty('quiet', @temp) then quiet := temp.asBoolean;
-  if obj.hasProperty('default-variable-name', @temp) then defaultName := temp.asString;
-  if obj.hasProperty('print-type-annotations', @temp) then printTypeAnnotations:=temp.asBoolean;
-  if obj.hasProperty('hide-variable-names', @temp) then hideVariableNames := temp.asBoolean;
-
-  if obj.hasProperty('print-variables', @temp) then setVariables(temp.asString);
   if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.asString);
   if obj.hasProperty('output-encoding', @temp) then outputEncoding:=strEncodingFromName(temp.asString);
 
@@ -188,21 +259,10 @@ begin
   if obj.hasProperty('follow', @temp) then
     addBasicValueUrl(temp, '');
 
-  if (extractKind = ekMultipage) and (length(urls) = 0) then begin
+  if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then begin
     arrayAdd(urls, '<empty/>');
     arrayAdd(urlsLevel, stepLevel);
   end;
-end;
-
-procedure TProcessingRequest.setVariables(v: string);
-var
-  tempSplitted: TStringArray;
-begin
-  printVariables:=[];
-  tempSplitted := strSplit(v, ',');
-  if arrayIndexOf(tempSplitted, 'log') >= 0 then include(printVariables, pvLog);
-  if arrayIndexOf(tempSplitted, 'condensed-log') >= 0 then include(printVariables, pvCondensedLog);
-  if arrayIndexOf(tempSplitted, 'final') >= 0 then include(printVariables, pvFinal);
 end;
 
 procedure TProcessingRequest.setVariablesTime(v: string);
@@ -215,18 +275,6 @@ begin
   if arrayIndexOf(tempSplitted, 'final') >= 0 then include(printVariablesTime, pvtFinal);
 end;
 
-procedure TProcessingRequest.setExtractKind(v: string);
-begin
-  if extract = '' then exit;
-  if striEqual(v, 'auto') then begin
-    if extract[1] = '<' then extractKind:=ekTemplate
-    else extractKind:=ekXPath;
-  end else if striEqual(v, 'xpath') then extractKind:=ekXPath
-  else if striEqual(v, 'css') then extractKind:=ekCSS
-  else if striEqual(v, 'template') then extractKind:=ekTemplate
-  else if striEqual(v, 'multipage') then extractKind:=ekMultipage
-  else raise Exception.Create('Unknown kind for the extract expression: '+v);
-end;
 
 
 
@@ -276,12 +324,17 @@ begin
   end;
 end;
 
-procedure TProcessingRequest.printStatus(s: string);
+procedure TProcessingRequest.pageProcessed(parser: THtmlTemplateParser);
+begin
+
+end;
+
+procedure TExtraction.printStatus(s: string);
 begin
   if not quiet then writeln(stderr, s);
 end;
 
-procedure TProcessingRequest.printExtractedValue(value: TPXPValue);
+procedure TExtraction.printExtractedValue(value: TPXPValue);
 var
   i: Integer;
   temp: TPXPValueObject;
@@ -320,7 +373,7 @@ begin
   end;
 end;
 
-procedure TProcessingRequest.printExtractedVariables(parser: THtmlTemplateParser);
+procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser);
 begin
   if pvFinal in printVariables then
     printExtractedVariables(parser.variables, '** Current variable state: **');
@@ -332,8 +385,26 @@ begin
     printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **');
 end;
 
+procedure followTo(dest: TPXPValue); forward;
 
-procedure TProcessingRequest.printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
+procedure TExtraction.pageProcessed(parser: THtmlTemplateParser);
+var
+  i: Integer;
+begin
+  if firstExtraction then begin
+    firstExtraction := false;
+    if outputFormat = ofXML then writeln('<e>');
+  end else writeln(outputArraySeparator[outputFormat]);
+
+  printExtractedVariables(parser);
+
+  for i := 0 to parser.variableChangeLog.count-1 do
+    if parser.variableChangeLog.getVariableName(i) = '_follow' then
+      followTo(parser.variableChangeLog.getVariableValue(i));
+end;
+
+
+procedure TExtraction.printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
   function acceptName(n: string): boolean;
   begin
     result := ((length(extractInclude) = 0) and (arrayIndexOf(extractExclude, n) = -1)) or
@@ -447,21 +518,6 @@ begin
   end;
 end;
 
-procedure TProcessingRequest.pageProcessed(parser: THtmlTemplateParser);
-var
-  i: Integer;
-begin
-  if firstExtraction then begin
-    firstExtraction := false;
-    if outputFormat = ofXML then writeln('<e>');
-  end else writeln(outputArraySeparator[outputFormat]);
-
-  printExtractedVariables(parser);
-
-  for i := 0 to parser.variableChangeLog.count-1 do
-    if parser.variableChangeLog.getVariableName(i) = '_follow' then
-      followTo(parser.variableChangeLog.getVariableValue(i));
-end;
 
 
 type
@@ -614,6 +670,9 @@ begin
     requests[high(requests)].initFromCommandLine(TCommandLineReader(sender), length(requests) - 1);
     TCommandLineReaderBreaker(sender).clearNameless;
     SetLength(requests, length(requests) + 1);
+  end else if name = 'extract' then begin
+    SetLength(requests[high(requests)].extractions, length(requests[high(requests)].extractions) + 1);
+    requests[high(requests)].extractions[high(requests[high(requests)].extractions)].initFromCommandLine(TCommandLineReader(sender));
   end;
 end;
 
@@ -626,6 +685,7 @@ begin
   LongDateFormat:='YYYY-MM-DD';
 
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
+  mycmdline.allowOverrides:=true;
 
   mycmdLine.declareString('data', 'Data to process (--data= prefix can be omitted)');
 
@@ -738,13 +798,13 @@ begin
         alreadyProcessed.Add(urls[0]+#1+post);
 
         printStatus('**** Processing:'+urls[0]+' ****');
-        if extract <> '' then begin
+        for j := 0 to high(extractions) do begin
           htmlparser.OutputEncoding := outputEncoding;
 
-          case extractKind of
+          case extractions[j].extractKind of
             ekTemplate: begin
-              htmlparser.UnnamedVariableName:=defaultName;
-              htmlparser.parseTemplate(extract); //todo reuse existing parser
+              htmlparser.UnnamedVariableName:=extractions[j].defaultName;
+              htmlparser.parseTemplate(extractions[j].extract); //todo reuse existing parser
               htmlparser.parseHTML(data, urls[0]);
               pageProcessed(htmlparser);
             end;
@@ -758,15 +818,15 @@ begin
               xpathparser.RootElement := htmlparser.HTMLTree;
               xpathparser.ParentElement := xpathparser.RootElement;
               xpathparser.StaticBaseUri := urls[0];
-              if extractKind = ekCSS then xpathparser.parse('css("'+StringReplace(extract,'"','""',[rfReplaceAll])+'")')
-              else xpathparser.parse(extract);
-              printExtractedValue(xpathparser.evaluate());
+              if extractions[j].extractKind = ekCSS then xpathparser.parse('css("'+StringReplace(extractions[j].extract,'"','""',[rfReplaceAll])+'")')
+              else xpathparser.parse(extractions[j].extract);
+              extractions[j].printExtractedValue(xpathparser.evaluate());
               writeln;
             end;
             ekMultipage: if assigned (onPrepareInternet) then begin
               multipage.internet := onPrepareInternet(userAgent, proxy);;
               multipagetemp := TMultiPageTemplate.create();
-              multipagetemp.loadTemplateFromString(extract);
+              multipagetemp.loadTemplateFromString(extractions[j].extract);
               multipage.setTemplate(multipagetemp);
               multipage.perform();
               multipage.setTemplate(nil);
