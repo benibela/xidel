@@ -9,7 +9,7 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="xibri"/>
+      <Title Value="xidel"/>
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
     </General>
@@ -41,21 +41,21 @@
     </RequiredPackages>
     <Units Count="2">
       <Unit0>
-        <Filename Value="xibri.pas"/>
+        <Filename Value="xidel.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xibri"/>
+        <UnitName Value="xidel"/>
       </Unit0>
       <Unit1>
-        <Filename Value="xibribase.pas"/>
+        <Filename Value="xidelbase.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xibribase"/>
+        <UnitName Value="xidelbase"/>
       </Unit1>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="xibri"/>
+      <Filename Value="xidel"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

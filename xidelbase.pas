@@ -1,4 +1,4 @@
-unit xibribase;
+unit xidelbase;
 
 {$mode objfpc}{$H+}
 {$modeswitch advancedrecords}

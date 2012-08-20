@@ -1,9 +1,9 @@
-program xibri;
+program xidel;
 
 {$mode objfpc}{$H+}
 
 uses Interfaces, simpleinternet, internetaccess, multipagetemplate, bbutils,
-     xibribase,
+     xidelbase,
      rcmdline  //<< if you don't have this command line parser unit, you can download it from www.benibela.de
      ;
 
@@ -29,14 +29,14 @@ begin
 end;
 
 begin
-  xibribase.cgimode := false;
-  xibribase.allowInternetAccess := true;
-  xibribase.mycmdline := TCommandLineReader.create;
-  xibribase.onPrepareInternet := @prepareInternet;
-  xibribase.onRetrieve := @retrieve;
-  xibribase.defaultUserAgent := defaultInternetConfiguration.userAgent;
+  xidelbase.cgimode := false;
+  xidelbase.allowInternetAccess := true;
+  xidelbase.mycmdline := TCommandLineReader.create;
+  xidelbase.onPrepareInternet := @prepareInternet;
+  xidelbase.onRetrieve := @retrieve;
+  xidelbase.defaultUserAgent := defaultInternetConfiguration.userAgent;
 
 
-  xibribase.perform;
+  xidelbase.perform;
 end.
 

@@ -1,17 +1,17 @@
-program xibrisoap;
+program xidelsoap;
 
 {$mode objfpc}{$H+}
 
 uses
-  xibribase,
+  xidelbase,
   rcmdlinecgi
   { you can add units after this };
 
 begin
-  xibribase.cgimode := true;
-  xibribase.allowInternetAccess := false;
-  xibribase.mycmdline := TCommandLineReaderCGI.create;
+  xidelbase.cgimode := true;
+  xidelbase.allowInternetAccess := false;
+  xidelbase.mycmdline := TCommandLineReaderCGI.create;
 
-  xibribase.perform;
+  xidelbase.perform;
 end.
 

@@ -9,7 +9,7 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="xibrisoap"/>
+      <Title Value="xidelsoap"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
@@ -34,9 +34,9 @@
     </RunParams>
     <Units Count="1">
       <Unit0>
-        <Filename Value="xibrisoap.lpr"/>
+        <Filename Value="xidelsoap.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xibrisoap"/>
+        <UnitName Value="xidelsoap"/>
       </Unit0>
     </Units>
   </ProjectOptions>
