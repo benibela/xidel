@@ -205,7 +205,6 @@ begin
     extractions[high(extractions)].initFromCommandLine(cmdLine);
 
   for i:=0 to high(extractions) do with extractions[i] do begin
-    writeln('>',i);
     if extract = '-' then begin
       extract:='';
       while not EOF(Input) do begin
