@@ -590,8 +590,8 @@ end;
 
 procedure TTemplateReaderBreaker.perform;
 begin
-  if length(template.actions) = 0 then raise Exception.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
-  performAction(template.actions[0]);
+  if length(template.baseActions.children) = 0 then raise Exception.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
+  performAction(template.baseActions.children[0]);
 end;
 
 procedure TTemplateReaderBreaker.selfLog(sender: TTemplateReader; logged: string; debugLevel: integer);
@@ -694,7 +694,7 @@ begin
     SetLength(requests[high(requests)].extractions, length(requests[high(requests)].extractions) + 1);
     requests[high(requests)].extractions[high(requests[high(requests)].extractions)].initFromCommandLine(TCommandLineReader(sender));
 
-    if name = 'template-file' then TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'auto');
+    //if name = 'template-file' then TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'auto');
   end;
 end;
 
