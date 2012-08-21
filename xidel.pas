@@ -13,6 +13,8 @@ uses Interfaces, simpleinternet, internetaccess, multipagetemplate, bbutils,
 
 function prepareInternet(const userAgent, proxy: string): TInternetAccess;
 begin
+  defaultInternetConfiguration.userAgent:=userAgent;
+  defaultInternetConfiguration.setProxy(proxy);
   simpleinternet.needInternetAccess;
   if assigned(simpleinternet.defaultInternet.internetConfig) then begin
     simpleinternet.defaultInternet.internetConfig^.userAgent := userAgent;
