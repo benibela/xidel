@@ -677,6 +677,11 @@ begin
   end;
 end;
 
+procedure printUsage;
+begin
+
+end;
+
 procedure perform;
 begin
   //normalized formats (for use in unittests)
@@ -733,9 +738,17 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf8 (default), latin1, or input (no encoding conversion)', 'utf8');
 
+  mycmdLine.declareFlag('usage','Print help, examples and usage information');
+  );
+
   SetLength(requests,1);
 
   mycmdLine.parse();
+
+  if mycmdline.readFlag('usage') then begin
+    printUsage;
+    exit;
+  end;
 
   requests[high(requests)].initFromCommandLine(mycmdLine, length(requests) - 1);
 
