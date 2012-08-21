@@ -704,6 +704,8 @@ begin
 end;
 
 procedure perform;
+var
+  tempvalue: TPXPValue;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -854,7 +856,9 @@ begin
               xpathparser.StaticBaseUri := urls[0];
               if extractions[j].extractKind = ekCSS then xpathparser.parse('css("'+StringReplace(extractions[j].extract,'"','""',[rfReplaceAll])+'")')
               else xpathparser.parse(extractions[j].extract);
-              extractions[j].printExtractedValue(xpathparser.evaluate());
+              tempvalue :=xpathparser.evaluate();
+              extractions[j].printExtractedValue(tempvalue);
+              tempvalue.free;
               writeln;
             end;
             ekMultipage: if assigned (onPrepareInternet) then begin
@@ -865,6 +869,7 @@ begin
               multipage.setTemplate(multipagetemp);
               multipage.perform();
               multipage.setTemplate(nil);
+              multipagetemp.free;
             end
             else raise Exception.Create('Impossible');
           end;
