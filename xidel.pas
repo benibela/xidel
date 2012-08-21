@@ -34,7 +34,6 @@ begin
   xidelbase.mycmdline := TCommandLineReader.create;
   xidelbase.onPrepareInternet := @prepareInternet;
   xidelbase.onRetrieve := @retrieve;
-  xidelbase.defaultUserAgent := 'Mozilla/3.0 (compatible; Xidel)';
 
 
   xidelbase.perform;

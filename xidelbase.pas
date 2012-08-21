@@ -15,7 +15,7 @@ uses
 var cgimode: boolean = false;
     allowInternetAccess: boolean = true;
     mycmdline: TCommandLineReader;
-    defaultUserAgent: string = 'Mozilla compatible';
+    defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
 
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
     onRetrieve: function (const url, postdata: string): string;
