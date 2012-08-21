@@ -125,17 +125,12 @@ end;
 procedure TExtraction.initFromCommandLine(cmdLine: TCommandLineReader);
 var s: string;
 begin
-  if cmdLine.readString('extract-file') <> '' then extract := strLoadFromFile(cmdLine.readString('extract-file'))
-  else extract := cmdLine.readString('extract');
+  extract := cmdLine.readString('extract');
   extract := trim(extract);
   extractExclude := strSplit(cmdLine.readString('extract-exclude'), ',', false);
   extractInclude := strSplit(cmdLine.readString('extract-include'), ',', false);
 
   setExtractKind(cmdLine.readString('extract-kind'));
-  if cmdLine.readString('template-file') <> '' then begin
-    extract := strLoadFromFile(cmdLine.readString('template-file'));
-    extractKind := ekMultipage;
-  end;
 
 
   defaultName := cmdLine.readString('default-variable-name');
@@ -153,6 +148,12 @@ begin
   end;
 end;
 
+function strLoadFromFileChecked(const fn: string): string;
+begin
+  result := strLoadFromFile(fn);
+  if Result = '' then raise Exception.Create('File '+fn+' is empty.');
+end;
+
 procedure TExtraction.mergeWithObject(obj: TPXPValueObject);
 var
   temp: TPXPValue;
@@ -163,7 +164,7 @@ begin
   if obj.hasProperty('extract-include', @temp) then extractInclude := strSplit(temp.asString, ',', false);
   if obj.hasProperty('extract-kind', @temp) then setExtractKind(temp.asString);
   if obj.hasProperty('template-file', @temp)  then begin
-    extract := strLoadFromFile(temp.asString);
+    extract := strLoadFromFileChecked(temp.asString);
     extractKind := ekMultipage;
   end;
 
@@ -217,7 +218,7 @@ begin
       else extractKind:=ekXPath;
   end;
 
-  if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFile(cmdLine.readString('follow-file'))
+  if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
   else follow := cmdLine.readString('follow');
   follow := trim(follow);
   followExclude := strSplit(cmdLine.readString('follow-exclude'), ',', false);
@@ -254,7 +255,7 @@ begin
   if length(extractions) > 0 then
     extractions[high(extractions)].mergeWithObject(obj);
 
-  if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFile(temp.asString)
+  if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFileChecked(temp.asString)
   else if obj.hasProperty('follow', @temp) then follow := temp.asString;
   if obj.hasProperty('follow-exclude', @temp) then followExclude := strSplit(temp.asString, ',', false);
   if obj.hasProperty('follow-include', @temp) then followInclude := strSplit(temp.asString, ',', false);
@@ -654,10 +655,16 @@ type
 { TCommandLineReaderBreaker }
 
 TCommandLineReaderBreaker = class(TCommandLineReader)
+  procedure overrideVar(const name, value: string);
   procedure clearNameless;
 end;
 
 { TCommandLineReaderBreaker }
+
+procedure TCommandLineReaderBreaker.overrideVar(const name, value: string);
+begin
+  findProperty(name)^.strvalue:=value;
+end;
 
 procedure TCommandLineReaderBreaker.clearNameless;
 begin
@@ -666,14 +673,28 @@ end;
 
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
 begin
-  if (name = 'follow') or ((name = '') and (length(requests[high(requests)].extractions) > 0))  then begin
-    writeln(stderr,name,'=',value);
+  if (name = 'follow') or (name = 'follow-file') or ((name = '') and (length(requests[high(requests)].extractions) > 0))  then begin
+    if name = 'follow-file' then
+      if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('follow', '-')
+      else TCommandLineReaderBreaker(sender).overrideVar('follow', strLoadFromFileChecked(value));
+
+    //writeln(stderr,name,'=',value);
     requests[high(requests)].initFromCommandLine(TCommandLineReader(sender), length(requests) - 1);
     TCommandLineReaderBreaker(sender).clearNameless;
     SetLength(requests, length(requests) + 1);
-  end else if name = 'extract' then begin
+  end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') then begin
+    if name = 'extract-file' then begin
+      if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
+      else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+    end else if name = 'template-file' then begin
+      TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'multipage');
+      TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+    end;
+
     SetLength(requests[high(requests)].extractions, length(requests[high(requests)].extractions) + 1);
     requests[high(requests)].extractions[high(requests[high(requests)].extractions)].initFromCommandLine(TCommandLineReader(sender));
+
+    if name = 'template-file' then TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'auto');
   end;
 end;
 
@@ -739,7 +760,6 @@ begin
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf8 (default), latin1, or input (no encoding conversion)', 'utf8');
 
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
-  );
 
   SetLength(requests,1);
 
