@@ -75,7 +75,8 @@ In some kinds of extract expression you can create new variables, if you assign 
 If you assign an object to _follow, its properties will override the command line parameters with the same
 value. 
 
-
+Generally an option modifier (like --extract-kind) affects all succeeding options, unless there are none, 
+then it affects the immediate preceding option.
 
 
 ========================================== (Pseudo) XPath 2.0 ==========================================
@@ -109,7 +110,7 @@ The most important changes are:
      
      Everything is weakly typed, e.g 'false' = false() is true, and 1 + "2" is 3. 
 
-     Namespaces and the namespace axis are not well supported
+     Namespaces, the namespace axis and attribute axes are not well supported (e.g. @href is a string)
 
   Additional functions:
  
@@ -121,8 +122,8 @@ The most important changes are:
     eval("xpath") This will evaluate the string "xpath" as an XPath expression
     deep-text()   This is the concatenated plain text of the every tag inside the current text. 
                   You can also pass a separator like deep-text(' ') to separate text of different nodes.
-    inner-xml(.)  This is the xml content of node ., like innerHTML in javascript.  
-    outer-xml(.)  This is the same as inner-xml, but includes the node itself
+    inner-xml()   This is the xml content of node ., like innerHTML in javascript.  
+    outer-xml()   This is the same as inner-xml, but includes the node itself
     split-equal("list", "string"[, "sep" = " "])
                   Treats the string "list" as a list of strings separated by "sep" and tests if 
                   "string" is contained in that list. (just like css class matching)
