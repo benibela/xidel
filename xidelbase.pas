@@ -687,6 +687,10 @@ begin
     requests[high(requests)].initFromCommandLine(TCommandLineReader(sender), length(requests) - 1);
     TCommandLineReaderBreaker(sender).clearNameless;
     SetLength(requests, length(requests) + 1);
+
+    TCommandLineReaderBreaker(sender).overrideVar('follow', '');
+    TCommandLineReaderBreaker(sender).overrideVar('extract', '');
+    TCommandLineReaderBreaker(sender).overrideVar('download', '');
   end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') then begin
     if name = 'extract-file' then begin
       if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
@@ -802,6 +806,12 @@ begin
   end;
 
   requests[high(requests)].initFromCommandLine(mycmdLine, length(requests) - 1);
+
+  if (length(requests) >= 2) and (length(requests[high(requests)].extractions) = 0) and (length(requests[high(requests)].downloads) = 0) then begin
+    requests[high(requests)].extractions := requests[high(requests)-1].extractions;
+    requests[high(requests)].downloads := requests[high(requests)-1].downloads;
+    requests[high(requests)].follow := requests[high(requests)-1].follow;
+  end;
 
   baserequests := requests;
   setlength(baserequests, length(baserequests));
