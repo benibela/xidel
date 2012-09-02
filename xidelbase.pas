@@ -25,6 +25,7 @@ procedure perform;
 
 implementation
 
+//{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJson, ofXML);
 var outputFormat: TOutputFormat;
@@ -704,8 +705,25 @@ begin
 end;
 
 procedure printUsage;
+{var
+  S: TResourceStream;
+  F: TFileStream;
+  temp: string;
+  split: TStringArray;
+  i: integer;
 begin
-
+  // create a resource stream which points to our resource
+  S := TResourceStream.Create(HInstance, 'README', 'RCDATA');
+  try
+    setlength(temp, s.Size);
+    split := strSplit(temp, #10);
+    for i := 0 to high(split) do
+      writeln(split[i]);
+  finally
+    S.Free; // destroy the resource stream
+  end;         } //doesn't work?? with 'README         RCDATA "readme"' in xidelbase.rc
+begin
+  {$I printUsage.inc}
 end;
 
 procedure perform;
