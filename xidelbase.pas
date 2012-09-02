@@ -896,6 +896,11 @@ begin
             //    ./            save in current directory/abc/def with name index.html
             //    ./.           save in current directory with name index.html
             //    .             save in current directory with name index.html
+            //    -             print to stdout
+            if downloadTo = '-' then begin
+              write(data);
+              continue;
+            end;
             if strEndsWith(downloadTo, '/.') then begin
               SetLength(downloadto,Length(downloadTo)-1);
               downloadTo:=downloadTo+realFile;
