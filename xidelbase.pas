@@ -749,7 +749,7 @@ begin
   mycmdline.allowOverrides:=true;
 
   mycmdLine.declareString('data', 'Data/URL to process (--data= prefix can be omitted)');
-  mycmdLine.declareString('download', 'Downloads/saves the data');
+  mycmdLine.declareString('download', 'Downloads/saves the data to a given filename (- prints to stdout, . uses the filename of the url)');
 
   mycmdLine.beginDeclarationCategory('Extraction options:');
 
