@@ -21,6 +21,10 @@ tests/test.sh 2urls2read tests/a.xml tests/b.xml -e //title -e //title
 echo '<test>123<x/>foo<abc>bar</abc>def<x/></test>' | tests/test.sh stdin1 - -e //abc
 echo //abc2 | tests/test.sh stdin2 '<test>123<x/>foo<abc2>bar2!</abc2>def<x/></test>' -e -
 
+#multipage template
+tests/test.sh multipage --extract '<action><page url="tests/a.xml"><template><title>{.}</title></template></page></action>' --extract-kind=multipage
+tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "tests/b.xml")'"'"'><page url="$page;"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage
+
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
 tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml
@@ -37,5 +41,9 @@ tests/test.sh json2b tests/a.xml tests/b.xml --output-format json -e "<a>{.}</a>
 tests/test.sh adhoc3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*"  
 tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json 
+
+#Online test
+tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
+
 
 

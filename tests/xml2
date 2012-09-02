@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+<e>
+<object>
+<result>b</result>
+<result>c</result>
+</object>
+</e><e>
+<object>
+<result>c</result>
+<result>b1</result>
+<result>b2</result>
+</object>
+</e>
+</seq>
