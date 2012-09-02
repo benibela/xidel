@@ -199,6 +199,16 @@ begin
   else extractions[high(extractions)].printStatus(s);
 end;
 
+function strReadFromStdin: string;
+var s:string;
+begin
+  result:='';
+  while not EOF(Input) do begin
+    ReadLn(s);
+    result+=s+LineEnding;
+  end;
+end;
+
 procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
 var
   tempSplitted: TStringArray;
@@ -209,20 +219,17 @@ begin
     extractions[high(extractions)].initFromCommandLine(cmdLine);
 
   for i:=0 to high(extractions) do with extractions[i] do begin
-    if extract = '-' then begin
-      extract:='';
-      while not EOF(Input) do begin
-        ReadLn(s);
-        extract:=extract+s+LineEnding;
-      end;
-    end;
+    if extract = '-' then extract:=strReadFromStdin;
     if extractKind = ekAuto then
       if (extract <> '') and (extract[1] = '<') then extractKind:=ekTemplate
       else extractKind:=ekXPath;
   end;
 
   if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
-  else follow := cmdLine.readString('follow');
+  else begin
+    follow := cmdLine.readString('follow');
+    if follow = '-' then follow :=strReadFromStdin;
+  end;
   follow := trim(follow);
   followExclude := strSplit(cmdLine.readString('follow-exclude'), ',', false);
   followInclude := strSplit(cmdLine.readString('follow-include'), ',', false);
@@ -864,11 +871,14 @@ begin
         if urls[0] = '' then begin deleteUrl0; continue; end;
 
         data := urls[0];
-        if not cgimode and allowInternetAccess then begin
-          if assigned(onPrepareInternet) then onPrepareInternet(userAgent, proxy);
-          printStatus('**** Retrieving:'+urls[0]+' ****');
-          if post <> '' then printStatus('Post: '+post);
-          if assigned(onRetrieve) then data := onRetrieve(urls[0], post);
+        if not cgimode then begin
+          if data = '-' then data := strReadFromStdin()
+          else if allowInternetAccess then begin
+            if assigned(onPrepareInternet) then onPrepareInternet(userAgent, proxy);
+            printStatus('**** Retrieving:'+urls[0]+' ****');
+            if post <> '' then printStatus('Post: '+post);
+            if assigned(onRetrieve) then data := onRetrieve(urls[0], post);
+          end
         end;
 
         alreadyProcessed.Add(urls[0]+#1+post);
