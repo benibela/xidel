@@ -14,6 +14,7 @@ uses
 
 var cgimode: boolean = false;
     allowInternetAccess: boolean = true;
+    allowFileAccess: boolean = true;
     mycmdline: TCommandLineReader;
     defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
 
@@ -79,6 +80,7 @@ end;
   urlsLevel: bbutils.TLongintArray;
 
   extractions: array of TExtraction;
+  downloads: TStringArray;
 
   follow: string;
   followExclude, followInclude: TStringArray;
@@ -254,6 +256,8 @@ var
 begin
   if length(extractions) > 0 then
     extractions[high(extractions)].mergeWithObject(obj);
+
+  if obj.hasProperty('download', @temp) then arrayAdd(downloads, temp.asString);
 
   if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFileChecked(temp.asString)
   else if obj.hasProperty('follow', @temp) then follow := temp.asString;
@@ -549,7 +553,7 @@ var htmlparser:THtmlTemplateParserBreaker;
     i: Integer;
     temp: TStringArray;
     j: Integer;
-    data: string;
+    data, downloadTo: string;
 
     alreadyProcessed: TStringList;
     xpathparser: TPseudoXPathParser;
@@ -695,7 +699,8 @@ begin
     requests[high(requests)].extractions[high(requests[high(requests)].extractions)].initFromCommandLine(TCommandLineReader(sender));
 
     //if name = 'template-file' then TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'auto');
-  end;
+  end else if name = 'download' then
+    arrayAdd(requests[high(requests)].downloads, value);
 end;
 
 procedure printUsage;
@@ -706,6 +711,11 @@ end;
 procedure perform;
 var
   tempvalue: TPXPValue;
+  realUrl: string;
+  tempHost: string;
+  realPath: String;
+  realFile: String;
+  tempProto: string;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -716,7 +726,8 @@ begin
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
   mycmdline.allowOverrides:=true;
 
-  mycmdLine.declareString('data', 'Data to process (--data= prefix can be omitted)');
+  mycmdLine.declareString('data', 'Data/URL to process (--data= prefix can be omitted)');
+  mycmdLine.declareString('download', 'Downloads/saves the data');
 
   mycmdLine.beginDeclarationCategory('Extraction options:');
 
@@ -828,10 +839,45 @@ begin
         if not cgimode and allowInternetAccess then begin
           if assigned(onPrepareInternet) then onPrepareInternet(userAgent, proxy);
           printStatus('**** Retrieving:'+urls[0]+' ****');
+          if post <> '' then printStatus('Post: '+post);
           if assigned(onRetrieve) then data := onRetrieve(urls[0], post);
         end;
 
         alreadyProcessed.Add(urls[0]+#1+post);
+
+        if not cgimode and allowFileAccess and (length(downloads) > 0) then begin
+          decodeURL(urls[0], tempProto, tempHost, realUrl);
+          realUrl := strSplitGet('?', realUrl);
+          realUrl := strSplitGet('#', realUrl);
+          j := strRpos('/', realUrl);
+          if j = 0 then begin
+            realPath := '';
+            realFile := realUrl;
+          end else begin
+            realPath := copy(realUrl, 1, j);
+            realFile := copy(realUrl, j + 1, length(realUrl) - j)
+          end;
+
+          for j := 0 to high(downloads) do begin
+            downloadTo := downloads[j];
+            //Download abc/def/index.html
+            //    foo/bar/xyz   save in directory foo/bar with name xyz
+            //    foo/bar/      save in directory foo/bar/abc/def with name index.html
+            //    foo/bar/.     save in directory foo/bar with name index.html
+            //    foo           save in current directory/abc/def with name foo
+            //    ./            save in current directory/abc/def with name index.html
+            //    ./.           save in current directory with name index.html
+            //    .             save in current directory with name index.html
+            if strEndsWith(downloadTo, '/.') then begin
+              SetLength(downloadto,Length(downloadTo)-1);
+              downloadTo:=downloadTo+realFile;
+            end else if strEndsWith(downloadTo, '/') then begin
+              downloadTo:=downloadTo+realPath+realFile;
+            end else if downloadTo = '.' then downloadTo:=realFile;
+            printStatus('**** Save as:'+downloadTo+' ****');
+            strSaveToFileUTF8(downloadTo, data);
+          end;
+        end;
 
         printStatus('**** Processing:'+urls[0]+' ****');
         for j := 0 to high(extractions) do begin
