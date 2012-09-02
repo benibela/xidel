@@ -315,7 +315,7 @@ procedure TProcessingRequest.addBasicValueUrl(dest: tpxpvalue; baseurl: string);
   begin
     if length(urlsLevel) > 0 then arrayAdd(urlsLevel, urlsLevel[0])
     else arrayAdd(urlsLevel, stepLevel);
-    if (guessType(baseurl) = rtRemoteURL) and (guessType(urls[high(urls)]) = rtFile) then
+    if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(urls[high(urls)]) = rtFile) then
       urls[high(urls)] := resolveURI(urls[high(urls)], baseurl);
   end;
 
