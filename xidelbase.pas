@@ -337,7 +337,7 @@ begin
       if n = nil then exit;
       if n.typ <> tetOpen then arrayAdd(urls, dest.asString)
       else if SameText(n.value, 'a') then arrayAdd(urls, n.getAttribute('href', ''))
-      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') then arrayAdd(urls, n.getAttribute('src', ''))
+      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then arrayAdd(urls, n.getAttribute('src', ''))
       else arrayAdd(urls, n.deepNodeText());
       activateNewUrl;
     end;
