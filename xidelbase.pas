@@ -762,7 +762,7 @@ begin
 
   mycmdLine.declareString('extract', joined(['Expression to extract from the data.','If it starts with < it is interpreted as template, otherwise as XPath 2 expression']));
   mycmdline.addAbbreviation('e');
-  mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow)', '_follow');
+  mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow,_url)', '_follow');
   mycmdLine.declareString('extract-include', 'If not empty, comma separated list of variables to use in an extract template (white list)');
   mycmdLine.declareFile('extract-file', 'File containing an extract expression (for longer expressions)');
   mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, css, template or multipage', 'auto');
@@ -882,45 +882,7 @@ begin
         end;
 
         alreadyProcessed.Add(urls[0]+#1+post);
-
-        if not cgimode and allowFileAccess and (length(downloads) > 0) then begin
-          decodeURL(urls[0], tempProto, tempHost, realUrl);
-          realUrl := strSplitGet('?', realUrl);
-          realUrl := strSplitGet('#', realUrl);
-          j := strRpos('/', realUrl);
-          if j = 0 then begin
-            realPath := '';
-            realFile := realUrl;
-          end else begin
-            realPath := copy(realUrl, 1, j);
-            realFile := copy(realUrl, j + 1, length(realUrl) - j)
-          end;
-
-          for j := 0 to high(downloads) do begin
-            downloadTo := downloads[j];
-            //Download abc/def/index.html
-            //    foo/bar/xyz   save in directory foo/bar with name xyz
-            //    foo/bar/      save in directory foo/bar/abc/def with name index.html
-            //    foo/bar/.     save in directory foo/bar with name index.html
-            //    foo           save in current directory/abc/def with name foo
-            //    ./            save in current directory/abc/def with name index.html
-            //    ./.           save in current directory with name index.html
-            //    .             save in current directory with name index.html
-            //    -             print to stdout
-            if downloadTo = '-' then begin
-              write(data);
-              continue;
-            end;
-            if strEndsWith(downloadTo, '/.') then begin
-              SetLength(downloadto,Length(downloadTo)-1);
-              downloadTo:=downloadTo+realFile;
-            end else if strEndsWith(downloadTo, '/') then begin
-              downloadTo:=downloadTo+realPath+realFile;
-            end else if downloadTo = '.' then downloadTo:=realFile;
-            printStatus('**** Save as:'+downloadTo+' ****');
-            strSaveToFileUTF8(downloadTo, data);
-          end;
-        end;
+        htmlparser.variableChangeLog.addVariable('_url', urls[0]);
 
         printStatus('**** Processing:'+urls[0]+' ****');
         for j := 0 to high(extractions) do begin
@@ -961,6 +923,45 @@ begin
               multipagetemp.free;
             end
             else raise Exception.Create('Impossible');
+          end;
+        end;
+
+        if not cgimode and allowFileAccess and (length(downloads) > 0) then begin
+          decodeURL(urls[0], tempProto, tempHost, realUrl);
+          realUrl := strSplitGet('?', realUrl);
+          realUrl := strSplitGet('#', realUrl);
+          j := strRpos('/', realUrl);
+          if j = 0 then begin
+            realPath := '';
+            realFile := realUrl;
+          end else begin
+            realPath := copy(realUrl, 1, j);
+            realFile := copy(realUrl, j + 1, length(realUrl) - j)
+          end;
+
+          for j := 0 to high(downloads) do begin
+            downloadTo := htmlparser.replaceVars(downloads[j]);
+            //Download abc/def/index.html
+            //    foo/bar/xyz   save in directory foo/bar with name xyz
+            //    foo/bar/      save in directory foo/bar/abc/def with name index.html
+            //    foo/bar/.     save in directory foo/bar with name index.html
+            //    foo           save in current directory/abc/def with name foo
+            //    ./            save in current directory/abc/def with name index.html
+            //    ./.           save in current directory with name index.html
+            //    .             save in current directory with name index.html
+            //    -             print to stdout
+            if downloadTo = '-' then begin
+              write(data);
+              continue;
+            end;
+            if strEndsWith(downloadTo, '/.') then begin
+              SetLength(downloadto,Length(downloadTo)-1);
+              downloadTo:=downloadTo+realFile;
+            end else if strEndsWith(downloadTo, '/') then begin
+              downloadTo:=downloadTo+realPath+realFile;
+            end else if downloadTo = '.' then downloadTo:=realFile;
+            printStatus('**** Save as: '+downloadTo+' ****');
+            strSaveToFileUTF8(downloadTo, data);
           end;
         end;
 
