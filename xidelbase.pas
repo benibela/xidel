@@ -961,6 +961,7 @@ begin
               downloadTo:=downloadTo+realPath+realFile;
             end else if downloadTo = '.' then downloadTo:=realFile;
             printStatus('**** Save as: '+downloadTo+' ****');
+            ForceDirectories(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]));
             strSaveToFileUTF8(downloadTo, data);
           end;
         end;
