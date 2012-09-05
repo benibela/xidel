@@ -264,7 +264,7 @@ You can use $..; variables in the attributes and post-nodes.
 Since this would be cumbersome to directly to --extract, you can also specify the containing file
 with the --template-file argument.
 
-You can also have multiple <action/>s in a mulitpage template (surrounded by a parent element with 
+You can also have multiple <action/>s in a multipage template (surrounded by a parent element with 
 any name), call the later actions with <call action=".."/> from another action.
 
 =========================================== Output formats =============================================
