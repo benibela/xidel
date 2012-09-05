@@ -133,8 +133,9 @@ CSS 3 Selectors are fully supported, except some pseudoclasses like :hover and :
 make sense in a gui less, reading-only application.
 (It is however not much tested, since I have only used XPath)
 
-The easiest way to use CSS selectors with the command line is to write it like --extract 'css("selector")'
-(the '-quotes are necessary to escape the "-quotes). 
+The easiest way to use CSS selectors with the command line is to write it like --extract "css('selector')"
+(the "-quotes are necessary to escape the '-quotes.) 
+
 
 
 
