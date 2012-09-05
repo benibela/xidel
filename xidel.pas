@@ -30,6 +30,8 @@ begin
   else result := httpRequest(url, post);
 end;
 
+{$R *.res}
+
 begin
   xidelbase.cgimode := false;
   xidelbase.allowInternetAccess := true;
