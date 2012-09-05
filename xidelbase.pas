@@ -774,6 +774,7 @@ var
   realPath: String;
   realFile: String;
   tempProto: string;
+  toCreate: String;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -914,7 +915,11 @@ begin
         end;
 
         alreadyProcessed.Add(urls[0]+#1+post);
-        htmlparser.variableChangeLog.addVariable('_url', urls[0]);
+        htmlparser.variableChangeLog.addVariable('url', urls[0]);
+        decodeURL(urls[0], tempProto, tempHost, realUrl);
+        htmlparser.variableChangeLog.addVariable('host', tempHost);
+        htmlparser.variableChangeLog.addVariable('path', realUrl);
+
 
         printStatus('**** Processing:'+urls[0]+' ****');
         for j := 0 to high(extractions) do begin
@@ -959,7 +964,6 @@ begin
         end;
 
         if not cgimode and allowFileAccess and (length(downloads) > 0) then begin
-          decodeURL(urls[0], tempProto, tempHost, realUrl);
           realUrl := strSplitGet('?', realUrl);
           realUrl := strSplitGet('#', realUrl);
           j := strRpos('/', realUrl);
@@ -970,9 +974,13 @@ begin
             realPath := copy(realUrl, 1, j);
             realFile := copy(realUrl, j + 1, length(realUrl) - j)
           end;
+          if strBeginsWith(realPath, '/') then delete(realPath,1,1);
 
           for j := 0 to high(downloads) do begin
             downloadTo := htmlparser.replaceVars(downloads[j]);
+            {$ifdef win32}
+            downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
+            {$endif}
             //Download abc/def/index.html
             //    foo/bar/xyz   save in directory foo/bar with name xyz
             //    foo/bar/      save in directory foo/bar/abc/def with name index.html
@@ -986,15 +994,18 @@ begin
               write(data);
               continue;
             end;
-            if strEndsWith(downloadTo, '/.') then begin
+            if downloadTo = './.' then downloadTo:=realPath+realFile
+            else if strEndsWith(downloadTo, '/.') then begin
               SetLength(downloadto,Length(downloadTo)-1);
               downloadTo:=downloadTo+realFile;
             end else if strEndsWith(downloadTo, '/') then begin
               downloadTo:=downloadTo+realPath+realFile;
-            end else if downloadTo = '.' then downloadTo:=realFile;
+            end;
+            if strEndsWith(downloadTo, '/') or (downloadTo = '') then downloadTo += 'index.html';
             printStatus('**** Save as: '+downloadTo+' ****');
-            ForceDirectories(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]));
-            strSaveToFileUTF8(downloadTo, data);
+            if pos('/', downloadTo) > 0 then
+              ForceDirectories(StringReplace(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]), '/', DirectorySeparator, [rfReplaceAll]));
+            strSaveToFileUTF8(StringReplace(downloadTo, '/', DirectorySeparator, [rfReplaceAll]), data);
           end;
         end;
 
