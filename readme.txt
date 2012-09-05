@@ -5,7 +5,7 @@ The trivial usage is to extract an expression from a webpage like:
   
    xidel http://www.example.org --extract //title
 
-Instead of one or more urls, you can also pass filenames or the xml data itself (<html>..</html>). 
+Instead of one or more urls, you can also pass file names or the xml data itself (<html>..</html>). 
 The --extract option can be abbreviated as -e, and there are four different kind of extract expressions:
  
   1*) XPath 2 expressions, with some changes and additional functions.
@@ -17,7 +17,7 @@ The --extract option can be abbreviated as -e, and there are four different kind
   4 ) Multipage templates, i.e. a file that contain templates for several pages
 
 The kinds marked with a * are automatically detected, the other ones have to be activated with the 
-extract-kind option. CSS Selectors are also 2autodetected", if they are written as css("...").
+extract-kind option. CSS Selectors are also "autodetected", if they are written as css("...").
 See the sections below for a more detailed description of each expression kind.
 
 
@@ -89,7 +89,7 @@ The most important changes are:
     
     You can assign values to variables like:                           var := value       
       
-    You can use objects with properites within the XPath expressions:  var := object(),  var.foo := "bar"
+    You can use objects with properties within the XPath expressions:  var := object(),  var.foo := "bar"
     The properties can then be accessed by $var.foo, and are copied by object assignments, i.e.:
     after obj2 := var, the value of $obj2.foo is $var.foo is "bar".
     Different variables always have different objects, i.e. there are no pointers, and changing $obj2.foo 
@@ -102,7 +102,7 @@ The most important changes are:
      
      All string comparisons are case insensitive, and "clever", e.g.:  '9xy' = '9XY' < '10XY' < 'xy'
      This is more useful for html (think of class = 'foobar'), but can be disabled by passing collation urls
-     to the string functions.
+     to the string functions. 
      
      Everything is weakly typed, e.g 'false' = false() is true, and 1 + "2" is 3. 
 
@@ -202,7 +202,7 @@ template:
  textnodes                Textnodes are matched like html element nodes.
                           A textnode in the webpage is considered a valid match, if it starts
                           with the same text as the text node in the template.
-                          (but you can change this behaviour to ends-with/exact/regex-comparisons with 
+                          (but you can change this behavior to ends-with/exact/regex-comparisons with 
                           the  <t:meta [default-text-matching="??"] [default-case-sensitive="??"]/>
                           command)
  
@@ -220,7 +220,7 @@ template:
  
  *                        Like +, but it can also match none
  
- {min,max}                Matches between [min,max] many occurences of the previous element
+ {min,max}                Matches between [min,max] many occurrences of the previous element
  
  <t:loop min=.. max=../>  The same as above. However, t:loop will repeat all its children, while a marker 
                           like + can only repeat the single, previous element.
@@ -269,7 +269,7 @@ any name), call the later actions with <call action=".."/> from another action.
 
 =========================================== Output formats =============================================
 
-Xidel has three different output formats, which can be choosen with the output-format option:
+Xidel has three different output formats, which can be chosen with the output-format option:
 
 adhoc:  A very simple format, it will just print all values (default)
 
