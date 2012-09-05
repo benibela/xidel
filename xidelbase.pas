@@ -1,3 +1,20 @@
+{Copyright (C) 2012  Benito van der Zander
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+}
+
 unit xidelbase;
 
 {$mode objfpc}{$H+}
@@ -17,6 +34,9 @@ var cgimode: boolean = false;
     allowFileAccess: boolean = true;
     mycmdline: TCommandLineReader;
     defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
+
+    majorVersion: integer = 0;
+    minorVersion: integer = 5;
 
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
     onRetrieve: function (const url, postdata: string): string;
@@ -715,6 +735,15 @@ begin
     arrayAdd(requests[high(requests)].downloads, value);
 end;
 
+procedure printVersion;
+begin
+  writeln('Xidel '+IntToStr(majorVersion)+'.'+IntToStr(minorVersion));
+  writeln('');
+  writeln('http://videlibri.sourceforge.net/xidel.html');
+  writeln('by Benito van der Zander <benito@benibela.de>');
+  writeln();
+end;
+
 procedure printUsage;
 {var
   S: TResourceStream;
@@ -801,12 +830,15 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf8 (default), latin1, or input (no encoding conversion)', 'utf8');
 
+  mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
 
   SetLength(requests,1);
 
   mycmdLine.parse();
 
+  if mycmdline.readFlag('version') then
+    printVersion;
   if mycmdline.readFlag('usage') then begin
     printUsage;
     exit;
