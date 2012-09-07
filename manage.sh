@@ -17,11 +17,8 @@ action=2
 function pushhg(){
 	VIDELIBRIBASE=$HGROOT/programs/internet/VideLibri
 	PUBLICHG=$HGROOT/../videlibrixidelpublichg
-	mkdir $PUBLICHG
-	hg convert  --traceback --debug --filemap $VIDELIBRIBASE/_hg.filemap $HGROOT $PUBLICHG
-	cd $PUBLICHG
-	hg update trunks
-	hg push -f ssh://$SF_USER@videlibri.hg.sourceforge.net/hgroot/videlibri/videlibri
+
+	syncHg $VIDELIBRIBASE/_hg.filemap $HGROOT $PUBLICHG
 }
 
 case "$1" in
