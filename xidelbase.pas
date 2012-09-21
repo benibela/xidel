@@ -305,6 +305,8 @@ begin
   setlength(urls, 0);
   if obj.hasProperty('follow', @temp) then
     addBasicValueUrl(temp, '');
+  if obj.hasProperty('url', @temp) then
+    addBasicValueUrl(temp, '');
 
   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then begin
     arrayAdd(urls, '<empty/>');
