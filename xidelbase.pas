@@ -74,6 +74,8 @@ TExtraction = object
  extractExclude, extractInclude: TStringArray;
  extractKind: (ekAuto, ekXPath, ekTemplate, ekCSS, ekMultipage);
 
+ templateActions: TStringArray;
+
  defaultName: string;
  printVariables: set of (pvLog, pvCondensedLog, pvFinal);
  printTypeAnnotations,  hideVariableNames, printNodeXML: boolean;
@@ -155,6 +157,7 @@ begin
   extractInclude := strSplit(cmdLine.readString('extract-include'), ',', false);
 
   setExtractKind(cmdLine.readString('extract-kind'));
+  templateActions := strSplit(cmdLine.readString('template-action'), ',', false);
 
 
   defaultName := cmdLine.readString('default-variable-name');
@@ -191,6 +194,7 @@ begin
     extract := strLoadFromFileChecked(temp.asString);
     extractKind := ekMultipage;
   end;
+  if obj.hasProperty('template-action', @temp) then templateActions := strSplit(temp.asString, ',', false);
 
   if obj.hasProperty('default-variable-name', @temp) then defaultName := temp.asString;
   if obj.hasProperty('print-type-annotations', @temp) then printTypeAnnotations:=temp.asBoolean;
@@ -583,7 +587,7 @@ end;
  TTemplateReaderBreaker = class(TTemplateReader)
    constructor create();
    procedure setTemplate(atemplate: TMultiPageTemplate);
-   procedure perform;
+   procedure perform(actions: TStringArray);
    procedure selfLog(sender: TTemplateReader; logged: string; debugLevel: integer);
  end;
 
@@ -630,10 +634,12 @@ begin
   inherited setTemplate(atemplate);
 end;
 
-procedure TTemplateReaderBreaker.perform;
+procedure TTemplateReaderBreaker.perform(actions: TStringArray);
 begin
   if length(template.baseActions.children) = 0 then raise Exception.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
-  performAction(template.baseActions.children[0]);
+  if length(actions) = 0 then performAction(template.baseActions.children[0])
+  else for i:= 0 to high(actions) do
+    performAction(actions[i]);
 end;
 
 procedure TTemplateReaderBreaker.selfLog(sender: TTemplateReader; logged: string; debugLevel: integer);
@@ -808,6 +814,7 @@ begin
   mycmdLine.declareFile('extract-file', 'File containing an extract expression (for longer expressions)');
   mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, css, template or multipage', 'auto');
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
+  mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions are allowed with comma separated values)');
 
   mycmdLine.beginDeclarationCategory('Follow options:');
 
@@ -973,7 +980,7 @@ begin
               multipagetemp := TMultiPageTemplate.create();
               multipagetemp.loadTemplateFromString(extractions[j].extract);
               multipage.setTemplate(multipagetemp);
-              multipage.perform();
+              multipage.perform(extractions[j].templateActions);
               multipage.setTemplate(nil);
               multipagetemp.free;
             end
