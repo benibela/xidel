@@ -29,7 +29,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--template-file /tmp/t.xml"/>
+        <CommandLineParams Value="/tmp/omg.html -e '&lt;html>&lt;form> &lt;t:loop>&lt;input type=&quot;hidden&quot;>&lt;t:s>node-name(.)&lt;/t:s>&lt;/input>&lt;/t:loop>&lt;/form>&lt;/html>'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
