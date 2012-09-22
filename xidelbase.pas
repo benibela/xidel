@@ -577,7 +577,7 @@ type
 { THtmlTemplateParserBreaker }
 
  THtmlTemplateParserBreaker = class(THtmlTemplateParser)
-  procedure parseHTMLSimple(html,uri: string);
+  procedure parseHTMLSimple(html,uri,contenttype: string);
 end;
 
  TTemplateReaderBreaker = class(TTemplateReader)
@@ -603,10 +603,10 @@ var htmlparser:THtmlTemplateParserBreaker;
 
 { THtmlTemplateParserBreaker }
 
-procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri: string);
+procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
 begin
   FHTML.trimText := FTrimTextNodes = ttnWhenLoading;
-  FHtmlTree := FHTML.parseTree(html, uri);
+  FHtmlTree := FHTML.parseTree(html, uri, contenttype);
 
   //encoding trouble
   FHtmlTree.setEncoding(outputEncoding,true,true);
@@ -785,6 +785,7 @@ var
   realFile: String;
   tempProto: string;
   toCreate: String;
+  contenttype: String;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -927,6 +928,7 @@ begin
               for j:=0 to internet.lastHTTPHeaders.Count-1 do
                 writeln(internet.lastHTTPHeaders[j]);
             end;
+            if Assigned(internet) then contenttype := internet.getLastHTTPHeader('Content-Type');
           end
         end;
 
@@ -945,7 +947,7 @@ begin
             ekTemplate: begin
               htmlparser.UnnamedVariableName:=extractions[j].defaultName;
               htmlparser.parseTemplate(extractions[j].extract); //todo reuse existing parser
-              htmlparser.parseHTML(data, urls[0]);
+              htmlparser.parseHTML(data, urls[0], contenttype);
               extractions[j].pageProcessed(nil,htmlparser);
             end;
             ekXPath, ekCSS: begin
@@ -954,7 +956,7 @@ begin
                 if outputFormat = ofXML then writeln('<e>');
               end else writeln(outputArraySeparator[outputFormat]);
 
-              htmlparser.parseHTMLSimple(data, urls[0]);
+              htmlparser.parseHTMLSimple(data, urls[0], contenttype);
               xpathparser.RootElement := htmlparser.HTMLTree;
               xpathparser.ParentElement := xpathparser.RootElement;
               xpathparser.StaticBaseUri := urls[0];
@@ -1030,14 +1032,14 @@ begin
 
           if follow[1] = '<' then begin //assume my template
             htmlparser.parseTemplate(follow); //todo reuse existing parser
-            htmlparser.parseHTML(data, urls[0]);
+            htmlparser.parseHTML(data, urls[0], contenttype);
             for i:=0 to htmlparser.variableChangeLog.count-1 do
               if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getVariableName(i)) = -1)) or
                  ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getVariableName(i)) > -1)) then
                 followTo(htmlparser.variableChangeLog.getVariableValue(i));
           end else begin
             //assume xpath
-            htmlparser.parseHTMLSimple(data, urls[0]);
+            htmlparser.parseHTMLSimple(data, urls[0], contenttype);
             xpathparser.RootElement := htmlparser.HTMLTree;
             xpathparser.ParentElement := xpathparser.RootElement;
             xpathparser.StaticBaseUri := urls[0];
