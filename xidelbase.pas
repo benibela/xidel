@@ -51,7 +51,7 @@ type TOutputFormat = (ofAdhoc, ofJson, ofXML);
 var outputFormat: TOutputFormat;
     firstExtraction: boolean = true;
     outputArraySeparator: array[toutputformat] of string = ('', ', ', '</e><e>');
-
+    internet: TInternetAccess;
 function joined(s: array of string): string;
 var
   i: Integer;
@@ -111,6 +111,7 @@ end;
   userAgent: string;
   proxy: string;
   post: string;
+  printReceivedHeaders: boolean;
 
   quiet: boolean;
 
@@ -261,6 +262,7 @@ begin
     userAgent := cmdLine.readString('user-agent');
     proxy := cmdLine.readString('proxy');
     post := cmdLine.readString('post');
+    printReceivedHeaders := cmdLine.readFlag('print-received-headers');
   end;
 
   setVariablesTime(cmdLine.readString('print-variables-time'));
@@ -297,6 +299,7 @@ begin
   if obj.hasProperty('user-agent', @temp) then userAgent := temp.asString;
   if obj.hasProperty('proxy', @temp) then proxy := temp.asString;
   if obj.hasProperty('post', @temp) then post := temp.asString;
+  if obj.hasProperty('print-received-headers', @temp) then printReceivedHeaders := temp.asBoolean;
 
   if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.asString);
   if obj.hasProperty('output-encoding', @temp) then outputEncoding:=strEncodingFromName(temp.asString);
@@ -824,6 +827,7 @@ begin
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
     mycmdLine.declareString('post', 'Post request to send (url encoded)');
+    mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
   end;
 
   mycmdLine.beginDeclarationCategory('Output options:');
@@ -914,10 +918,15 @@ begin
         if not cgimode then begin
           if data = '-' then data := strReadFromStdin()
           else if allowInternetAccess then begin
-            if assigned(onPrepareInternet) then onPrepareInternet(userAgent, proxy);
+            if assigned(onPrepareInternet) then  internet := onPrepareInternet(userAgent, proxy);
             printStatus('**** Retrieving:'+urls[0]+' ****');
             if post <> '' then printStatus('Post: '+post);
             if assigned(onRetrieve) then data := onRetrieve(urls[0], post);
+            if printReceivedHeaders and assigned(internet) then begin
+              printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
+              for j:=0 to internet.lastHTTPHeaders.Count-1 do
+                writeln(internet.lastHTTPHeaders[j]);
+            end;
           end
         end;
 
