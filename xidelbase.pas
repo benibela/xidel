@@ -546,19 +546,24 @@ var
 procedure followTo(dest: TPXPValue);
 var
   n: TTreeElement;
+  refRequest: integer;
+  i: Integer;
 begin
+  if (length(requests) > 1) and (requests[0].stepLevel = requests[1].stepLevel - 1) then
+    refRequest := 1
+   else
+    refRequest := 0;
+
   case dest.kind of
     pvkObject: begin //this can't imho be in addBasicValueUrl, because you can't reliable call a method on a  record in an array that will be modified
       SetLength(requests, length(requests) + 1);
-      requests[high(requests)] := requests[0];
+      requests[high(requests)] := requests[refRequest];
       requests[high(requests)].mergeWithObject(dest as TPXPValueObject);
     end;
-    else begin
-      if (length(requests) > 1) and (requests[0].stepLevel = requests[1].stepLevel - 1) then
-        requests[1].addBasicValueUrl(dest, requests[0].urls[0])
-       else
-        requests[0].addBasicValueUrl(dest, requests[0].urls[0]);
-    end;
+    pvkSequence:
+      for i := 0 to TPXPValueSequence(dest).seq.Count-1 do
+        followTo(TPXPValueSequence(dest).seq[i]);
+    else requests[refRequest].addBasicValueUrl(dest, requests[0].urls[0])
   end;
 end;
 
