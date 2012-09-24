@@ -123,7 +123,16 @@ The most important changes are:
     split-equal("list", "string"[, "sep" = " "])
                   Treats the string "list" as a list of strings separated by "sep" and tests if 
                   "string" is contained in that list. (just like css class matching)
+    form(form, [overridden parameters = ()])
+                  Converts a html form in a http request, by url encoding all inputs descendants
+                  of the given form node. You can give a sequence of parameters to  override.
+                  e.g. form(//form[1], "foo=bar&xyz=123") returns a request for the first form,
+                  with the foo and xyz parameters overriden by bar and 123.
+                  It returns an object with .url, .method and .post properties.
+                  (form is not supported in Xidel 0.5, you can compile it from the hg repository.. ) 
 
+The pasdoc documentation of my XPath 2 library explains more details:
+http://www.benibela.de/documentation/internettools/pseudoxpath.TPseudoXPathParser.html
 
 
 ========================================== CSS 3.0 Selectors ==========================================
@@ -131,12 +140,13 @@ The most important changes are:
 
 CSS 3 Selectors are fully supported, except some pseudoclasses like :hover and ::before that do not 
 make sense in a gui less, reading-only application.
-(It is however not much tested, since I have only used XPath)
+(It is however not much tested, since I have only used XPath. edit: e.g. there is a bug in Xidel 0.5 that 
+you can not use a selector like "a,b", only "a, b" with an additional space. This is fixed in the source)
 
 The easiest way to use CSS selectors with the command line is to write it like --extract "css('selector')"
 (the "-quotes are necessary to escape the '-quotes.) 
 
-
+Alternatively you can use --extract-kind=css --extract=selector. 
 
 
 ============================================== Templates ==============================================
@@ -259,14 +269,20 @@ E.g.
 
 All pages are downloaded with GET or respectively POST requests, and processed with the given template.
 The page-node also accepts a "test" attribute, which gives an XPath expression that needs to be true, 
-and a repeat="true" attribute that will repeat the page request as long as possible.
+if the page element should be used.
 You can use $..; variables in the attributes and post-nodes. 
 
-Since this would be cumbersome to directly to --extract, you can also specify the containing file
+Since this would be cumbersome to pass directly to --extract, you can also specify the containing file
 with the --template-file argument.
 
 You can also have multiple <action/>s in a multipage template (surrounded by a parent element with 
-any name), call the later actions with <call action=".."/> from another action.
+name <actions>), and call the later actions with <call action=".."/> from another action.
+If a template with multiple actions is passed to Xidel it will always perform the first action,
+unless the --template-action parameter specifies another action to run. (in Xidel > 0.5)
+
+There are also <variable>-elements to declare variables and <loop>-elements to repeat other elements, 
+see http://www.benibela.de/documentation/internettools/multipagetemplate.TMultiPageTemplate.html
+for more details.
 
 =========================================== Output formats =============================================
 
