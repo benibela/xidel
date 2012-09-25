@@ -95,7 +95,7 @@ TExtraction = object
  procedure printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
- procedure pageProcessed(unused: TTemplateReader; parser: THtmlTemplateParser);
+ procedure pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 end;
 
  TProcessingRequest = record
@@ -438,7 +438,7 @@ end;
 
 procedure followTo(dest: TPXPValue); forward;
 
-procedure TExtraction.pageProcessed(unused: TTemplateReader; parser: THtmlTemplateParser);
+procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 var
   i: Integer;
 begin
@@ -584,11 +584,11 @@ type
   procedure parseHTMLSimple(html,uri,contenttype: string);
 end;
 
- TTemplateReaderBreaker = class(TTemplateReader)
+ TTemplateReaderBreaker = class(TMultipageTemplateReader)
    constructor create();
    procedure setTemplate(atemplate: TMultiPageTemplate);
    procedure perform(actions: TStringArray);
-   procedure selfLog(sender: TTemplateReader; logged: string; debugLevel: integer);
+   procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
  end;
 
 var htmlparser:THtmlTemplateParserBreaker;
@@ -637,12 +637,12 @@ end;
 procedure TTemplateReaderBreaker.perform(actions: TStringArray);
 begin
   if length(template.baseActions.children) = 0 then raise Exception.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
-  if length(actions) = 0 then performAction(template.baseActions.children[0])
+  if length(actions) = 0 then callAction(template.baseActions.children[0])
   else for i:= 0 to high(actions) do
-    performAction(actions[i]);
+    callAction(actions[i]);
 end;
 
-procedure TTemplateReaderBreaker.selfLog(sender: TTemplateReader; logged: string; debugLevel: integer);
+procedure TTemplateReaderBreaker.selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
 begin
   if debugLevel <> 0 then exit;
   writeln(stderr, logged);
