@@ -416,7 +416,6 @@ begin
             write(', ', temp.values.getName(i), ': ');
             printExtractedValue(temp.values.get(i));
           end;
-          temp.free;
         end;
         write('}');
       end
