@@ -24,7 +24,7 @@ interface
 
 uses
   Classes,
-  extendedhtmlparser,  pseudoxpath, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
+  extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess,
   rcmdline
   ;
@@ -72,7 +72,7 @@ type
 TExtraction = object
  extract: string;
  extractExclude, extractInclude: TStringArray;
- extractKind: (ekAuto, ekXPath, ekTemplate, ekCSS, ekMultipage);
+ extractKind: (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
 
  templateActions: TStringArray;
 
@@ -85,14 +85,14 @@ TExtraction = object
  procedure setExtractKind(v: string);
 
  procedure initFromCommandLine(cmdLine: TCommandLineReader);
- procedure mergeWithObject(obj: TPXPValueObject);
+ procedure mergeWithObject(obj: TXQValueObject);
 
  procedure setVariables(v: string);
 
  procedure printStatus(s: string);
 
- procedure printExtractedValue(value: TPXPValue);
- procedure printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
+ procedure printExtractedValue(value: IXQValue);
+ procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
  procedure pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
@@ -123,12 +123,12 @@ end;
   procedure printStatus(s: string);
 
   procedure initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
-  procedure mergeWithObject(obj: TPXPValueObject);
+  procedure mergeWithObject(obj: TXQValueObject);
 
   procedure setVariablesTime(v: string);
 
   procedure deleteUrl0;
-  procedure addBasicValueUrl(dest: tpxpvalue; baseurl: string);
+  procedure addBasicValueUrl(dest: IXQValue; baseurl: string);
 
 end;
 
@@ -141,6 +141,7 @@ begin
   if extract = '' then exit;
   if striEqual(v, 'auto') then extractKind := ekAuto
   else if striEqual(v, 'xpath') then extractKind:=ekXPath
+  else if striEqual(v, 'xquery') then extractKind:=ekXQuery
   else if striEqual(v, 'css') then extractKind:=ekCSS
   else if striEqual(v, 'template') then extractKind:=ekTemplate
   else if striEqual(v, 'multipage') then extractKind:=ekMultipage
@@ -181,28 +182,28 @@ begin
   if Result = '' then raise Exception.Create('File '+fn+' is empty.');
 end;
 
-procedure TExtraction.mergeWithObject(obj: TPXPValueObject);
+procedure TExtraction.mergeWithObject(obj: TXQValueObject);
 var
-  temp: TPXPValue;
+  temp: TXQValue;
 begin
-  if obj.hasProperty('extract-file', @temp) then extract := temp.asString
-  else if obj.hasProperty('extract', @temp) then extract := temp.asString;
-  if obj.hasProperty('extract-exclude', @temp) then extractExclude := strSplit(temp.asString, ',', false);
-  if obj.hasProperty('extract-include', @temp) then extractInclude := strSplit(temp.asString, ',', false);
-  if obj.hasProperty('extract-kind', @temp) then setExtractKind(temp.asString);
+  if obj.hasProperty('extract-file', @temp) then extract := temp.toString
+  else if obj.hasProperty('extract', @temp) then extract := temp.toString;
+  if obj.hasProperty('extract-exclude', @temp) then extractExclude := strSplit(temp.toString, ',', false);
+  if obj.hasProperty('extract-include', @temp) then extractInclude := strSplit(temp.toString, ',', false);
+  if obj.hasProperty('extract-kind', @temp) then setExtractKind(temp.toString);
   if obj.hasProperty('template-file', @temp)  then begin
-    extract := strLoadFromFileChecked(temp.asString);
+    extract := strLoadFromFileChecked(temp.toString);
     extractKind := ekMultipage;
   end;
-  if obj.hasProperty('template-action', @temp) then templateActions := strSplit(temp.asString, ',', false);
+  if obj.hasProperty('template-action', @temp) then templateActions := strSplit(temp.toString, ',', false);
 
-  if obj.hasProperty('default-variable-name', @temp) then defaultName := temp.asString;
-  if obj.hasProperty('print-type-annotations', @temp) then printTypeAnnotations:=temp.asBoolean;
-  if obj.hasProperty('hide-variable-names', @temp) then hideVariableNames := temp.asBoolean;
+  if obj.hasProperty('default-variable-name', @temp) then defaultName := temp.toString;
+  if obj.hasProperty('print-type-annotations', @temp) then printTypeAnnotations:=temp.toBoolean;
+  if obj.hasProperty('hide-variable-names', @temp) then hideVariableNames := temp.toBoolean;
 
-  if obj.hasProperty('print-variables', @temp) then setVariables(temp.asString);
+  if obj.hasProperty('print-variables', @temp) then setVariables(temp.toString);
 
-  if obj.hasProperty('quiet', @temp) then quiet := temp.asBoolean;
+  if obj.hasProperty('quiet', @temp) then quiet := temp.toBoolean;
 end;
 
 procedure TExtraction.setVariables(v: string);
@@ -247,6 +248,7 @@ begin
     if extract = '-' then extract:=strReadFromStdin;
     if extractKind = ekAuto then
       if (extract <> '') and (extract[1] = '<') then extractKind:=ekTemplate
+      else if strBeginsWith(extract, 'xquery') then extractKind:=ekXQuery
       else extractKind:=ekXPath;
   end;
 
@@ -283,30 +285,30 @@ begin
   for i:= 0 to high(urlsLevel) do urlsLevel[i] := stepLevel;
 end;
 
-procedure TProcessingRequest.mergeWithObject(obj: TPXPValueObject);
+procedure TProcessingRequest.mergeWithObject(obj: TXQValueObject);
 var
-  temp: TPXPValue;
+  temp: TXQValue;
   tempSplitted: TStringArray;
 begin
   if length(extractions) > 0 then
     extractions[high(extractions)].mergeWithObject(obj);
 
-  if obj.hasProperty('download', @temp) then arrayAdd(downloads, temp.asString);
+  if obj.hasProperty('download', @temp) then arrayAdd(downloads, temp.toString);
 
-  if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFileChecked(temp.asString)
-  else if obj.hasProperty('follow', @temp) then follow := temp.asString;
-  if obj.hasProperty('follow-exclude', @temp) then followExclude := strSplit(temp.asString, ',', false);
-  if obj.hasProperty('follow-include', @temp) then followInclude := strSplit(temp.asString, ',', false);
-  if obj.hasProperty('follow-level', @temp) then followMaxLevel := temp.asInteger;
+  if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFileChecked(temp.toString)
+  else if obj.hasProperty('follow', @temp) then follow := temp.toString;
+  if obj.hasProperty('follow-exclude', @temp) then followExclude := strSplit(temp.toString, ',', false);
+  if obj.hasProperty('follow-include', @temp) then followInclude := strSplit(temp.toString, ',', false);
+  if obj.hasProperty('follow-level', @temp) then followMaxLevel := temp.toInt64;
 
-  if obj.hasProperty('wait', @temp) then wait := temp.asDecimal;
-  if obj.hasProperty('user-agent', @temp) then userAgent := temp.asString;
-  if obj.hasProperty('proxy', @temp) then proxy := temp.asString;
-  if obj.hasProperty('post', @temp) then post := temp.asString;
-  if obj.hasProperty('print-received-headers', @temp) then printReceivedHeaders := temp.asBoolean;
+  if obj.hasProperty('wait', @temp) then wait := temp.toDecimal;
+  if obj.hasProperty('user-agent', @temp) then userAgent := temp.toString;
+  if obj.hasProperty('proxy', @temp) then proxy := temp.toString;
+  if obj.hasProperty('post', @temp) then post := temp.toString;
+  if obj.hasProperty('print-received-headers', @temp) then printReceivedHeaders := temp.toBoolean;
 
-  if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.asString);
-  if obj.hasProperty('output-encoding', @temp) then outputEncoding:=strEncodingFromName(temp.asString);
+  if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.toString);
+  if obj.hasProperty('output-encoding', @temp) then outputEncoding:=strEncodingFromName(temp.toString);
 
 
   setlength(urls, 0);
@@ -346,7 +348,7 @@ begin
   setlength(urlsLevel,length(urlsLevel)-1);
 end;
 
-procedure TProcessingRequest.addBasicValueUrl(dest: tpxpvalue; baseurl: string);
+procedure TProcessingRequest.addBasicValueUrl(dest: IXQValue; baseurl: string);
   procedure activateNewUrl;
   begin
     if length(urlsLevel) > 0 then arrayAdd(urlsLevel, urlsLevel[0])
@@ -358,23 +360,24 @@ procedure TProcessingRequest.addBasicValueUrl(dest: tpxpvalue; baseurl: string);
 var
   n: TTreeElement;
   i: Integer;
+  x: IXQValue;
 begin
   case dest.kind of
     pvkUndefined: exit;
     pvkNode: begin
-      n := dest.asNode;
+      n := dest.toNode;
       if n = nil then exit;
-      if n.typ <> tetOpen then arrayAdd(urls, dest.asString)
+      if n.typ <> tetOpen then arrayAdd(urls, dest.toString)
       else if SameText(n.value, 'a') then arrayAdd(urls, n.getAttribute('href', ''))
       else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then arrayAdd(urls, n.getAttribute('src', ''))
       else arrayAdd(urls, n.deepNodeText());
       activateNewUrl;
     end;
     pvkSequence:
-      for i:=0 to TPXPValueSequence(dest).seq.Count-1 do
-        addBasicValueUrl(TPXPValueSequence(dest).seq[i], baseurl);
+      for x in dest do
+        addBasicValueUrl(x, baseurl);
     else begin
-      arrayAdd(urls, dest.asString);
+      arrayAdd(urls, dest.toString);
       activateNewUrl;
     end;
   end;
@@ -385,35 +388,39 @@ begin
   if not quiet then writeln(stderr, s);
 end;
 
-procedure TExtraction.printExtractedValue(value: TPXPValue);
+procedure TExtraction.printExtractedValue(value: IXQValue);
 var
   i: Integer;
-  temp: TPXPValueObject;
+  temp: TXQValueObject;
+  x: IXQValue;
 begin
   case outputFormat of
     ofAdhoc: begin
       if printTypeAnnotations then write(value.typeName+': ');
-      if value is TPXPValueSequence then begin
-        for i:=0 to TPXPValueSequence(value).seq.Count-1 do begin
-          printExtractedValue(TPXPValueSequence(value).seq[i]);
-          if i <> TPXPValueSequence(value).seq.count-1 then writeln;
+      if value is TXQValueSequence then begin
+        i := 0;
+        for x in value do begin
+          if i <> 0 then writeln;
+          printExtractedValue(x);
+          i += 1;
         end;
-      end else if printNodeXML and (value is TPXPValueNode) then
-        write(value.asNode.outerXML())
-      else if value is TPXPValueObject then begin
-        temp := TPXPValueObject(value.clone);
+      end else if printNodeXML and (value is TXQValueNode) then
+        write(value.toNode.outerXML())
+      else if value is TXQValueObject then begin
+        x := value.clone;
+        temp := x as TXQValueObject;
         write('{');
         if temp.values.count > 0 then begin
-          write(temp.values.getVariableName(0),': '); printExtractedValue(temp.values.getVariableValue(0));
+          write(temp.values.getName(0),': '); printExtractedValue(temp.values.get(0));
           for i:=1 to temp.values.count-1 do begin
-            write(', ', temp.values.getVariableName(i), ': ');
-            printExtractedValue(temp.values.getVariableValue(i));
+            write(', ', temp.values.getName(i), ': ');
+            printExtractedValue(temp.values.get(i));
           end;
           temp.free;
         end;
         write('}');
       end
-      else write(value.asString);
+      else write(value.toString);
     end;
     ofJson: begin
       write(value.jsonSerialize(not printNodeXML));
@@ -436,7 +443,7 @@ begin
     printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **');
 end;
 
-procedure followTo(dest: TPXPValue); forward;
+procedure followTo(dest: IXQValue); forward;
 
 procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 var
@@ -450,12 +457,12 @@ begin
   printExtractedVariables(parser);
 
   for i := 0 to parser.variableChangeLog.count-1 do
-    if parser.variableChangeLog.getVariableName(i) = '_follow' then
-      followTo(parser.variableChangeLog.getVariableValue(i));
+    if parser.variableChangeLog.getName(i) = '_follow' then
+      followTo(parser.variableChangeLog.get(i));
 end;
 
 
-procedure TExtraction.printExtractedVariables(vars: TPXPVariableChangeLog; state: string);
+procedure TExtraction.printExtractedVariables(vars: TXQVariableChangeLog; state: string);
   function acceptName(n: string): boolean;
   begin
     result := ((length(extractInclude) = 0) and (arrayIndexOf(extractExclude, n) = -1)) or
@@ -466,7 +473,7 @@ var
   i: Integer;
   tempUsed: array of boolean;
   first: boolean;
-  values: TPXPValueArray;
+  values: IXQValue;
   j: Integer;
 begin
   printStatus(state);
@@ -475,7 +482,7 @@ begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
            if not hideVariableNames then write(vars.Names[i] + ': ');
-           printExtractedValue(vars.getVariableValue(i));
+           printExtractedValue(vars.get(i));
            writeln;
          end;
     end;
@@ -487,7 +494,7 @@ begin
           if acceptName(vars.Names[i]) then begin
             if first then first := false
             else writeln(', ');
-            printExtractedValue(vars.getVariableValue(i));
+            printExtractedValue(vars.get(i));
           end;
         end;
         writeln(']');
@@ -502,14 +509,14 @@ begin
             if first then first := false
             else writeln(',');
             write(jsonStrEscape(vars.Names[i]) + ': ');
-            values := vars.getAllVariableValues(vars.Names[i]);
-            if length(values) = 1 then printExtractedValue(values[0])
+            values := vars.getAll(vars.Names[i]);
+            if values.getSequenceCount = 1 then printExtractedValue(values)
             else begin
               write('[');
-              printExtractedValue(values[0]);
-              for j:=1 to high(values) do begin
+              printExtractedValue(values.getChild(1));
+              for j:=2 to values.getSequenceCount do begin
                 write(', ');
-                printExtractedValue(values[j]);
+                printExtractedValue(values.getChild(j));
               end;
               write(']');
             end;
@@ -528,7 +535,7 @@ begin
           if acceptName(vars.Names[i]) then begin
             if first then begin first := false; write('<e>');end
             else write('</e><e>');
-            printExtractedValue(vars.getVariableValue(i));
+            printExtractedValue(vars.get(i));
           end;
         end;
         if not first then write('</e>');
@@ -538,7 +545,7 @@ begin
         for i:=0 to vars.count-1 do
            if acceptName(vars.Names[i])  then begin
              write('<'+vars.Names[i] + '>');
-             printExtractedValue(vars.getVariableValue(i));
+             printExtractedValue(vars.Values[i]);
              writeln('</'+vars.Names[i] + '>');
            end;
         writeln('</object>');
@@ -550,11 +557,12 @@ end;
 var
   baserequests, requests: array of TProcessingRequest;
 
-procedure followTo(dest: TPXPValue);
+procedure followTo(dest: IXQValue);
 var
   n: TTreeElement;
   refRequest: integer;
   i: Integer;
+  x: IXQValue;
 begin
   if (length(requests) > 1) and (requests[0].stepLevel = requests[1].stepLevel - 1) then
     refRequest := 1
@@ -565,11 +573,11 @@ begin
     pvkObject: begin //this can't imho be in addBasicValueUrl, because you can't reliable call a method on a  record in an array that will be modified
       SetLength(requests, length(requests) + 1);
       requests[high(requests)] := requests[refRequest];
-      requests[high(requests)].mergeWithObject(dest as TPXPValueObject);
+      requests[high(requests)].mergeWithObject(dest as TXQValueObject);
     end;
     pvkSequence:
-      for i := 0 to TPXPValueSequence(dest).seq.Count-1 do
-        followTo(TPXPValueSequence(dest).seq[i]);
+      for x in dest do
+        followTo(x);
     else requests[refRequest].addBasicValueUrl(dest, requests[0].urls[0])
   end;
 end;
@@ -598,7 +606,7 @@ var htmlparser:THtmlTemplateParserBreaker;
     data, downloadTo: string;
 
     alreadyProcessed: TStringList;
-    xpathparser: TPseudoXPathParser;
+    xpathparser: TXQueryEngine;
     multipage: TTemplateReaderBreaker;
     multipagetemp: TMultiPageTemplate;
 
@@ -784,7 +792,7 @@ end;
 
 procedure perform;
 var
-  tempvalue: TPXPValue;
+  tempvalue: IXQValue;
   realUrl: string;
   tempHost: string;
   realPath: String;
@@ -900,7 +908,7 @@ begin
     multipage := TTemplateReaderBreaker.create();
     multipage.parser:=htmlparser;
   end;
-  xpathparser := htmlparser.createPseudoXPathParser('');
+  xpathparser := htmlparser.QueryEngine;
   alreadyProcessed := TStringList.Create;
 
 
@@ -940,10 +948,10 @@ begin
         end;
 
         alreadyProcessed.Add(urls[0]+#1+post);
-        htmlparser.variableChangeLog.addVariable('url', urls[0]);
+        htmlparser.variableChangeLog.add('url', urls[0]);
         decodeURL(urls[0], tempProto, tempHost, realUrl);
-        htmlparser.variableChangeLog.addVariable('host', tempHost);
-        htmlparser.variableChangeLog.addVariable('path', realUrl);
+        htmlparser.variableChangeLog.add('host', tempHost);
+        htmlparser.variableChangeLog.add('path', realUrl);
 
 
         printStatus('**** Processing:'+urls[0]+' ****');
@@ -957,7 +965,7 @@ begin
               htmlparser.parseHTML(data, urls[0], contenttype);
               extractions[j].pageProcessed(nil,htmlparser);
             end;
-            ekXPath, ekCSS: begin
+            ekXPath, ekCSS, ekXQuery: begin
               if firstExtraction then begin
                 firstExtraction := false;
                 if outputFormat = ofXML then writeln('<e>');
@@ -966,12 +974,14 @@ begin
               htmlparser.parseHTMLSimple(data, urls[0], contenttype);
               xpathparser.RootElement := htmlparser.HTMLTree;
               xpathparser.ParentElement := xpathparser.RootElement;
-              xpathparser.StaticBaseUri := urls[0];
-              if extractions[j].extractKind = ekCSS then xpathparser.parse('css("'+StringReplace(extractions[j].extract,'"','""',[rfReplaceAll])+'")')
-              else xpathparser.parse(extractions[j].extract);
+              xpathparser.StaticContext.BaseUri := urls[0];
+              case extractions[j].extractKind of
+                ekCSS: xpathparser.parseCSS3(extractions[j].extract);
+                ekXPath: xpathparser.parseXPath2(extractions[j].extract);
+                ekXQuery: xpathparser.parseXQuery1(extractions[j].extract);
+              end;
               tempvalue :=xpathparser.evaluate();
               extractions[j].printExtractedValue(tempvalue);
-              tempvalue.free;
               writeln;
             end;
             ekMultipage: if assigned (onPrepareInternet) then begin
@@ -1041,16 +1051,17 @@ begin
             htmlparser.parseTemplate(follow); //todo reuse existing parser
             htmlparser.parseHTML(data, urls[0], contenttype);
             for i:=0 to htmlparser.variableChangeLog.count-1 do
-              if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getVariableName(i)) = -1)) or
-                 ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getVariableName(i)) > -1)) then
-                followTo(htmlparser.variableChangeLog.getVariableValue(i));
+              if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getName(i)) = -1)) or
+                 ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getName(i)) > -1)) then
+                followTo(htmlparser.variableChangeLog.get(i));
           end else begin
             //assume xpath
             htmlparser.parseHTMLSimple(data, urls[0], contenttype);
             xpathparser.RootElement := htmlparser.HTMLTree;
             xpathparser.ParentElement := xpathparser.RootElement;
-            xpathparser.StaticBaseUri := urls[0];
-            xpathparser.parse(follow);
+            xpathparser.StaticContext. BaseUri := urls[0];
+            if strBeginsWith(follow, 'xquery') then xpathparser.parseXQuery1(follow)
+            else xpathparser.parseXPath2(follow);
             followTo(xpathparser.evaluate());
           end;
         end;
@@ -1071,7 +1082,6 @@ begin
       else raise;
     end;
   end;
-  xpathparser.free;
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
   mycmdLine.free;

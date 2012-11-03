@@ -1,3 +1,4 @@
+g
 ================================================ Basics ================================================
 
 
@@ -10,14 +11,17 @@ The --extract option can be abbreviated as -e, and there are four different kind
  
   1*) XPath 2 expressions, with some changes and additional functions.
   
-  2 ) CSS 3 selectors. 
- 
-  3*) Templates, a simplified version of the page, in which the values you want to extract are annotated
+  2 ) XQuery 1 expressions
   
-  4 ) Multipage templates, i.e. a file that contain templates for several pages
+  3 ) CSS 3 selectors. 
+ 
+  4*) Templates, a simplified version of the page, in which the values you want to extract are annotated
+  
+  5 ) Multipage templates, i.e. a file that contain templates for several pages
 
 The kinds marked with a * are automatically detected, the other ones have to be activated with the 
-extract-kind option. CSS Selectors are also "autodetected", if they are written as css("...").
+extract-kind option. CSS Selectors are also "autodetected", if they are written as css("..."),
+and XQuery expressions are detected, if they start with "xquery version "1.0"; ".
 See the sections below for a more detailed description of each expression kind.
 
 
@@ -75,12 +79,13 @@ Generally an option modifier (like --extract-kind) affects all succeeding option
 then it affects the immediate preceding option.
 
 
-========================================== (Pseudo) XPath 2.0 ==========================================
+========================================== XPath 2.0 / XQuery ===========================================
 
 XPath expressions provide an easy way to extract calculated values from x/html. 
 See http://en.wikipedia.org/wiki/XPath_2.0 for details.
 
-The XPath implementation of Xidel deviates in a few ways from the XPath 2 standard.
+In the default configuration the XPath/XQuery implementation of Xidel deviates in a few ways from the 
+standard. However, you can disable this differences with the respective options (see link below).
 The most important changes are:
 
   Syntax:
@@ -106,7 +111,12 @@ The most important changes are:
      
      Everything is weakly typed, e.g 'false' = false() is true, and 1 + "2" is 3. 
 
-     Namespaces, the namespace axis and attribute axes are not well supported (e.g. @href is a string)
+     Unknown namespace prefixes are resolved with the namespace bindings of the input data. 
+     Therefore //a always finds all links, independent of any xmlns=".." attributes.
+     (however, if you explicitely declare a namespace like 'declare default element namespace "..."' in XQuery, 
+     it will only find -elements in that namespace)
+
+     XML Schemas are not supported.
 
   Additional functions:
  
@@ -131,8 +141,8 @@ The most important changes are:
                   It returns an object with .url, .method and .post properties.
                   (form is not supported in Xidel 0.5, you can compile it from the hg repository.. ) 
 
-The pasdoc documentation of my XPath 2 library explains more details:
-http://www.benibela.de/documentation/internettools/pseudoxpath.TPseudoXPathParser.html
+The pasdoc documentation of my XPath 2 / XQuery library explains more details:
+http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
 
 
 ========================================== CSS 3.0 Selectors ==========================================
