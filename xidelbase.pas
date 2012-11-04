@@ -40,6 +40,7 @@ var cgimode: boolean = false;
 
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
     onRetrieve: function (const url, postdata: string): string;
+    onPreOutput: procedure ();
 
 procedure perform;
 
@@ -664,7 +665,7 @@ begin
   writeln(stderr, logged);
 end;
 
-procedure displayError(e: EHTMLParseException);
+procedure displayError(e: Exception);
   procedure sayln(s: string);
   begin
     if cgimode then writeln(s)
@@ -828,7 +829,7 @@ begin
   mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow,_url)', '_follow');
   mycmdLine.declareString('extract-include', 'If not empty, comma separated list of variables to use in an extract template (white list)');
   mycmdLine.declareFile('extract-file', 'File containing an extract expression (for longer expressions)');
-  mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, css, template or multipage', 'auto');
+  mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, xquery, css, template or multipage', 'auto');
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
   mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions are allowed with comma separated values)');
 
@@ -896,14 +897,8 @@ begin
   else if mycmdLine.readString('output-format') = 'xml' then outputFormat:=ofXML
   else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
 
-  if cgimode then begin
-    case outputFormat of
-      ofAdhoc: writeln('Content-Type: text/plain'); //writeln(...) instead of writeln(stdout, ...) doesn't work, because on the sf server text written by writeln(stdout, ..) appears before text written by writeln(..) independent of actual order of the calls
-      ofXML: writeln('Content-Type: text/html');
-      ofJson: writeln('Content-Type: application/json');
-    end;
-    writeln();
-  end;
+  if assigned(onPreOutput) then onPreOutput();
+
 
   if outputFormat = ofJson then writeln('[')
   else if outputFormat = ofXML then writeln('<?xml version="1.0" encoding="UTF-8"?>'+LineEnding+'<seq>');
@@ -1081,13 +1076,19 @@ begin
   except
     on e: EHTMLParseException do begin
       displayError(e);
-      if cgimode then halt
-      else raise;
+      if not cgimode then raise;
     end;
     on e: EHTMLParseMatchingException do begin
       displayError(e);
-      if cgimode then halt
-      else raise;
+      if not cgimode then raise;
+    end;
+    on e: EXQEvaluationException do begin
+      displayError(e);
+      if not cgimode then raise;
+    end;
+    on e: EXQParsingException do begin
+      displayError(e);
+      if not cgimode then raise;
     end;
   end;
   if allowInternetAccess then multipage.Free

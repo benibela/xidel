@@ -9,7 +9,7 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="xidelsoap"/>
+      <Title Value="xidelcgi"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
@@ -32,11 +32,16 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="internettools"/>
+      </Item1>
+    </RequiredPackages>
     <Units Count="1">
       <Unit0>
-        <Filename Value="xidelsoap.lpr"/>
+        <Filename Value="xidelcgi.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xidelsoap"/>
+        <UnitName Value="xidelcgi"/>
       </Unit0>
     </Units>
   </ProjectOptions>
