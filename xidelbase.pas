@@ -626,14 +626,7 @@ var htmlparser:THtmlTemplateParserBreaker;
 
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
 begin
-  FHTML.trimText := FTrimTextNodes = ttnWhenLoading;
-  FHtmlTree := FHTML.parseTree(html, makeAbsoluteFilePath(uri), contenttype);
-
-  //encoding trouble
-  FHtmlTree.setEncoding(outputEncoding,true,true);
-
-  if FTrimTextNodes = ttnWhenLoadingEmptyOnly then
-    FHTML.removeEmptyTextNodes(true);
+  inherited parseHTMLSimple(html, uri, contenttype);
 end;
 
 constructor TTemplateReaderBreaker.create;
