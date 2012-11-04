@@ -582,6 +582,15 @@ begin
 end;
 
 
+function makeAbsoluteFilePath(s: string): string;
+begin
+  result := s;
+  if strContains('://', s) then exit;
+  if s = '' then exit;
+  if s[1] in AllowDirectorySeparators then exit;
+  if (length(s) >= 3) and (s[2] = ':') and (s[3] in AllowDirectorySeparators) then exit;
+  result := ExpandFileName(s)
+end;
 
 type
 
@@ -617,7 +626,7 @@ var htmlparser:THtmlTemplateParserBreaker;
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
 begin
   FHTML.trimText := FTrimTextNodes = ttnWhenLoading;
-  FHtmlTree := FHTML.parseTree(html, uri, contenttype);
+  FHtmlTree := FHTML.parseTree(html, makeAbsoluteFilePath(uri), contenttype);
 
   //encoding trouble
   FHtmlTree.setEncoding(outputEncoding,true,true);
@@ -961,7 +970,7 @@ begin
             ekTemplate: begin
               htmlparser.UnnamedVariableName:=extractions[j].defaultName;
               htmlparser.parseTemplate(extractions[j].extract); //todo reuse existing parser
-              htmlparser.parseHTML(data, urls[0], contenttype);
+              htmlparser.parseHTML(data, makeAbsoluteFilePath(urls[0]), contenttype);
               extractions[j].pageProcessed(nil,htmlparser);
             end;
             ekXPath, ekCSS, ekXQuery: begin
@@ -973,7 +982,7 @@ begin
               htmlparser.parseHTMLSimple(data, urls[0], contenttype);
               xpathparser.RootElement := htmlparser.HTMLTree;
               xpathparser.ParentElement := xpathparser.RootElement;
-              xpathparser.StaticContext.BaseUri := urls[0];
+              xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(urls[0]);
               case extractions[j].extractKind of
                 ekCSS: xpathparser.parseCSS3(extractions[j].extract);
                 ekXPath: xpathparser.parseXPath2(extractions[j].extract);
