@@ -676,7 +676,7 @@ begin
   writeln(stderr, logged);
 end;
 
-procedure displayError(e: Exception);
+procedure displayError(e: Exception; printPartialMatches: boolean = false);
   procedure sayln(s: string);
   begin
     if cgimode then writeln(s)
@@ -692,34 +692,42 @@ begin
   case outputFormat of
     ofJson: begin
       sayln('{"_error": {');
-      sayln('"_message": '+jsonStrEscape(e.Message)+', ');
-      sayln('"_partial-matches": [');
-      temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
-      if length(temp) > 0 then
-        say(jsonStrEscape(temp[j]));
-      for j := 1 to high(temp) do  say (', '+LineEnding+jsonStrEscape(temp[j]));
-      sayln(']}');
-      sayln('}');
+      say('"_message": '+jsonStrEscape(e.Message));
+      if printPartialMatches then begin
+        sayln(', ');
+        sayln('"_partial-matches": [');
+        temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
+        if length(temp) > 0 then
+          say(jsonStrEscape(temp[j]));
+        for j := 1 to high(temp) do  say (', '+LineEnding+jsonStrEscape(temp[j]));
+        sayln(']');
+      end else sayln('');
+      sayln('}}');
       if cgimode then
         sayln(']');
     end;
     ofXML: begin
       sayln('<error>');
       sayln('<message>'+xmlStrEscape(e.Message)+'</message>');
-      sayln('<partial-matches><![CDATA[');
-      temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
-      for j := 0 to high(temp) do  sayln( temp[j]);
-      sayln(']]></partial-matches>');
+      if printPartialMatches then begin
+        sayln('<partial-matches><![CDATA[');
+        temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
+        for j := 0 to high(temp) do  sayln( temp[j]);
+        sayln(']]></partial-matches>');
+      end;
       sayln('</error>');
       if cgimode then
         sayln('</seq>');
     end;
     ofAdhoc: begin
-      sayln( 'Parsing error:');
+      sayln( 'Error:');
       sayln( e.Message);
-      sayln( 'Partial matches:');
-      temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
-      for j := 0 to high(temp) do  sayln( temp[j]);
+      if printPartialMatches then begin
+        sayln('');
+        sayln( 'Partial matches:');
+        temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
+        for j := 0 to high(temp) do  sayln( temp[j]);
+      end;
     end;
   end;
   if cgimode then flush(StdOut)
@@ -1101,20 +1109,20 @@ begin
     end;
   except
     on e: EHTMLParseException do begin
-      displayError(e);
-      if not cgimode then raise;
+      displayError(e, true);
+     // if not cgimode then raise;
     end;
     on e: EHTMLParseMatchingException do begin
-      displayError(e);
-      if not cgimode then raise;
+      displayError(e, true);
+     // if not cgimode then raise;
     end;
     on e: EXQEvaluationException do begin
       displayError(e);
-      if not cgimode then raise;
+     // if not cgimode then raise;
     end;
     on e: EXQParsingException do begin
       displayError(e);
-      if not cgimode then raise;
+     // if not cgimode then raise;
     end;
   end;
   if allowInternetAccess then multipage.Free
