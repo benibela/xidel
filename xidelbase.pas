@@ -121,6 +121,9 @@ end;
   outputEncoding: TEncoding;
   printVariablesTime: set of (pvtImmediate, pvtFinal);
 
+
+  compatibilityNoExtendedStrings,compatibilityNoObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+
   procedure printStatus(s: string);
 
   procedure initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
@@ -237,6 +240,11 @@ begin
 end;
 
 procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
+  procedure flagToBoolean(var b: boolean; n: string);
+  begin
+    b := cmdLine.readFlag(n);
+  end;
+
 var
   tempSplitted: TStringArray;
   i: Integer;
@@ -275,6 +283,13 @@ begin
   setVariablesTime(cmdLine.readString('print-variables-time'));
   outputEncoding:=strEncodingFromName(cmdLine.readString('output-encoding'));
 
+
+  flagToBoolean(compatibilityNoExtendedStrings, 'no-extended-strings');
+  flagToBoolean(compatibilityNoObjects, 'no-objects');
+  flagToBoolean(compatibilityStrictTypeChecking, 'strict-type-checking');
+  flagToBoolean(compatibilityStrictNamespaces, 'strict-namespaces');
+
+
   urls:=cmdLine.readNamelessFiles();
 
   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
@@ -287,6 +302,12 @@ begin
 end;
 
 procedure TProcessingRequest.mergeWithObject(obj: TXQValueObject);
+  procedure flagToBoolean(var b: boolean; n: string);
+  var
+    temp: TXQValue;
+  begin
+    if obj.hasProperty(n, @temp) then b := temp.toBoolean;
+  end;
 var
   temp: TXQValue;
   tempSplitted: TStringArray;
@@ -311,6 +332,10 @@ begin
   if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.toString);
   if obj.hasProperty('output-encoding', @temp) then outputEncoding:=strEncodingFromName(temp.toString);
 
+  flagToBoolean(compatibilityNoExtendedStrings, 'no-extended-strings');
+  flagToBoolean(compatibilityNoObjects, 'no-objects');
+  flagToBoolean(compatibilityStrictTypeChecking, 'strict-type-checking');
+  flagToBoolean(compatibilityStrictNamespaces, 'strict-namespaces');
 
   setlength(urls, 0);
   if obj.hasProperty('follow', @temp) then
@@ -860,6 +885,13 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf8 (default), latin1, or input (no encoding conversion)', 'utf8');
 
+  mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
+
+  mycmdline.declareFlag('no-extended-strings', 'Disables the replacements of variables in double quoted strings, like "$varname;"');
+  mycmdline.declareFlag('no-objects', 'Disables the usage of objects like in (object(("a", x)).a)');
+  mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
+  mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
+
   mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
 
@@ -905,7 +937,9 @@ begin
     multipage.parser:=htmlparser;
   end;
   xpathparser := htmlparser.QueryEngine;
+
   alreadyProcessed := TStringList.Create;
+
 
 
   try
@@ -923,6 +957,13 @@ begin
       end;
 
       with requests[0] do begin
+        xpathparser.AllowVariableUseInStringLiterals:= not compatibilityNoExtendedStrings;
+        xpathparser.VariableChangelog.allowObjects:=not compatibilityNoObjects;
+        htmlparser.variableChangeLog.allowObjects:=xpathparser.VariableChangelog.allowObjects;
+        xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
+        xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
+
+
         urls[0] := htmlparser.replaceVars(trim(urls[0]));
         if urls[0] = '' then begin deleteUrl0; continue; end;
 
