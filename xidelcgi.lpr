@@ -108,9 +108,11 @@ begin
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
-  w('<br><br><input type="submit"></input> <span class="options"><b>Options</b>: ');
+  w('<br><br><input type="submit"></input> <br> <span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml']) +  select('output-format', 'Output format:', ['adhoc', 'json', 'xml']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
+  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings ("varname;") ') + checkbox('no-objects', 'Disable objects (objects(("a", 1)).a)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
+
   w('</span></form>');
 
 
