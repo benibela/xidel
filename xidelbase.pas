@@ -96,7 +96,7 @@ TExtraction = object
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
- procedure pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
+ procedure pageProcessed(                  unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 end;
 
  TProcessingRequest = record
@@ -154,7 +154,6 @@ end;
 
 
 procedure TExtraction.initFromCommandLine(cmdLine: TCommandLineReader);
-var s: string;
 begin
   extract := cmdLine.readString('extract');
   extract := trim(extract);
@@ -246,9 +245,7 @@ procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; le
   end;
 
 var
-  tempSplitted: TStringArray;
   i: Integer;
-  s: string;
 begin
   if length(extractions) > 0 then
     extractions[high(extractions)].initFromCommandLine(cmdLine);
@@ -310,7 +307,6 @@ procedure TProcessingRequest.mergeWithObject(obj: TXQValueObject);
   end;
 var
   temp: TXQValue;
-  tempSplitted: TStringArray;
 begin
   if length(extractions) > 0 then
     extractions[high(extractions)].mergeWithObject(obj);
@@ -385,7 +381,6 @@ procedure TProcessingRequest.addBasicValueUrl(dest: IXQValue; baseurl: string);
 
 var
   n: TTreeNode;
-  i: Integer;
   x: IXQValue;
 begin
   case dest.kind of
@@ -584,9 +579,7 @@ var
 
 procedure followTo(dest: IXQValue);
 var
-  n: TTreeNode;
   refRequest: integer;
-  i: Integer;
   x: IXQValue;
 begin
   if (length(requests) > 1) and (requests[0].stepLevel = requests[1].stepLevel - 1) then
@@ -825,7 +818,6 @@ var
   realPath: String;
   realFile: String;
   tempProto: string;
-  toCreate: String;
   contenttype: String;
 begin
   //normalized formats (for use in unittests)
