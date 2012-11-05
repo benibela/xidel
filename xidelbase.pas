@@ -36,7 +36,7 @@ var cgimode: boolean = false;
     defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
 
     majorVersion: integer = 0;
-    minorVersion: integer = 5;
+    minorVersion: integer = 6;
 
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
     onRetrieve: function (const url, postdata: string): string;
