@@ -58,7 +58,7 @@ procedure printPre;
   begin
     result := '<input type="radio" name="extract-kind" value="'+t+'"';
     if mycmdline.readString('extract-kind') = t then result += ' checked';
-    result += ' onclick="document.getElementsByName(''extract'')[0].value = '''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  ''';"';
+    result += ' onclick="document.getElementsByName(''extract'')[0].value = '''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''; update();"';
     result += '/> '+ n;
   end;
   function checkbox(t, n: string): string;
@@ -97,18 +97,19 @@ begin
   w('<title>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector Example</title>');
   w('<link rel="stylesheet" type="text/css" href="../cgi.css" />');
   w('<link rel="stylesheet" type="text/css" href="cgi.css" />');
-
-  w('</head><body>');
+  w('<script src="../cgi.js" type="text/javascript"></script>');
+  w('<script src="cgi.js" type="text/javascript"></script>');
+  w('</head><body onload="init()">');
   w('<h1>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector Example</h1>');
   w('(You can find the documentation below)<br><br>');
-  w('<form method="POST">');  //use get because the post method somehow didn't work
-  w('<div id="html">HTML-Content:<br><textarea name="data" rows="18" cols="80">'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
+  w('<form method="POST" action="./xidelcgi">');
+  w('<div id="html">HTML-Content:<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
   w('<div id="template">'+kind('template', 'Template')+kind('xpath', 'XPath 2.0')+kind('xquery', 'XQuery 1.0')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
-  w('<br><textarea name="extract" rows=18 cols=80>');
+  w('<br><textarea name="extract" rows=18 cols=80 >');
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
-  w('<br><br><input type="submit"></input> <br> <span class="options"><b>Output Options</b>: ');
+  w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <br> <span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml']) +  select('output-format', 'Output format:', ['adhoc', 'json', 'xml']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
   w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings ("varname;") ') + checkbox('no-objects', 'Disable objects (objects(("a", 1)).a)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
@@ -118,7 +119,7 @@ begin
 
   w('<hr>');
   w('Result of the above expression applied to the above html file:<br>');
-  w('<textarea rows="30" cols="100">');
+  w('<textarea id="result" rows="30" cols="100">');
 
   flush(stdout);
 
@@ -188,6 +189,7 @@ begin
 
   mycmdline.beginDeclarationCategory('CGI Only options');
   mycmdline.declareFlag('raw', 'Only prints the output of the expression');
+  mycmdline.declareFlag('no-auto-update', 'No automatical javascript based autoupdate');
 
   xidelbase.onPreOutput := @printPre;
 
