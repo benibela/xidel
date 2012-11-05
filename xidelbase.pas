@@ -899,6 +899,7 @@ begin
 
   mycmdLine.parse();
 
+
   if mycmdline.readFlag('version') then
     printVersion;
   if mycmdline.readFlag('usage') then begin
@@ -912,6 +913,11 @@ begin
     requests[high(requests)].extractions := requests[high(requests)-1].extractions;
     requests[high(requests)].downloads := requests[high(requests)-1].downloads;
     requests[high(requests)].follow := requests[high(requests)-1].follow;
+  end;
+
+  if (length(requests) = 1) and (length(requests[0].urls) = 0) and (length(requests[0].extractions) > 0) then begin
+    arrayAdd(requests[0].urls, '<empty/>');
+    arrayAdd(requests[0].urlsLevel, 0);
   end;
 
   baserequests := requests;
