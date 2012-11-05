@@ -888,7 +888,7 @@ begin
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
   mycmdline.declareFlag('no-extended-strings', 'Disables the replacements of variables in double quoted strings, like "$varname;"');
-  mycmdline.declareFlag('no-objects', 'Disables the usage of objects like in (object(("a", x)).a)');
+  mycmdline.declareFlag('no-objects', 'Disables the object.property syntax like in (object(("a", x)).a)');
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
 
