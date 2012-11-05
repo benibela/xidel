@@ -359,7 +359,7 @@ procedure TProcessingRequest.addBasicValueUrl(dest: IXQValue; baseurl: string);
   end;
 
 var
-  n: TTreeElement;
+  n: TTreeNode;
   i: Integer;
   x: IXQValue;
 begin
@@ -559,7 +559,7 @@ var
 
 procedure followTo(dest: IXQValue);
 var
-  n: TTreeElement;
+  n: TTreeNode;
   refRequest: integer;
   i: Integer;
   x: IXQValue;
