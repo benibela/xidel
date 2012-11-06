@@ -23,7 +23,7 @@ unit xidelbase;
 interface
 
 uses
-  Classes,
+  Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess,
   rcmdline
@@ -50,9 +50,37 @@ implementation
 
 type TOutputFormat = (ofAdhoc, ofJson, ofXML);
 var outputFormat: TOutputFormat;
+    outputEncoding: TEncoding;
     firstExtraction: boolean = true;
     outputArraySeparator: array[toutputformat] of string = ('', ', ', '</e><e>');
     internet: TInternetAccess;
+    systemEncodingIsUTF8: boolean = true;
+
+procedure w(const s: string);
+var
+  temp, temp2: String;
+begin
+  if s = '' then exit;
+  if (outputEncoding = eUTF8) or (outputEncoding = eUnknown) then write(s)
+  {$ifdef win32}
+  else if outputEncoding = eUnknownUser1 then begin
+    if systemEncodingIsUTF8 then temp := s
+    else temp := Utf8ToAnsi(s);
+    SetLength(temp2, length(temp)+1);
+    writeln(stderr, 'SEIU: ',systemEncodingIsUTF8);
+    if charToOEM(pchar(temp), pchar(temp2)) then
+      writeln(pchar(temp2));
+  end
+  {$endif}
+  else write(strConvertFromUtf8(s, outputEncoding));
+end;
+
+procedure wln(const s: string = '');
+begin
+  w(s);
+  w(LineEnding);
+end;
+
 function joined(s: array of string): string;
 var
   i: Integer;
@@ -99,7 +127,7 @@ TExtraction = object
  procedure pageProcessed(                  unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 end;
 
- TProcessingRequest = record
+TProcessingRequest = record
   urls: TStringArray;
   urlsLevel: bbutils.TLongintArray;
 
@@ -118,7 +146,6 @@ end;
 
   quiet: boolean;
 
-  outputEncoding: TEncoding;
   printVariablesTime: set of (pvtImmediate, pvtFinal);
 
 
@@ -130,6 +157,7 @@ end;
   procedure mergeWithObject(obj: TXQValueObject);
 
   procedure setVariablesTime(v: string);
+  procedure setOutputEncoding(e: string);
 
   procedure deleteUrl0;
   procedure addBasicValueUrl(dest: IXQValue; baseurl: string);
@@ -278,7 +306,8 @@ begin
   end;
 
   setVariablesTime(cmdLine.readString('print-variables-time'));
-  outputEncoding:=strEncodingFromName(cmdLine.readString('output-encoding'));
+  setOutputEncoding(cmdLine.readString('output-encoding'));
+
 
 
   flagToBoolean(compatibilityNoExtendedStrings, 'no-extended-strings');
@@ -326,7 +355,7 @@ begin
   if obj.hasProperty('print-received-headers', @temp) then printReceivedHeaders := temp.toBoolean;
 
   if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.toString);
-  if obj.hasProperty('output-encoding', @temp) then outputEncoding:=strEncodingFromName(temp.toString);
+  if obj.hasProperty('output-encoding', @temp) then setOutputEncoding(temp.toString);
 
   flagToBoolean(compatibilityNoExtendedStrings, 'no-extended-strings');
   flagToBoolean(compatibilityNoObjects, 'no-objects');
@@ -355,6 +384,32 @@ begin
   if arrayIndexOf(tempSplitted, 'final') >= 0 then include(printVariablesTime, pvtFinal);
 end;
 
+procedure TProcessingRequest.setOutputEncoding(e: string);
+var
+  str: String;
+begin
+  str:=UpperCase(e);
+  outputEncoding:=eUnknown;
+  case str of
+    'UTF-8', 'UTF8': outputEncoding:=eUTF8;
+    'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': outputEncoding:=eWindows1252;
+    'UTF-16BE', 'UTF16BE': outputEncoding:=eUTF16BE;
+    'UTF-16LE', 'UTF16LE': outputEncoding:=eUTF16LE;
+    'UTF-32BE', 'UTF32BE': outputEncoding:=eUTF32BE; //utf-32 seems to be broken, but no one is using anyways. TODO: Fix sometime
+    'UTF-32LE', 'UTF32LE': outputEncoding:=eUTF32LE;
+    'OEM': outputEncoding:=eUnknownUser1
+  end;
+end;
+
+function encodingName(e: TEncoding): string;
+begin
+  case e of
+    eWindows1252: result := 'ISO-8859-1';
+    eUTF16BE, eUTF16LE: result := 'UTF-16';
+    eUTF32BE, eUTF32LE: result := 'UTF-32';
+    else result := 'UTF-8';
+  end;
+end;
 
 
 
@@ -417,36 +472,36 @@ var
 begin
   case outputFormat of
     ofAdhoc: begin
-      if printTypeAnnotations then write(value.typeName+': ');
+      if printTypeAnnotations then w(value.typeName+': ');
       if value is TXQValueSequence then begin
         i := 0;
         for x in value do begin
-          if i <> 0 then writeln;
+          if i <> 0 then wln();
           printExtractedValue(x);
           i += 1;
         end;
       end else if printNodeXML and (value is TXQValueNode) then
-        write(value.toNode.outerXML())
+        w(value.toNode.outerXML())
       else if value is TXQValueObject then begin
         x := value.clone;
         temp := x as TXQValueObject;
-        write('{');
+        w('{');
         if temp.values.count > 0 then begin
-          write(temp.values.getName(0),': '); printExtractedValue(temp.values.get(0));
+          w(temp.values.getName(0)+': '); printExtractedValue(temp.values.get(0));
           for i:=1 to temp.values.count-1 do begin
-            write(', ', temp.values.getName(i), ': ');
+            w(', '+ temp.values.getName(i)+ ': ');
             printExtractedValue(temp.values.get(i));
           end;
         end;
-        write('}');
+        w('}');
       end
-      else write(value.toString);
+      else w(value.toString);
     end;
     ofJson: begin
-      write(value.jsonSerialize(not printNodeXML));
+      w(value.jsonSerialize(not printNodeXML));
     end;
     ofXML: begin
-      write(value.xmlSerialize(not printNodeXML, 'seq', 'e', 'object'));
+      w(value.xmlSerialize(not printNodeXML, 'seq', 'e', 'object'));
     end;
   end;
 end;
@@ -471,8 +526,8 @@ var
 begin
   if firstExtraction then begin
     firstExtraction := false;
-    if outputFormat = ofXML then writeln('<e>');
-  end else writeln(outputArraySeparator[outputFormat]);
+    if outputFormat = ofXML then wln('<e>');
+  end else wln(outputArraySeparator[outputFormat]);
 
   printExtractedVariables(parser);
 
@@ -501,74 +556,74 @@ begin
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if not hideVariableNames then write(vars.Names[i] + ': ');
+           if not hideVariableNames then w(vars.Names[i] + ': ');
            printExtractedValue(vars.get(i));
-           writeln;
+           wln;
          end;
     end;
     ofJson:
       if hideVariableNames then begin
-        write('[');
+        w('[');
         first := true;
         for i:=0 to vars.count-1 do begin
           if acceptName(vars.Names[i]) then begin
             if first then first := false
-            else writeln(', ');
+            else wln(', ');
             printExtractedValue(vars.get(i));
           end;
         end;
-        writeln(']');
+        wln(']');
       end else begin
         first := true;
-        writeln('{');
+        wln('{');
         setlength(tempUsed, vars.count);
         FillChar(tempUsed[0], sizeof(tempUsed[0])*length(tempUsed), 0);
         for i:=0 to vars.count-1 do begin
           if tempUsed[i] then continue;
           if acceptName(vars.Names[i]) then begin
             if first then first := false
-            else writeln(',');
-            write(jsonStrEscape(vars.Names[i]) + ': ');
+            else wln(',');
+            w(jsonStrEscape(vars.Names[i]) + ': ');
             values := vars.getAll(vars.Names[i]);
             if values.getSequenceCount = 1 then printExtractedValue(values)
             else begin
-              write('[');
+              w('[');
               printExtractedValue(values.getChild(1));
               for j:=2 to values.getSequenceCount do begin
-                write(', ');
+                w(', ');
                 printExtractedValue(values.getChild(j));
               end;
-              write(']');
+              w(']');
             end;
           end;
           for j := i + 1 to vars.count-1 do
             if vars.Names[i] = vars.Names[j] then tempUsed[j] := true;
         end;
-        writeln();
-        writeln('}');
+        wln();
+        wln('}');
     end;
     ofXML: begin
       if hideVariableNames then begin
-        write('<seq>');
+        w('<seq>');
         first := true;
         for i:=0 to vars.count-1 do begin
           if acceptName(vars.Names[i]) then begin
-            if first then begin first := false; write('<e>');end
-            else write('</e><e>');
+            if first then begin first := false; w('<e>');end
+            else w('</e><e>');
             printExtractedValue(vars.get(i));
           end;
         end;
-        if not first then write('</e>');
-        writeln('</seq>');
+        if not first then w('</e>');
+        wln('</seq>');
       end else begin
-        writeln('<object>');
+        wln('<object>');
         for i:=0 to vars.count-1 do
            if acceptName(vars.Names[i])  then begin
-             write('<'+vars.Names[i] + '>');
+             w('<'+vars.Names[i] + '>');
              printExtractedValue(vars.Values[i]);
-             writeln('</'+vars.Names[i] + '>');
+             wln('</'+vars.Names[i] + '>');
            end;
-        writeln('</object>');
+        wln('</object>');
       end;
     end;
   end;
@@ -833,6 +888,8 @@ begin
   ThousandSeparator:=#0;
   ShortDateFormat:='YYYY-MM-DD';
   LongDateFormat:='YYYY-MM-DD';
+  {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
+
 
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
   mycmdline.allowOverrides:=true;
@@ -883,7 +940,7 @@ begin
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
-  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf8 (default), latin1, or input (no encoding conversion)', 'utf8');
+  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf8');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -931,8 +988,8 @@ begin
   if assigned(onPreOutput) then onPreOutput();
 
 
-  if outputFormat = ofJson then writeln('[')
-  else if outputFormat = ofXML then writeln('<?xml version="1.0" encoding="UTF-8"?>'+LineEnding+'<seq>');
+  if outputFormat = ofJson then wln('[')
+  else if outputFormat = ofXML then wln('<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding+'<seq>');
 
 
   htmlparser:=THtmlTemplateParserBreaker.create;
@@ -984,7 +1041,7 @@ begin
             if printReceivedHeaders and assigned(internet) then begin
               printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
               for j:=0 to internet.lastHTTPHeaders.Count-1 do
-                writeln(internet.lastHTTPHeaders[j]);
+                wln(internet.lastHTTPHeaders[j]);
             end;
             if Assigned(internet) then contenttype := internet.getLastHTTPHeader('Content-Type');
           end
@@ -999,7 +1056,8 @@ begin
 
         printStatus('**** Processing:'+urls[0]+' ****');
         for j := 0 to high(extractions) do begin
-          htmlparser.OutputEncoding := outputEncoding;
+          if outputEncoding = eUnknown then htmlparser.OutputEncoding := outputEncoding
+          else htmlparser.OutputEncoding := eUTF8;
 
           case extractions[j].extractKind of
             ekTemplate: begin
@@ -1011,8 +1069,8 @@ begin
             ekXPath, ekCSS, ekXQuery: begin
               if firstExtraction then begin
                 firstExtraction := false;
-                if outputFormat = ofXML then writeln('<e>');
-              end else writeln(outputArraySeparator[outputFormat]);
+                if outputFormat = ofXML then wln('<e>');
+              end else wln(outputArraySeparator[outputFormat]);
 
               htmlparser.parseHTMLSimple(data, urls[0], contenttype);
               xpathparser.RootElement := htmlparser.HTMLTree;
@@ -1025,7 +1083,7 @@ begin
               end;
               tempvalue :=xpathparser.evaluate();
               extractions[j].printExtractedValue(tempvalue);
-              writeln;
+              wln;
             end;
             ekMultipage: if assigned (onPrepareInternet) then begin
               multipage.onPageProcessed:=@extractions[j].pageProcessed;
@@ -1069,7 +1127,7 @@ begin
             //    .             save in current directory with name index.html
             //    -             print to stdout
             if downloadTo = '-' then begin
-              write(data);
+              w(data);
               continue;
             end;
             if downloadTo = './.' then downloadTo:=realPath+realFile
@@ -1088,7 +1146,7 @@ begin
         end;
 
         if follow <> '' then begin
-          htmlparser.OutputEncoding := outputEncoding; //todo correct encoding?
+          htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
 
           if follow[1] = '<' then begin //assume my template
             htmlparser.parseTemplate(follow); //todo reuse existing parser
@@ -1136,10 +1194,10 @@ begin
   mycmdLine.free;
   alreadyProcessed.Free;
 
-  if outputFormat = ofJson then writeln(']')
+  if outputFormat = ofJson then wln(']')
   else if outputFormat = ofXML then begin
-    if not firstExtraction then Writeln('</e>');
-    writeln('</seq>');
+    if not firstExtraction then wln('</e>');
+    wln('</seq>');
   end;
 
 end;
