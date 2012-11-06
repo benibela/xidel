@@ -34,8 +34,17 @@ linux64)
         if [ $action -lt 2 ]; then exit; fi
         tar -vczf xidel-$VERSION.linux64.tar.gz xidel readme.txt install.sh
         fileUpload xidel-$VERSION.linux64.tar.gz "/Xidel/Xidel\ $VERSION/"
-        checkinstall --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libgtk2.0-0" bash ./install.sh 
+        checkinstall --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
         fileUpload xidel_$VERSION-1_amd64.deb "/Xidel/Xidel\ $VERSION/"
+        ;;
+
+linux32)
+        lazCompileLinux32 xidel
+        if [ $action -lt 2 ]; then exit; fi
+        tar -vczf xidel-$VERSION.linux32.tar.gz xidel readme.txt install.sh
+        fileUpload xidel-$VERSION.linux32.tar.gz "/Xidel/Xidel\ $VERSION/"
+        checkinstall --pkgarch=i386 --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
+        fileUpload xidel_$VERSION-1_i386.deb "/Xidel/Xidel\ $VERSION/"
         ;;
 
 win32)
