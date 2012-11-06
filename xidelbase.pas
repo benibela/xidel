@@ -67,9 +67,8 @@ begin
     if systemEncodingIsUTF8 then temp := s
     else temp := Utf8ToAnsi(s);
     SetLength(temp2, length(temp)+1);
-    writeln(stderr, 'SEIU: ',systemEncodingIsUTF8);
     if charToOEM(pchar(temp), pchar(temp2)) then
-      writeln(pchar(temp2));
+      write(pchar(temp2));
   end
   {$endif}
   else write(strConvertFromUtf8(s, outputEncoding));
