@@ -26,6 +26,13 @@ const ExampleHTML: string = '<html><body>'#13#10+
                              '</template:loop>'#13#10+
                              '</table>';
 
+    ExampleTemplateResult: string =
+      'col: 123'#13#10 +
+      'col: foo'#13#10 +
+      'col: bar'#13#10 +
+      'col: xyz';
+
+
     ExampleCSS: string = '#t2 tr td:first-child';
 
     ExampleXPath: string = 'id("t2") / tr / td[1]';
@@ -35,6 +42,7 @@ const ExampleHTML: string = '<html><body>'#13#10+
 
 var
   wasRaw: Boolean = false;
+  permalink: String;
 
 procedure w(const s: string);
 begin
@@ -58,7 +66,7 @@ procedure printPre;
   begin
     result := '<input type="radio" name="extract-kind" value="'+t+'"';
     if mycmdline.readString('extract-kind') = t then result += ' checked';
-    result += ' onclick="document.getElementsByName(''extract'')[0].value = '''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''; update();"';
+    result += ' onclick="changeexample('''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''); update();"';
     result += '/> '+ n;
   end;
   function checkbox(t, n: string): string;
@@ -90,6 +98,7 @@ begin
     exit;
   end;
 
+
   w('Content-Type: text/html');
   w('');
 
@@ -112,7 +121,7 @@ begin
   w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <br> <span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml']) +  select('output-format', 'Output format:', ['adhoc', 'json', 'xml']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
-  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings ("varname;") ') + checkbox('no-objects', 'Disable objects (objects(("a", 1)).a)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
+  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings ("$varname;") ') + checkbox('no-objects', 'Disable objects (object(("a", 1)).a)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
 
   w('</span></form>');
 
@@ -121,7 +130,13 @@ begin
   w('Result of the above expression applied to the above html file:<br>');
   w('<textarea id="result" rows="30" cols="100">');
 
+  if (mycmdline.readString('data') = '') and (mycmdline.readString('extract') = '') then
+    w(ExampleTemplateResult);
+
+  permalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+
   flush(stdout);
+
 
 end;
 
@@ -132,7 +147,10 @@ begin
 end;
 
 begin
-  w('</textarea></div>');
+  w('</textarea><br>');
+  w('<a id="permalink" href="'+permalink+'">');
+  w('permalink');
+  w('</a></div>');
 
   w('<br><br><br><hr>');
 

@@ -17,6 +17,8 @@ function encodeForm(form){
   return res;
 }
 
+var lastFormEncoding = "";
+
 function sendForm(form, callback){
     //var fd = new FormData(form); 
     //fd.append("raw", "true");
@@ -28,13 +30,16 @@ function sendForm(form, callback){
         if (req.readyState!=4) return; 
         if (req.status==200) callback(req.responseText, req); /*else alert("request failed: "+message+", "+data+"\n => "+req.status+" "+req.responseText);  */ 
       }
-    req.send("raw=true"+encodeForm(form));
+    lastFormEncoding = encodeForm(form);
+    req.send("raw=true"+lastFormEncoding);
 }
 var lastCallTime;
+var changed = false;
 function updateNow(calltime) { 
   if (lastCallTime > calltime) return;  //alert(calltime);
   sendForm(document.getElementsByTagName("form")[0], function(answer){
     document.getElementById("result").value = answer;
+    document.getElementById("permalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?"+lastFormEncoding;
   });
 }
 function update(){
@@ -44,6 +49,10 @@ function update(){
     setTimeout(function () {updateNow(boundTime); }, 500); 
   }) (new Date().getTime());
 }
+function changeexample(example){
+  if (changed) return;
+  document.getElementsByName("extract")[0].value = example;
+}
 function init(){
   var form = document.getElementsByTagName("form")[0];
   var x = form.getElementsByTagName("input");
@@ -52,8 +61,11 @@ function init(){
   for (var i=0;i<x.length;i++) x[i].onchange = update;
   var x = form.getElementsByTagName("textarea");
   for (var i=0;i<x.length;i++) 
-    x[i].onkeyup = function(event){
+    x[i].onkeyup = (function(_i){ return function(event){
       var key = event.keyCode ? event.keyCode : event.charCode;
-      if (!(key >= 16 && key <= 18 /*ShiftCtrlAlt*/ ) && !(key >= 33 && key <= 45 /* e.g. arrows */))  update();
-    };
-}
+      if (!(key >= 16 && key <= 18 /*ShiftCtrlAlt*/ ) && !(key >= 33 && key <= 45 /* e.g. arrows */)) {
+        if (_i == 1) changed = true;
+        update();
+      }}})(i);
+};
+
