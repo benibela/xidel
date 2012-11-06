@@ -6,8 +6,8 @@ The trivial usage is to extract an expression from a webpage like:
   
    xidel http://www.example.org --extract //title
 
-Instead of one or more urls, you can also pass file names or the xml data itself (<html>..</html>). 
-The --extract option can be abbreviated as -e, and there are four different kind of extract expressions:
+Instead of one or more urls, you can also pass file names or the xml data itself (xidel "<html>.." ...). 
+The --extract option can be abbreviated as -e, and there are five different kind of extract expressions:
  
   1*) XPath 2 expressions, with some changes and additional functions.
   
@@ -17,11 +17,12 @@ The --extract option can be abbreviated as -e, and there are four different kind
  
   4*) Templates, a simplified version of the page, in which the values you want to extract are annotated
   
-  5 ) Multipage templates, i.e. a file that contain templates for several pages
+  5 ) Multipage templates, i.e. a file that contains templates for several pages
 
 The kinds marked with a * are automatically detected, the other ones have to be activated with the 
-extract-kind option. CSS Selectors are also "autodetected", if they are written as css("..."),
-and XQuery expressions are detected, if they start with "xquery version "1.0"; ".
+extract-kind option. 
+CSS Selectors are also "autodetected", if they are written as css("..."),
+XQuery expressions are detected, if they start with "xquery version "1.0"; ".
 See the sections below for a more detailed description of each expression kind.
 
 
@@ -40,7 +41,7 @@ usual elements, or the contained text if there are none.
 =====================================  Recursion / Argument order ======================================
 
 
-You can specify several --extract (-e) and --follow (-f) arguments to extract values from one page, 
+You can specify multiple --extract (-e) and --follow (-f) arguments to extract values from one page, 
 follow the links to the next pages and extract values from there as well ...
 Then it becomes important in which order the arguments are given, so it extracts before following, 
 or the other way around. 
@@ -85,7 +86,8 @@ XPath expressions provide an easy way to extract calculated values from x/html.
 See http://en.wikipedia.org/wiki/XPath_2.0 for details.
 
 In the default configuration the XPath/XQuery implementation of Xidel deviates in a few ways from the 
-standard. However, you can disable this differences with the respective options (see link below).
+standard. However, you can disable this differences with the respective options (see link below or the
+command line parameter listing printed by --help).
 The most important changes are:
 
   Syntax:
@@ -116,7 +118,7 @@ The most important changes are:
      (however, if you explicitely declare a namespace like 'declare default element namespace "..."' in XQuery, 
      it will only find -elements in that namespace)
 
-     XML Schemas are not supported.
+     XML Schemas, error codes and static type checking are not supported.
 
   Additional functions:
  
@@ -139,7 +141,20 @@ The most important changes are:
                   e.g. form(//form[1], "foo=bar&xyz=123") returns a request for the first form,
                   with the foo and xyz parameters overriden by bar and 123.
                   It returns an object with .url, .method and .post properties.
-                  (form is not supported in Xidel 0.5, you can compile it from the hg repository.. ) 
+    match(<template>, <node>)
+                  Performs pattern matching between the template (see below for template documentation) 
+                  and the nodes, and returns a list or an object of matched values.
+                  For exmple match(<a>{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns <a>FOO</a>, and
+                  match(<a>*{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns (<a>FOO</a>, <a>BAR</a>).
+                  It is also possible to use named variables in the template, in which case an object 
+                  is returned, e.g:
+                    match(<x><a>{{first:=.}}</a><a>{{second:=.}}</a></x>, <x><a>FOO</a><a>BAR</a></x>)
+                  returns an object with two properties "first" and "bar", containing respectively
+                    <a>FOO</a> and <a>BAR</a>.
+                  The template can be a node or a string. Written as string the above example would be
+                    match("<a>{.}</a>", <x><a>FOO</a><a>BAR</a></x>).
+                 
+
 
 The pasdoc documentation of my XPath 2 / XQuery library explains more details:
 http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
@@ -150,8 +165,7 @@ http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
 
 CSS 3 Selectors are fully supported, except some pseudoclasses like :hover and ::before that do not 
 make sense in a gui less, reading-only application.
-(It is however not much tested, since I have only used XPath. edit: e.g. there is a bug in Xidel 0.5 that 
-you can not use a selector like "a,b", only "a, b" with an additional space. This is fixed in the source)
+(It is however not much tested, since I personally only use XPath)
 
 The easiest way to use CSS selectors with the command line is to write it like --extract "css('selector')"
 (the "-quotes are necessary to escape the '-quotes.) 
@@ -210,7 +224,11 @@ A basic template as above consists of three different kind of expressions:
              place in the html page has been found. 
              The context node . will refer to the surrounding element, and you can use my extended 
              XPath syntax (var := value) to create a variable. (see XPath above)
-             (an equivalent syntax is <template:s>..</template:s> or <t:s>..</t:s>)
+             Often you want to read the entire matched element in a variable with $name, which
+             can be written as {$name := .} or further abbreviated as {$name} .             
+             It can also be used within attributes, like <a x="{.}"/> to read the attribute value.
+             (the parentheses can be also replaced by <template:s>..</template:s> or <t:s>..</t:s>)
+             
  
   +          Finally the loop marker will repeat the matching of the previous element as long as 
              possible (an similar syntax is <t:loop>..</t:loop> or <t:loop>..</t:loop>).
@@ -241,7 +259,8 @@ template:
  
  *                        Like +, but it can also match none
  
- {min,max}                Matches between [min,max] many occurrences of the previous element
+ {min,max} or {count}     Matches between [min,max] or {count}-many occurrences of the previous element
+ 
  
  <t:loop min=.. max=../>  The same as above. However, t:loop will repeat all its children, while a marker 
                           like + can only repeat the single, previous element.
