@@ -26,6 +26,12 @@ const ExampleHTML: string = '<html><body>'#13#10+
                              '</template:loop>'#13#10+
                              '</table>';
 
+    ExampleCSS: string = '#t2 tr td:first-child';
+
+    ExampleXPath: string = 'id("t2") / tr / td[1]';
+
+    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($name as xs:string){'#13#10'  id($name) / tr / td[1]'#13#10'};'#13#10'local:test("t2")';
+
     ExampleTemplateResult: string =
       'col: 123'#13#10 +
       'col: foo'#13#10 +
@@ -33,11 +39,11 @@ const ExampleHTML: string = '<html><body>'#13#10+
       'col: xyz';
 
 
-    ExampleCSS: string = '#t2 tr td:first-child';
-
-    ExampleXPath: string = 'id("t2") / tr / td[1]';
-
-    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($name as xs:string){'#13#10'  id($name) / tr / td[1]'#13#10'};'#13#10'local:test("t2")';
+    ExampleOtherResult: string =
+      '123'#13#10 +
+      'foo'#13#10 +
+      'bar'#13#10 +
+      'xyz';
 
 
 var
@@ -130,8 +136,11 @@ begin
   w('Result of the above expression applied to the above html file:<br>');
   w('<textarea id="result" rows="30" cols="100">');
 
-  if (mycmdline.readString('data') = '') and (mycmdline.readString('extract') = '') then
-    w(ExampleTemplateResult);
+  if  (mycmdline.readString('data') = '') and (mycmdline.readString('extract') = '') then
+    case mycmdline.readString('extract-kind') of
+    'template', 'auto', '':  w(ExampleTemplateResult);
+    else w(ExampleOtherResult);
+    end;
 
   permalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
 
