@@ -54,6 +54,10 @@ win32)
         fileUpload xidel-$VERSION.win32.zip "/Xidel/Xidel\ $VERSION/"
         ;;
 
+cgi)    lazCompileLinux64 xidelcgi
+        webUpload xidelcgi  /../cgi-bin
+        ;;
+
 hg)     pushhg;;
 
 src)
