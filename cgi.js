@@ -40,6 +40,7 @@ function updateNow(calltime) {
   sendForm(document.getElementsByTagName("form")[0], function(answer){
     document.getElementById("result").value = answer;
     document.getElementById("permalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?"+lastFormEncoding;
+    document.getElementById("rawpermalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?raw=true"+lastFormEncoding;
   });
 }
 function update(){

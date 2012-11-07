@@ -48,7 +48,7 @@ const ExampleHTML: string = '<html><body>'#13#10+
 
 var
   wasRaw: Boolean = false;
-  permalink: String;
+  permalink, rawpermalink: String;
 
 procedure w(const s: string);
 begin
@@ -143,6 +143,7 @@ begin
     end;
 
   permalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+  rawpermalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
 
   flush(stdout);
 
@@ -157,9 +158,9 @@ end;
 
 begin
   w('</textarea><br>');
-  w('<a id="permalink" href="'+permalink+'">');
-  w('permalink');
-  w('</a></div>');
+  w('<a id="permalink" href="'+permalink+'">permalink</a>, ');
+  w('<a id="rawpermalink" href="'+rawpermalink+'">result-only</a>');
+  w('</div>');
 
   w('<br><br><br><hr>');
 
