@@ -1,4 +1,5 @@
 #!/bin/sh
+
 tests/test.sh t1   tests/a.xml
 tests/test.sh te   tests/a.xml -e //title 
 #Follow all a, print all titles
@@ -44,6 +45,13 @@ tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title>
 
 #Online test
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
+
+#Test for bugs that have been previously fixed
+tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a></r>'
+tests/test.sh regression_text1b '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/text()}</a></r>'
+tests/test.sh regression_text1c '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/(text())}</a></r>'
+tests/test.sh regression_text1d '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/concat("-",text(),"-")}</a></r>'
+tests/test.sh regression_text1e '<a>1</a>' -f '<a>{object(("url", "&lt;a>2&lt;/a>"))}</a>' -e '/a/concat(">",text(),"<")'
 
 
 
