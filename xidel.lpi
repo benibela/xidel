@@ -29,7 +29,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="/tmp/test.html -e 'declare function verboseName($n){ concat ( if (contains($n, &quot;win&quot;)) then &quot;Windows: &quot; else if (contains($n, &quot;linux&quot;)) then &quot;Universal Linux: &quot; else if (contains($n, &quot;.deb&quot;)) then &quot;Debian: &quot; else if (contains($n, &quot;src&quot;)) then &quot;Source:&quot; else &quot;&quot;, if (contains($n, &quot;32&quot;)) then &quot;32 Bit&quot; else if (contains($n, &quot;64&quot;))then &quot;64 Bit&quot; else &quot;&quot;  )   };           for $link in match(&lt;TABLE id=&quot;files_list&quot;>&lt;t:loop>&lt;TR class=&quot;file warn&quot;>&lt;TH>&lt;A class=&quot;name&quot;>{{link := object(), link.a := .}}&lt;/A>&lt;/TH>&lt;td/>&lt;td>{{link.size := .}}&lt;/td>&lt;/TR>&lt;/t:loop>&lt;/TABLE>, /) return $link' --extract-kind xquery"/>
+        <CommandLineParams Value="&quot;&lt;x>=on&amp;amp;&lt;/x>&quot; -e //x"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
