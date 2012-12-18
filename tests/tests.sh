@@ -61,3 +61,6 @@ tests/test.sh regression_entity3a '<a>x</a>' -e '<a>{res := "&amp;"}</a>'
 tests/test.sh regression_entity3b '<a>x</a>' -e '<a>{res := "&amp;amp;"}</a>'
 tests/test.sh regression_entity3c '<a>x</a>' -e '<a>{res := "&amp;amp;amp;"}</a>'
 tests/test.sh regression_entity3d '<a>x</a>' -e '<a>{res := "&amp;amp;amp;amp;"}</a>'
+
+tests/test.sh regression_object1 -e '($x := xs:object(("b","c")), $x.b)' 
+tests/test.sh regression_object2 -e '($x := xs:object(("b","c")), $x.a)' #allow accessing undefined properties

@@ -29,7 +29,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="&quot;&lt;x>=on&amp;amp;&lt;/x>&quot; -e //x"/>
+        <CommandLineParams Value="-e '($x := xs:object((&quot;b&quot;,&quot;c&quot;)), $x.a)'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
