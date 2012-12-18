@@ -53,5 +53,11 @@ tests/test.sh regression_text1c '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-s
 tests/test.sh regression_text1d '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/concat("-",text(),"-")}</a></r>'
 tests/test.sh regression_text1e '<a>1</a>' -f '<a>{object(("url", "&lt;a>2&lt;/a>"))}</a>' -e '/a/concat(">",text(),"<")'
 
-
-
+tests/test.sh regression_entity1a '<a>&amp;</a>' -e //a
+tests/test.sh regression_entity1b '<a>&amp;amp;</a>' -e //a
+tests/test.sh regression_entity1c '<a>&amp;amp;amp;</a>' -e //a
+tests/test.sh regression_entity2 -e '"&amp;"'
+tests/test.sh regression_entity3a '<a>x</a>' -e '<a>{res := "&amp;"}</a>'
+tests/test.sh regression_entity3b '<a>x</a>' -e '<a>{res := "&amp;amp;"}</a>'
+tests/test.sh regression_entity3c '<a>x</a>' -e '<a>{res := "&amp;amp;amp;"}</a>'
+tests/test.sh regression_entity3d '<a>x</a>' -e '<a>{res := "&amp;amp;amp;amp;"}</a>'
