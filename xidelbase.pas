@@ -48,11 +48,12 @@ implementation
 
 //{$R xidelbase.res}
 
-type TOutputFormat = (ofAdhoc, ofJson, ofXML);
+type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped);
 var outputFormat: TOutputFormat;
     outputEncoding: TEncoding;
+    outputHeader: string;
     firstExtraction: boolean = true;
-    outputArraySeparator: array[toutputformat] of string = ('', ', ', '</e><e>');
+    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>');
     internet: TInternetAccess;
     systemEncodingIsUTF8: boolean = true;
 
@@ -106,7 +107,8 @@ TExtraction = object
 
  defaultName: string;
  printVariables: set of (pvLog, pvCondensedLog, pvFinal);
- printTypeAnnotations,  hideVariableNames, printNodeXML: boolean;
+ printTypeAnnotations,  hideVariableNames: boolean;
+ printedNodeFormat: TTreeNodeSerialization;
 
  quiet: boolean;
 
@@ -200,9 +202,15 @@ begin
   setVariables(cmdLine.readString('print-variables'));
 
   if cmdLine.readString('printed-node-format') <> '' then begin
-    if cmdLine.readString('printed-node-format') = 'xml' then printNodeXML:=true
-    else if cmdLine.readString('printed-node-format') = 'text' then printNodeXML:=false
-    else raise EInvalidArgument.create('Unknown option: '+cmdLine.readString('printed-node-format'));
+    case cmdLine.readString('printed-node-format') of
+      'text': printedNodeFormat:=tnsText;
+      'xml': printedNodeFormat:=tnsXML;
+      'html': printedNodeFormat:=tnsHTML;
+      else raise EInvalidArgument.create('Unknown option: '+cmdLine.readString('printed-node-format'));
+    end;
+  end else case cmdLine.readString('output-format') of
+    'xml': printedNodeFormat:=tnsXML;
+    'html': printedNodeFormat:=tnsHTML;
   end;
 end;
 
@@ -479,8 +487,14 @@ begin
           printExtractedValue(x);
           i += 1;
         end;
-      end else if printNodeXML and (value is TXQValueNode) then
-        w(value.toNode.outerXML())
+      end else if value is TXQValueNode then begin
+        case printedNodeFormat of
+          tnsText: w(value.toString);
+          tnsXML: w(value.toNode.outerXML());
+          tnsHTML: w(value.toNode.outerHTML());
+          else raise EInvalidArgument.Create('Unknown node print format');
+        end;
+      end
       else if value is TXQValueObject then begin
         x := value.clone;
         temp := x as TXQValueObject;
@@ -496,11 +510,11 @@ begin
       end
       else w(value.toString);
     end;
-    ofJson: begin
-      w(value.jsonSerialize(not printNodeXML));
+    ofJsonWrapped: begin
+      w(value.jsonSerialize(printedNodeFormat));
     end;
-    ofXML: begin
-      w(value.xmlSerialize(not printNodeXML, 'seq', 'e', 'object'));
+    ofXMLWrapped: begin
+      w(value.xmlSerialize(printedNodeFormat, 'seq', 'e', 'object'));
     end;
   end;
 end;
@@ -525,7 +539,7 @@ var
 begin
   if firstExtraction then begin
     firstExtraction := false;
-    if outputFormat = ofXML then wln('<e>');
+    if outputFormat = ofXMLWrapped then wln('<e>');
   end else wln(outputArraySeparator[outputFormat]);
 
   printExtractedVariables(parser);
@@ -560,7 +574,7 @@ begin
            wln;
          end;
     end;
-    ofJson:
+    ofJsonWrapped:
       if hideVariableNames then begin
         w('[');
         first := true;
@@ -601,7 +615,7 @@ begin
         wln();
         wln('}');
     end;
-    ofXML: begin
+    ofXMLWrapped: begin
       if hideVariableNames then begin
         w('<seq>');
         first := true;
@@ -744,7 +758,7 @@ procedure displayError(e: Exception; printPartialMatches: boolean = false);
 
 begin
   case outputFormat of
-    ofJson: begin
+    ofJsonWrapped: begin
       sayln('{"_error": {');
       say('"_message": '+jsonStrEscape(e.Message));
       if printPartialMatches then begin
@@ -760,7 +774,7 @@ begin
       if cgimode then
         sayln(']');
     end;
-    ofXML: begin
+    ofXMLWrapped: begin
       sayln('<error>');
       sayln('<message>'+xmlStrEscape(e.Message)+'</message>');
       if printPartialMatches then begin
@@ -881,6 +895,7 @@ var
   realFile: String;
   tempProto: string;
   contenttype: String;
+  outputHeader: String;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -937,9 +952,10 @@ begin
   mycmdLine.declareString('print-variables-time', joined(['When the template variables are printed. ', 'Comma separated list of:', '  immediate: Prints the variable values after processing each file (default)', '  final: Print the variable values after processing all pages']), 'immediate');
   mycmdLine.declareFlag('print-type-annotations','Prints all variable values with type annotations (e.g. string: abc, instead of abc)');
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
-  mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text or xml');
+  mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf8');
+  mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -979,17 +995,29 @@ begin
   baserequests := requests;
   setlength(baserequests, length(baserequests));
 
-  if mycmdLine.readString('output-format') = 'adhoc' then outputFormat:=ofAdhoc
-  else if mycmdLine.readString('output-format') = 'json' then outputFormat:=ofJson
-  else if mycmdLine.readString('output-format') = 'xml' then outputFormat:=ofXML
-  else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
+  outputHeader := mycmdline.readString('output-header');
+  if mycmdLine.readString('output-format') = 'adhoc' then
+    outputFormat:=ofAdhoc
+  else if mycmdLine.readString('output-format') = 'html' then begin
+    outputFormat:=ofAdhoc;
+    if not mycmdline.existsProperty('output-header') then outputHeader:='<!DOCTYPE html>'+LineEnding;
+  end else if mycmdLine.readString('output-format') = 'xml' then begin
+    outputFormat:=ofAdhoc;
+    if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+  end else if mycmdLine.readString('output-format') = 'xml-wrapped' then begin
+    outputFormat:=ofXMLWrapped;
+    if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+  end else if (mycmdLine.readString('output-format') = 'json') or (mycmdLine.readString('output-format') = 'json-wrapped') then begin
+    outputFormat:=ofJsonWrapped;
+  end else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
 
   if assigned(onPreOutput) then onPreOutput();
 
-
-  if outputFormat = ofJson then wln('[')
-  else if outputFormat = ofXML then wln('<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding+'<seq>');
-
+  if outputHeader <> '' then w(outputHeader);
+  case outputFormat of
+    ofJsonWrapped: wln('[');
+    ofXMLWrapped: wln('<seq>');
+  end;
 
   htmlparser:=THtmlTemplateParserBreaker.create;
   htmlparser.TemplateParser.parsingModel:=pmHTML;
@@ -1068,7 +1096,7 @@ begin
             ekXPath, ekCSS, ekXQuery: begin
               if firstExtraction then begin
                 firstExtraction := false;
-                if outputFormat = ofXML then wln('<e>');
+                if outputFormat = ofXMLWrapped then wln('<e>');
               end else wln(outputArraySeparator[outputFormat]);
 
               htmlparser.parseHTMLSimple(data, urls[0], contenttype);
@@ -1193,8 +1221,8 @@ begin
   mycmdLine.free;
   alreadyProcessed.Free;
 
-  if outputFormat = ofJson then wln(']')
-  else if outputFormat = ofXML then begin
+  if outputFormat = ofJsonWrapped then wln(']')
+  else if outputFormat = ofXMLWrapped then begin
     if not firstExtraction then wln('</e>');
     wln('</seq>');
   end;
