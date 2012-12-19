@@ -88,7 +88,11 @@ See http://en.wikipedia.org/wiki/XPath_2.0 for details.
 In the default configuration the XPath/XQuery implementation of Xidel deviates in a few ways from the 
 standard. However, you can disable this differences with the respective options (see link below or the
 command line parameter listing printed by --help).
-The most important changes are:
+
+Switched to full standard compatible mode, its implementation passes 99.3% of the XPath 2 only tests and 
+97.8% of the XQuery 1 tests in the XQuery Testsuite (skipping tests for invalid input queries)
+
+However, in the default mode, there are the following important changes:
 
   Syntax:
   
@@ -108,7 +112,7 @@ The most important changes are:
   Semantic:
      
      All string comparisons are case insensitive, and "clever", e.g.:  '9xy' = '9XY' < '10XY' < 'xy'
-     This is more useful for html (think of class = 'foobar'), but can be disabled by passing collation urls
+     This is more useful for html (think of @class = 'foobar'), but can be disabled by passing collation urls
      to the string functions. 
      
      Everything is weakly typed, e.g 'false' = false() is true, and 1 + "2" is 3. 
@@ -156,7 +160,7 @@ The most important changes are:
                  
 
 
-The pasdoc documentation of my XPath 2 / XQuery library explains more details:
+The pasdoc documentation of my XPath 2 / XQuery library explains more details and lists more functions:
 http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
 
 
