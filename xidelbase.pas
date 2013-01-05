@@ -39,7 +39,7 @@ var cgimode: boolean = false;
     minorVersion: integer = 6;
 
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
-    onRetrieve: function (const url, postdata: string): string;
+    onRetrieve: function (const method, url, postdata: string): string;
     onPreOutput: procedure ();
 
 procedure perform;
@@ -142,7 +142,7 @@ TProcessingRequest = record
   wait: Extended;
   userAgent: string;
   proxy: string;
-  post: string;
+  method, post: string;
   printReceivedHeaders: boolean;
 
   quiet: boolean;
@@ -309,6 +309,7 @@ begin
     userAgent := cmdLine.readString('user-agent');
     proxy := cmdLine.readString('proxy');
     post := cmdLine.readString('post');
+    method := cmdLine.readString('method');
     printReceivedHeaders := cmdLine.readFlag('print-received-headers');
   end;
 
@@ -359,6 +360,7 @@ begin
   if obj.hasProperty('user-agent', @temp) then userAgent := temp.toString;
   if obj.hasProperty('proxy', @temp) then proxy := temp.toString;
   if obj.hasProperty('post', @temp) then post := temp.toString;
+  if obj.hasProperty('method', @temp) then method := temp.toString;
   if obj.hasProperty('print-received-headers', @temp) then printReceivedHeaders := temp.toBoolean;
 
   if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.toString);
@@ -941,6 +943,7 @@ begin
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
     mycmdLine.declareString('post', 'Post request to send (url encoded)');
+    mycmdLine.declareString('method', 'Http method to use (e.g. GET, POST, PUT)', 'GET');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
   end;
 
@@ -1064,7 +1067,7 @@ begin
             if assigned(onPrepareInternet) then  internet := onPrepareInternet(userAgent, proxy);
             printStatus('**** Retrieving:'+urls[0]+' ****');
             if post <> '' then printStatus('Post: '+post);
-            if assigned(onRetrieve) then data := onRetrieve(urls[0], post);
+            if assigned(onRetrieve) then data := onRetrieve(method, urls[0], post);
             if printReceivedHeaders and assigned(internet) then begin
               printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
               for j:=0 to internet.lastHTTPHeaders.Count-1 do

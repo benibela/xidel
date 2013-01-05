@@ -23,11 +23,15 @@ begin
   result := simpleinternet.defaultInternet;
 end;
 
-function retrieve(const url, post: string): string;
+function retrieve(const method, url, post: string): string;
 begin
   if cgimode then result := url //disallow remote access in cgi mode
-  else if post = '' then result := simpleinternet.retrieve(url)
-  else result := httpRequest(url, post);
+  else if (post = '') and ((method = '') or (method = 'GET')) then result := simpleinternet.retrieve(url)
+  else begin
+    needInternetAccess;
+    needInternetAccess();
+    result:=defaultInternet.request(method, url, post);
+  end;
 end;
 
 {$R *.res}
