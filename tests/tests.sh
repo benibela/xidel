@@ -28,25 +28,30 @@ tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/
 
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
-tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml
-tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json 
-tests/test.sh xml1b tests/a.xml --output-format xml --extract "<a>{.}</a>*" 
-tests/test.sh json1b tests/a.xml --output-format json --extract "<a>{.}</a>*" 
+tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml-wrapped
+tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json-wrapped
+tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json  #deprecated
+tests/test.sh xml1b tests/a.xml --output-format xml-wrapped --extract "<a>{.}</a>*" 
+tests/test.sh json1b tests/a.xml --output-format json-wrapped --extract "<a>{.}</a>*" 
+tests/test.sh json1b tests/a.xml --output-format json --extract "<a>{.}</a>*"  #deprecated
 
 tests/test.sh adhoc2 tests/a.xml tests/b.xml -e "<a>{.}</a>*"
-tests/test.sh xml2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format xml
-tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format json 
-tests/test.sh xml2b tests/a.xml tests/b.xml --output-format xml -e "<a>{.}</a>*" 
-tests/test.sh json2b tests/a.xml tests/b.xml --output-format json -e "<a>{.}</a>*" 
+tests/test.sh xml2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format xml-wrapped
+tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format json-wrapped
+tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format json  #deprecated
+tests/test.sh xml2b tests/a.xml tests/b.xml --output-format xml-wrapped -e "<a>{.}</a>*" 
+tests/test.sh json2b tests/a.xml tests/b.xml --output-format json-wrapped -e "<a>{.}</a>*" 
+tests/test.sh json2b tests/a.xml tests/b.xml --output-format json -e "<a>{.}</a>*"  #deprecated
 
 tests/test.sh adhoc3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*"  
-tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml
-tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json 
+tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml-wrapped
+tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json-wrapped
+tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json #deprecated option
 
 #Online test
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
 
-#Test for bugs that have been previously fixed
+#Regressions tests for bugs that have been fixed and should not appear again
 tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a></r>'
 tests/test.sh regression_text1b '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/text()}</a></r>'
 tests/test.sh regression_text1c '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/(text())}</a></r>'

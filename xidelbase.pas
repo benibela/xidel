@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess,
+  internetaccess, contnrs,
   rcmdline
   ;
 
@@ -49,17 +49,42 @@ implementation
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped);
-var outputFormat: TOutputFormat;
-    outputEncoding: TEncoding;
+var //output options
+    outputFormat: TOutputFormat;
+    outputEncoding: TEncoding = eUTF8;  //default to utf-8
     outputHeader: string;
     firstExtraction: boolean = true;
     outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>');
+    {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
+
     internet: TInternetAccess;
-    systemEncodingIsUTF8: boolean = true;
+
+type
+
+{ THtmlTemplateParserBreaker }
+
+ THtmlTemplateParserBreaker = class(THtmlTemplateParser)
+  procedure parseHTMLSimple(html,uri,contenttype: string);
+end;
+
+ TTemplateReaderBreaker = class(TMultipageTemplateReader)
+   constructor create();
+   procedure setTemplate(atemplate: TMultiPageTemplate);
+   procedure perform(actions: TStringArray);
+   procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
+ end;
+
+    //data processing classes
+var htmlparser:THtmlTemplateParserBreaker;
+    xpathparser: TXQueryEngine;
+    multipage: TTemplateReaderBreaker;
+    multipagetemp: TMultiPageTemplate;
 
 procedure w(const s: string);
+{$ifdef win32}
 var
   temp, temp2: String;
+{$endif}
 begin
   if s = '' then exit;
   if (outputEncoding = eUTF8) or (outputEncoding = eUnknown) then write(s)
@@ -91,14 +116,207 @@ begin
 end;
 
 
+function makeAbsoluteFilePath(s: string): string; //todo: check if it really needed where it is used
+begin
+  result := s;
+  if strContains('://', s) then exit;
+  if s = '' then exit;
+  if s[1] in AllowDirectorySeparators then exit;
+  if (length(s) >= 3) and (s[2] = ':') and (s[3] in AllowDirectorySeparators) then exit;
+  result := ExpandFileName(s)
+end;
+
+function strLoadFromFileChecked(const fn: string): string;
+begin
+  result := strLoadFromFile(fn);
+  if Result = '' then raise Exception.Create('File '+fn+' is empty.');
+end;
+
+function strReadFromStdin: string;
+var s:string;
+begin
+  result:='';
+  while not EOF(Input) do begin
+    ReadLn(s);
+    result+=s+LineEnding;
+  end;
+end;
+
+
+procedure setOutputEncoding(e: string);
+var
+  str: String;
+begin
+  //todo call this
+  str:=UpperCase(e);
+  outputEncoding:=eUnknown;
+  case str of
+    'UTF-8', 'UTF8': outputEncoding:=eUTF8;
+    'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': outputEncoding:=eWindows1252;
+    'UTF-16BE', 'UTF16BE': outputEncoding:=eUTF16BE;
+    'UTF-16LE', 'UTF16LE': outputEncoding:=eUTF16LE;
+    'UTF-32BE', 'UTF32BE': outputEncoding:=eUTF32BE; //utf-32 seems to be broken, but no one is using anyways. TODO: Fix sometime
+    'UTF-32LE', 'UTF32LE': outputEncoding:=eUTF32LE;
+    'OEM': outputEncoding:=eUnknownUser1
+  end;
+end;
+
+
+type
+  TOptionReaderWrapper = class
+    function read(const name: string; out value: string): boolean; virtual; abstract;
+    function read(const name: string; out value: integer): boolean; virtual; abstract;
+    function read(const name: string; out value: boolean): boolean; virtual; abstract;
+    function read(const name: string; out value: Extended): boolean; virtual; abstract;
+  end;
+
+  { TOptionReaderFromCommandLine }
+
+  TOptionReaderFromCommandLine = class(TOptionReaderWrapper)
+    constructor create(cmdLine: TCommandLineReader);
+    function read(const name: string; out value: string): boolean; override;
+    function read(const name: string; out value: integer): boolean; override;
+    function read(const name: string; out value: boolean): boolean; override;
+    function read(const name: string; out value: Extended): boolean; override;
+  private
+    acmdLine: TCommandLineReader;
+  end;
+
+  { TOptionReaderFromObject }
+
+  TOptionReaderFromObject = class(TOptionReaderWrapper)
+    constructor create(aobj: TXQValueObject);
+    function read(const name: string; out value: string): boolean; override;
+    function read(const name: string; out value: integer): boolean; override;
+    function read(const name: string; out value: boolean): boolean; override;
+    function read(const name: string; out value: Extended): boolean; override;
+  private
+    obj: TXQValueObject;
+  end;
 
 type
 
-{ TProcessingRequest }
+{ TData }
+
+TData = class
+{private todo: optimize
+  fparsed: TTreeDocument;
+  function GetParsed: TTreeDocument;
+public}
+  rawdata: string;
+  fullurl: string;
+  contenttype: string;
+  constructor create(somedata: string; aurl: string; acontenttype: string = '');
+  //property parsed:TTreeDocument read GetParsed;
+end;
+
+TDataProcessing = class;
+TProcessingContext = class;
+
+{ TFollowTo }
+
+TFollowTo = class
+  class function createFromRetrievalAddress(data: string): TFollowTo;
+  function clone: TFollowTo; virtual; abstract;
+  function retrieve(parent: TProcessingContext): TData; virtual; abstract;
+  procedure replaceVariables; virtual;
+  function equalTo(ft: TFollowTo): boolean; virtual; abstract;
+end;
+
+{ THTTPRequest }
+
+THTTPRequest = class(TFollowTo)
+  url: string;
+  method: string;
+  data: string;
+  constructor create(aurl: string);
+  function clone: TFollowTo; override;
+  function retrieve(parent: TProcessingContext): TData; override;
+  procedure replaceVariables; override;
+  function equalTo(ft: TFollowTo): boolean; override;
+end;
+
+{ TFileRequest }
+
+TFileRequest = class(TFollowTo)
+  url: string;
+  constructor create(aurl: string);
+  function clone: TFollowTo; override;
+  function retrieve(parent: TProcessingContext): TData; override;
+  procedure replaceVariables; override;
+  function equalTo(ft: TFollowTo): boolean; override;
+end;
+
+{ TDirectDataRequest }
+
+TDirectDataRequest = class(TFollowTo)
+  data: string;
+  constructor create(adata: string);
+  function clone: TFollowTo; override;
+  function retrieve(parent: TProcessingContext): TData; override;
+  function equalTo(ft: TFollowTo): boolean; override;
+  //procedure replaceVariables;  do not replace vars in direct data
+end;
+
+{ TStdinDataRequest }
+
+TStdinDataRequest = class(TFollowTo)
+  function clone: TFollowTo; override;
+  function retrieve(parent: TProcessingContext): TData; override;
+  function equalTo(ft: TFollowTo): boolean; override;
+end;
+
+{TFollowXQV = class(TFollowTo)
+  xqv: TXQValue;
+  //can be url/http-request, file(?), data
+  //object with arbitrary options
+  //sequence of previous
+end;}
+
+
+{ TFollowToList }
+
+TFollowToList = class(TFpObjectList)
+  constructor Create;
+  procedure merge(l: TFollowToList);
+  function first: TFollowTo;
+
+  procedure add(ft: TFollowTo);
+  procedure merge(dest: IXQValue; basedata: TData; parent: TProcessingContext);
+
+  function containsEqual(ft: TFollowTo): boolean;
+private
+  procedure addBasicUrl(absurl: string; baseurl: string);
+end;
+
+
+
+{ TDataProcessing }
+
+TDataProcessing = class
+  parent: TProcessingContext;
+  function process(data: TData): TFollowToList; virtual; abstract;
+
+  procedure readOptions(reader: TOptionReaderWrapper); virtual;
+  procedure initFromCommandLine(cmdLine: TCommandLineReader); virtual;
+  procedure mergeWithObject(obj: TXQValueObject); virtual;
+
+  function clone: TDataProcessing; virtual; abstract;
+end;
+
+
+{ TDownload }
+
+TDownload = class(TDataProcessing)
+  downloadTarget: string;
+  function process(data: TData): TFollowToList; override;
+  procedure readOptions(reader: TOptionReaderWrapper); override;
+  function clone: TDataProcessing; override;
+end;
 
 { TExtraction }
 
-TExtraction = object
+TExtraction = class(TDataProcessing)
  extract: string;
  extractExclude, extractInclude: TStringArray;
  extractKind: (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
@@ -110,64 +328,489 @@ TExtraction = object
  printTypeAnnotations,  hideVariableNames: boolean;
  printedNodeFormat: TTreeNodeSerialization;
 
- quiet: boolean;
+ constructor create;
 
  procedure setExtractKind(v: string);
 
- procedure initFromCommandLine(cmdLine: TCommandLineReader);
- procedure mergeWithObject(obj: TXQValueObject);
+ procedure readOptions(reader: TOptionReaderWrapper); override;
 
  procedure setVariables(v: string);
-
- procedure printStatus(s: string);
 
  procedure printExtractedValue(value: IXQValue);
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
- procedure pageProcessed(                  unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
+ function process(data: TData): TFollowToList; override;
+
+ procedure assignOptions(other: TExtraction);
+ function clone: TDataProcessing; override;
+private
+ currentFollowList: TFollowToList;
+ currentData: TData;
+ procedure pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 end;
 
-TProcessingRequest = record
-  urls: TStringArray;
-  urlsLevel: bbutils.TLongintArray;
 
-  extractions: array of TExtraction;
-  downloads: TStringArray;
+{ TFollowToWrapper }
+
+TFollowToWrapper = class(TDataProcessing)
+  followTo: TFollowTo;
+  function process(data: TData): TFollowToList; override;
+  function clone: TDataProcessing; override;
+end;
+
+{ TProcessingContext }
+
+TProcessingContext = class(TDataProcessing)
+  dataSources: array of TDataProcessing;
+  actions: array of TDataProcessing;
 
   follow: string;
   followExclude, followInclude: TStringArray;
-  stepLevel, followMaxLevel: integer;
+  followTo: TProcessingContext;
+
+  nextSibling: TProcessingContext;
 
   wait: Extended;
   userAgent: string;
   proxy: string;
-  method, post: string;
   printReceivedHeaders: boolean;
 
   quiet: boolean;
-
-  printVariablesTime: set of (pvtImmediate, pvtFinal);
-
 
   compatibilityNoExtendedStrings,compatibilityNoObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
 
   procedure printStatus(s: string);
 
-  procedure initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
-  procedure mergeWithObject(obj: TXQValueObject);
+  procedure readOptions(reader: TOptionReaderWrapper); override;
+  procedure mergeWithObject(obj: TXQValueObject); override;
 
-  procedure setVariablesTime(v: string);
-  procedure setOutputEncoding(e: string);
+  procedure readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
+  procedure readNewAction(action: TDataProcessing; options: TOptionReaderWrapper);
 
-  procedure deleteUrl0;
-  procedure addBasicValueUrl(dest: IXQValue; baseurl: string);
+  procedure assignOptions(other: TProcessingContext);
+  procedure assignActions(other: TProcessingContext);
 
+  function clone: TDataProcessing; override;
+
+
+  function process(data: TData): TFollowToList; override;
 end;
 
 type EInvalidArgument = Exception;
 
+{ TOptionReaderFromObject }
+
+constructor TOptionReaderFromObject.create(aobj: TXQValueObject);
+begin
+  obj := aobj;
+end;
+
+function TOptionReaderFromObject.read(const name: string; out value: string): boolean;
+var
+  temp: TXQValue;
+begin
+  result := obj.hasProperty(name, @temp);
+  if result then value := temp.toString;
+end;
+
+function TOptionReaderFromObject.read(const name: string; out value: integer): boolean;
+var
+  temp: TXQValue;
+begin
+  result := obj.hasProperty(name, @temp);
+  if result then value := temp.toInt64;
+end;
+
+function TOptionReaderFromObject.read(const name: string; out value: boolean): boolean;
+var
+  temp: TXQValue;
+begin
+  result := obj.hasProperty(name, @temp);
+  if result then value := temp.toBoolean;
+end;
+
+function TOptionReaderFromObject.read(const name: string; out value: Extended): boolean;
+var
+  temp: TXQValue;
+begin
+  result := obj.hasProperty(name, @temp);
+  if result then value := temp.toDecimal;
+end;
+
+{ TOptionReaderFromCommandLine }
+
+constructor TOptionReaderFromCommandLine.create(cmdLine: TCommandLineReader);
+begin
+  acmdLine := cmdLine;
+end;
+
+function TOptionReaderFromCommandLine.read(const name: string; out value: string): boolean;
+begin
+  value := acmdLine.readString(name);
+  result := acmdLine.existsProperty(name);
+end;
+
+function TOptionReaderFromCommandLine.read(const name: string; out value: integer): boolean;
+begin
+  value := acmdLine.readInt(name);
+  result := acmdLine.existsProperty(name);
+end;
+
+function TOptionReaderFromCommandLine.read(const name: string; out value: boolean): boolean;
+begin
+  value := acmdLine.readFlag(name);
+  result := acmdLine.existsProperty(name);
+end;
+
+function TOptionReaderFromCommandLine.read(const name: string; out value: Extended): boolean;
+begin
+  value := acmdLine.readFloat(name);
+  result := acmdLine.existsProperty(name);
+end;
+
+{ TDownload }
+
+function TDownload.process(data: TData): TFollowToList;
+var
+  realUrl: String;
+  j: LongInt;
+  realPath: String;
+  realFile: String;
+  downloadTo: String;
+begin
+  result := nil;
+  if cgimode or not allowFileAccess then
+    raise Exception.Create('Download not permitted');
+
+  realUrl := strSplitGet('?', data.fullurl);
+  realUrl := strSplitGet('#', realUrl);
+  j := strRpos('/', realUrl);
+  if j = 0 then begin
+    realPath := '';
+    realFile := realUrl;
+  end else begin
+    realPath := copy(realUrl, 1, j);
+    realFile := copy(realUrl, j + 1, length(realUrl) - j)
+  end;
+  if strBeginsWith(realPath, '/') then delete(realPath,1,1);
+
+  downloadTo := htmlparser.replaceVars(Self.downloadTarget);
+  {$ifdef win32}
+  downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
+  {$endif}
+
+  //Download abc/def/index.html
+  //    foo/bar/xyz   save in directory foo/bar with name xyz
+  //    foo/bar/      save in directory foo/bar/abc/def with name index.html
+  //    foo/bar/.     save in directory foo/bar with name index.html
+  //    foo           save in current directory/abc/def with name foo
+  //    ./            save in current directory/abc/def with name index.html
+  //    ./.           save in current directory with name index.html
+  //    .             save in current directory with name index.html        TODO: fix
+  //    -             print to stdout
+  if downloadTo = '-' then begin
+    w(data.rawdata);
+    exit;
+  end;
+  if downloadTo = './.' then downloadTo:=realPath+realFile
+  else if strEndsWith(downloadTo, '/.') then begin
+    SetLength(downloadto,Length(downloadTo)-1);
+    downloadTo:=downloadTo+realFile;
+  end else if strEndsWith(downloadTo, '/') then begin
+    downloadTo:=downloadTo+realPath+realFile;
+  end;
+  if strEndsWith(downloadTo, '/') or (downloadTo = '') then downloadTo += 'index.html';
+  parent.printStatus('**** Save as: '+downloadTo+' ****');
+  if pos('/', downloadTo) > 0 then
+    ForceDirectories(StringReplace(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]), '/', DirectorySeparator, [rfReplaceAll]));
+  strSaveToFileUTF8(StringReplace(downloadTo, '/', DirectorySeparator, [rfReplaceAll]), data.rawdata);
+end;
+
+procedure TDownload.readOptions(reader: TOptionReaderWrapper);
+begin
+  reader.read('download', downloadTarget);
+end;
+
+function TDownload.clone: TDataProcessing;
+begin
+  result := TDownload.Create;
+  TDownload(result).downloadTarget:=downloadTarget;
+end;
+
+
+{ THTTPRequest }
+
+constructor THTTPRequest.create(aurl: string);
+begin
+  url := aurl;
+end;
+
+function THTTPRequest.clone: TFollowTo;
+begin
+  result := THTTPRequest.create(url);
+  THTTPRequest(result).method:=method;
+  THTTPRequest(result).data:=data;
+end;
+
+function THTTPRequest.retrieve(parent: TProcessingContext): TData;
+var
+  i: Integer;
+begin
+  if not allowInternetAccess then raise Exception.Create('Internet access not permitted');
+  if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
+  parent.printStatus('**** Retrieving:'+url+' ****');
+  if data <> '' then parent.printStatus('Data: '+data);
+  result := tdata.create('', url);
+  if assigned(onRetrieve) then result.rawdata := onRetrieve(method, url, data);
+  if parent.printReceivedHeaders and assigned(internet) then begin
+    parent.printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
+    for i:=0 to internet.lastHTTPHeaders.Count-1 do
+      wln(internet.lastHTTPHeaders[i]);
+  end;
+  if Assigned(internet) then result.contenttype := internet.getLastHTTPHeader('Content-Type');
+end;
+
+procedure THTTPRequest.replaceVariables;
+begin
+  inherited replaceVariables;
+end;
+
+function THTTPRequest.equalTo(ft: TFollowTo): boolean;
+begin
+  result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data);
+end;
+
+{ TFileRequest }
+
+constructor TFileRequest.create(aurl: string);
+begin
+  url := aurl;
+end;
+
+function TFileRequest.clone: TFollowTo;
+begin
+  result := TFileRequest.create(url);
+end;
+
+function TFileRequest.retrieve(parent: TProcessingContext): TData;
+begin
+  if not allowFileAccess then raise Exception.Create('File access not permitted');
+  parent.printStatus('**** Retrieving:'+url+' ****');
+  result := tdata.create(strLoadFromFileUTF8(url), url);
+end;
+
+procedure TFileRequest.replaceVariables;
+begin
+  url := htmlparser.replaceVars(url);
+end;
+
+function TFileRequest.equalTo(ft: TFollowTo): boolean;
+begin
+  result := (ft is TFileRequest) and (TFileRequest(ft).url = url);
+end;
+
+{ TDirectDataRequest }
+
+constructor TDirectDataRequest.create(adata: string);
+begin
+  data := adata;
+end;
+
+function TDirectDataRequest.clone: TFollowTo;
+begin
+  result := TDirectDataRequest.create(data);
+end;
+
+function TDirectDataRequest.retrieve(parent: TProcessingContext): TData;
+begin
+  result := tdata.Create(data, copy(data, 1, 128));
+  if length(data) > length(result.fullurl) then result.fullurl := result.fullurl + '...';
+end;
+
+function TDirectDataRequest.equalTo(ft: TFollowTo): boolean;
+begin
+  result := (ft is TDirectDataRequest) and (TDirectDataRequest(ft).data = data);
+end;
+
+constructor TData.create(somedata: string; aurl: string; acontenttype: string);
+begin
+  rawdata := somedata;
+  fullurl := aurl;
+  contenttype := acontenttype;
+end;
+
+{ TStdinDataRequest }
+
+function TStdinDataRequest.clone: TFollowTo;
+begin
+  result := TStdinDataRequest.create;
+end;
+
+function TStdinDataRequest.retrieve(parent: TProcessingContext): TData;
+begin
+  result := TData.Create(strReadFromStdin(), '-');
+end;
+
+function TStdinDataRequest.equalTo(ft: TFollowTo): boolean;
+begin
+  result := false; //always different??
+end;
+
+
+class function TFollowTo.createFromRetrievalAddress(data: string): TFollowTo;
+begin
+  data := trim(data);
+  if cgimode then
+    exit(TDirectDataRequest.create(data));
+  if data = '-' then
+    exit(TStdinDataRequest.create());
+  case guessType(data) of
+    rtRemoteURL: result := THTTPRequest.Create(data);
+    rtFile: result := TFileRequest.create(data);
+    rtEmpty, rtXML: result := TDirectDataRequest.create(data);
+    else raise Exception.Create('Impossible 232');
+  end;
+  //todo: handle completely empty data ''
+end;
+
+procedure TFollowTo.replaceVariables;
+begin
+  //empty
+end;
+
+{ TFollowToWrapper }
+
+function TFollowToWrapper.process(data: TData): TFollowToList;
+var
+  res: TFollowTo;
+begin
+  res := followTo.clone;
+  res.replaceVariables();
+
+  result := TFollowToList.Create;
+  Result.Add(res);
+end;
+
+function TFollowToWrapper.clone: TDataProcessing;
+begin
+  result := TFollowToWrapper.Create;
+  TFollowToWrapper(result).followTo := followTo.clone;
+end;
+
+{ TFollowToList }
+
+constructor TFollowToList.Create;
+begin
+  inherited;
+  OwnsObjects:=true;
+end;
+
+procedure TFollowToList.merge(l: TFollowToList);
+var
+  i: Integer;
+begin
+  if l = nil then exit;
+  for i := 0 to l.Count-1 do
+    inherited add(TFollowTo(l[i]));
+  l.OwnsObjects:=false;
+  l.free;
+end;
+
+function TFollowToList.first: TFollowTo;
+begin
+  result := TFollowTo(inherited first);
+end;
+
+var globalDuplicationList: TFollowToList;
+
+procedure TFollowToList.add(ft: TFollowTo);
+begin
+  if (globalDuplicationList <> nil) and (self <> globalDuplicationList) then begin
+    if globalDuplicationList.containsEqual(ft) then exit;
+    globalDuplicationList.add(ft.clone);
+  end;
+  inherited add(ft);
+end;
+
+
+procedure TFollowToList.merge(dest: IXQValue; basedata: TData; parent: TProcessingContext);
+var x: IXQValue;
+    temp: TProcessingContext;
+    n: TTreeNode;
+begin
+  case dest.kind of
+    pvkUndefined: exit;
+    pvkObject: if parent <> nil then begin
+      temp := TProcessingContext.Create();
+      temp.assignOptions(parent);
+      temp.parent := parent;
+      temp.mergeWithObject(dest as TXQValueObject);
+      if length(temp.actions) = 0 then
+        temp.assignActions(parent);
+      merge(temp.process(basedata));
+      temp.Free;
+    end;
+    pvkSequence:
+      for x in dest do
+        merge(x, basedata, parent);
+    pvkNode: begin
+      n := dest.toNode;
+      if n = nil then exit;
+      if n.typ <> tetOpen then addBasicUrl(dest.toString, basedata.fullurl)
+      else if SameText(n.value, 'a') then addBasicUrl(n.getAttribute('href', ''), basedata.fullurl)
+      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then addBasicUrl(n.getAttribute('src', ''), basedata.fullurl)
+      else addBasicUrl(n.deepNodeText(), basedata.fullurl);
+    end;
+    else addBasicUrl(dest.toString, basedata.fullurl);
+  end;
+end;
+
+function TFollowToList.containsEqual(ft: TFollowTo): boolean;
+var
+  i: Integer;
+begin
+  for i := 0 to count-1 do
+    if (self[i] as TFollowTo).equalto(ft) then exit(true);
+  exit(false);
+end;
+
+procedure TFollowToList.addBasicUrl(absurl: string; baseurl: string);
+begin
+  if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(absurl) = rtFile) then
+    absurl := strResolveURI(absurl, baseurl);
+  Add(TFollowTo.createFromRetrievalAddress(absurl));
+end;
+
+procedure TDataProcessing.readOptions(reader: TOptionReaderWrapper);
+begin
+  //empty
+end;
+
+procedure TDataProcessing.initFromCommandLine(cmdLine: TCommandLineReader);
+var
+  temp: TOptionReaderFromCommandLine;
+begin
+  temp := TOptionReaderFromCommandLine.Create(cmdLine);
+  readOptions(temp);
+  temp.free;
+end;
+
+procedure TDataProcessing.mergeWithObject(obj: TXQValueObject);
+var
+  temp: TOptionReaderFromObject;
+begin
+  temp := TOptionReaderFromObject.create(obj);
+  readOptions(temp);
+  temp.free;
+end;
+
 { TExtraction }
+
+constructor TExtraction.create;
+begin
+  printVariables:=[pvCondensedLog];
+end;
 
 procedure TExtraction.setExtractKind(v: string);
 begin
@@ -181,67 +824,40 @@ begin
   else raise Exception.Create('Unknown kind for the extract expression: '+v);
 end;
 
-
-procedure TExtraction.initFromCommandLine(cmdLine: TCommandLineReader);
-begin
-  extract := cmdLine.readString('extract');
-  extract := trim(extract);
-  extractExclude := strSplit(cmdLine.readString('extract-exclude'), ',', false);
-  extractInclude := strSplit(cmdLine.readString('extract-include'), ',', false);
-
-  setExtractKind(cmdLine.readString('extract-kind'));
-  templateActions := strSplit(cmdLine.readString('template-action'), ',', false);
-
-
-  defaultName := cmdLine.readString('default-variable-name');
-  printTypeAnnotations:=cmdLine.readFlag('print-type-annotations');
-  hideVariableNames := cmdLine.readFlag('hide-variable-names');
-
-  quiet := cmdLine.readFlag('quiet');
-
-  setVariables(cmdLine.readString('print-variables'));
-
-  if cmdLine.readString('printed-node-format') <> '' then begin
-    case cmdLine.readString('printed-node-format') of
-      'text': printedNodeFormat:=tnsText;
-      'xml': printedNodeFormat:=tnsXML;
-      'html': printedNodeFormat:=tnsHTML;
-      else raise EInvalidArgument.create('Unknown option: '+cmdLine.readString('printed-node-format'));
-    end;
-  end else case cmdLine.readString('output-format') of
-    'xml': printedNodeFormat:=tnsXML;
-    'html': printedNodeFormat:=tnsHTML;
-  end;
-end;
-
-function strLoadFromFileChecked(const fn: string): string;
-begin
-  result := strLoadFromFile(fn);
-  if Result = '' then raise Exception.Create('File '+fn+' is empty.');
-end;
-
-procedure TExtraction.mergeWithObject(obj: TXQValueObject);
+procedure TExtraction.readOptions(reader: TOptionReaderWrapper);
 var
-  temp: TXQValue;
+  tempstr: string;
 begin
-  if obj.hasProperty('extract-file', @temp) then extract := temp.toString
-  else if obj.hasProperty('extract', @temp) then extract := temp.toString;
-  if obj.hasProperty('extract-exclude', @temp) then extractExclude := strSplit(temp.toString, ',', false);
-  if obj.hasProperty('extract-include', @temp) then extractInclude := strSplit(temp.toString, ',', false);
-  if obj.hasProperty('extract-kind', @temp) then setExtractKind(temp.toString);
-  if obj.hasProperty('template-file', @temp)  then begin
-    extract := strLoadFromFileChecked(temp.toString);
+  reader.read('extract', extract);  //todo. option: extract-file
+  extract:=trim(extract);
+  if reader.read('extract-exclude', tempstr) then extractExclude := strSplit(tempstr, ',', false);
+  if reader.read('extract-include', tempstr) then extractInclude := strSplit(tempstr, ',', false);
+  if reader.read('extract-kind', tempstr) then setExtractKind(tempstr);
+
+  if reader.read('template-file', tempstr)  then begin
+    extract := strLoadFromFileChecked(tempstr);
     extractKind := ekMultipage;
   end;
-  if obj.hasProperty('template-action', @temp) then templateActions := strSplit(temp.toString, ',', false);
+  if reader.read('template-action', tempstr) then templateActions := strSplit(tempstr, ',', false);
 
-  if obj.hasProperty('default-variable-name', @temp) then defaultName := temp.toString;
-  if obj.hasProperty('print-type-annotations', @temp) then printTypeAnnotations:=temp.toBoolean;
-  if obj.hasProperty('hide-variable-names', @temp) then hideVariableNames := temp.toBoolean;
+  reader.read('default-variable-name', defaultName);
+  reader.read('print-type-annotations', printTypeAnnotations);
+  reader.read('hide-variable-names', hideVariableNames);
 
-  if obj.hasProperty('print-variables', @temp) then setVariables(temp.toString);
+  if reader.read('print-variables', tempstr) then setVariables(tempstr);
 
-  if obj.hasProperty('quiet', @temp) then quiet := temp.toBoolean;
+  if reader.read('printed-node-format', tempstr) then begin
+      case tempstr of
+        'text': printedNodeFormat:=tnsText;
+        'xml': printedNodeFormat:=tnsXML;
+        'html': printedNodeFormat:=tnsHTML;
+        else raise EInvalidArgument.create('Unknown node format option: '+tempstr);
+      end;
+    end else if reader.read('output-format', tempstr) then
+      case tempstr of
+        'xml': printedNodeFormat:=tnsXML;
+        'html': printedNodeFormat:=tnsHTML;
+      end;
 end;
 
 procedure TExtraction.setVariables(v: string);
@@ -257,157 +873,140 @@ end;
 
 { TProcessingRequest }
 
-procedure TProcessingRequest.printStatus(s: string);
+procedure TProcessingContext.printStatus(s: string);
 begin
-  if length(extractions) = 0 then writeln(stderr, s)
-  else extractions[high(extractions)].printStatus(s);
+  if not quiet then writeln(stderr, s);
 end;
 
-function strReadFromStdin: string;
-var s:string;
-begin
-  result:='';
-  while not EOF(Input) do begin
-    ReadLn(s);
-    result+=s+LineEnding;
-  end;
-end;
-
-procedure TProcessingRequest.initFromCommandLine(cmdLine: TCommandLineReader; level: integer);
-  procedure flagToBoolean(var b: boolean; n: string);
-  begin
-    b := cmdLine.readFlag(n);
-  end;
-
+procedure TProcessingContext.readOptions(reader: TOptionReaderWrapper);
 var
-  i: Integer;
+  tempstr: string;
 begin
-  if length(extractions) > 0 then
-    extractions[high(extractions)].initFromCommandLine(cmdLine);
 
-  for i:=0 to high(extractions) do with extractions[i] do begin
-    if extract = '-' then extract:=strReadFromStdin;
-    if extractKind = ekAuto then
-      if (extract <> '') and (extract[1] = '<') then extractKind:=ekTemplate
-      else if strBeginsWith(extract, 'xquery') then extractKind:=ekXQuery
-      else extractKind:=ekXPath;
+  if allowInternetAccess then begin
+    reader.read('wait', wait);
+    reader.read('user-agent', userAgent);
+    reader.read('proxy', proxy);
+    //reader.read('post', Post);
+    //reader.read('method', method); moved to
+    reader.read('print-received-headers', printReceivedHeaders);
   end;
 
-  if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
+  if reader.read('output-encoding', tempstr) then setOutputEncoding(tempstr); //allows object returned by extract to change the output-encoding
+
+
+
+
+  {if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
   else begin
     follow := cmdLine.readString('follow');
     if follow = '-' then follow :=strReadFromStdin;
-  end;
-  follow := trim(follow);
-  followExclude := strSplit(cmdLine.readString('follow-exclude'), ',', false);
-  followInclude := strSplit(cmdLine.readString('follow-include'), ',', false);
-  stepLevel:=level;
-  followMaxLevel := cmdLine.readInt('follow-level');
-
-  if allowInternetAccess then begin
-    wait := cmdLine.readFloat('wait');
-    userAgent := cmdLine.readString('user-agent');
-    proxy := cmdLine.readString('proxy');
-    post := cmdLine.readString('post');
-    method := cmdLine.readString('method');
-    printReceivedHeaders := cmdLine.readFlag('print-received-headers');
-  end;
-
-  setVariablesTime(cmdLine.readString('print-variables-time'));
-  setOutputEncoding(cmdLine.readString('output-encoding'));
+  end;} //handled in variableRead
+  reader.read('follow', follow);
+  reader.read('follow-exclude', tempstr); followExclude := strSplit(tempstr, ',', false);
+  reader.read('follow-include', tempstr); followInclude := strSplit(tempstr, ',', false);
+//todo  reader.read('follow-level', followMaxLevel);
 
 
-
-  flagToBoolean(compatibilityNoExtendedStrings, 'no-extended-strings');
-  flagToBoolean(compatibilityNoObjects, 'no-objects');
-  flagToBoolean(compatibilityStrictTypeChecking, 'strict-type-checking');
-  flagToBoolean(compatibilityStrictNamespaces, 'strict-namespaces');
+//deprecated:   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
+//    arrayAdd(urls, '<empty/>');
+//  if cmdLine.readString('data') <> '' then arrayAdd(urls, cmdLine.readString('data'));
 
 
-  urls:=cmdLine.readNamelessFiles();
-
-  if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
-    arrayAdd(urls, '<empty/>');
-
-  if cmdLine.readString('data') <> '' then arrayAdd(urls, cmdLine.readString('data'));
-
-  setlength(urlsLevel, length(urls));
-  for i:= 0 to high(urlsLevel) do urlsLevel[i] := stepLevel;
 end;
 
-procedure TProcessingRequest.mergeWithObject(obj: TXQValueObject);
-  procedure flagToBoolean(var b: boolean; n: string);
-  var
-    temp: TXQValue;
-  begin
-    if obj.hasProperty(n, @temp) then b := temp.toBoolean;
-  end;
+
+procedure TProcessingContext.mergeWithObject(obj: TXQValueObject);
 var
+  tempreader: TOptionReaderFromObject;
   temp: TXQValue;
+  i: integer;
 begin
+  inherited;
+
+  tempreader := TOptionReaderFromObject.create(obj);
+  if length(actions) > 0 then
+    for i := 0 to high(actions) do
+      actions[i].readOptions(tempreader);
+  {todo:
   if length(extractions) > 0 then
     extractions[high(extractions)].mergeWithObject(obj);
 
   if obj.hasProperty('download', @temp) then arrayAdd(downloads, temp.toString);
 
   if obj.hasProperty('follow-file', @temp) then follow := strLoadFromFileChecked(temp.toString)
-  else if obj.hasProperty('follow', @temp) then follow := temp.toString;
-  if obj.hasProperty('follow-exclude', @temp) then followExclude := strSplit(temp.toString, ',', false);
-  if obj.hasProperty('follow-include', @temp) then followInclude := strSplit(temp.toString, ',', false);
-  if obj.hasProperty('follow-level', @temp) then followMaxLevel := temp.toInt64;
-
-  if obj.hasProperty('wait', @temp) then wait := temp.toDecimal;
-  if obj.hasProperty('user-agent', @temp) then userAgent := temp.toString;
-  if obj.hasProperty('proxy', @temp) then proxy := temp.toString;
-  if obj.hasProperty('post', @temp) then post := temp.toString;
-  if obj.hasProperty('method', @temp) then method := temp.toString;
-  if obj.hasProperty('print-received-headers', @temp) then printReceivedHeaders := temp.toBoolean;
-
-  if obj.hasProperty('print-variables-time', @temp) then setVariablesTime(temp.toString);
-  if obj.hasProperty('output-encoding', @temp) then setOutputEncoding(temp.toString);
-
-  flagToBoolean(compatibilityNoExtendedStrings, 'no-extended-strings');
-  flagToBoolean(compatibilityNoObjects, 'no-objects');
-  flagToBoolean(compatibilityStrictTypeChecking, 'strict-type-checking');
-  flagToBoolean(compatibilityStrictNamespaces, 'strict-namespaces');
 
   setlength(urls, 0);
-  if obj.hasProperty('follow', @temp) then
-    addBasicValueUrl(temp, '');
-  if obj.hasProperty('url', @temp) then
-    addBasicValueUrl(temp, '');
 
   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then begin
     arrayAdd(urls, '<empty/>');
     arrayAdd(urlsLevel, stepLevel);
-  end;
+  end;            }
+  if obj.hasProperty('url', @temp) then
+    readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader);
+  tempreader.free;
 end;
 
-procedure TProcessingRequest.setVariablesTime(v: string);
-var
-  tempSplitted: TStringArray;
+procedure TProcessingContext.readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
 begin
-  printVariablesTime:=[];
-  tempSplitted := strSplit(v, ',');
-  if arrayIndexOf(tempSplitted, 'immediate') >= 0 then include(printVariablesTime, pvtImmediate);
-  if arrayIndexOf(tempSplitted, 'final') >= 0 then include(printVariablesTime, pvtFinal);
+  SetLength(dataSources, length(dataSources) + 1);
+  dataSources[high(dataSources)] := TFollowToWrapper.Create;
+  dataSources[high(dataSources)].parent := self;
+  TFollowToWrapper(dataSources[high(dataSources)]).followTo := data;
+  TFollowToWrapper(dataSources[high(dataSources)]).readOptions(options);
 end;
 
-procedure TProcessingRequest.setOutputEncoding(e: string);
-var
-  str: String;
+procedure TProcessingContext.readNewAction(action: TDataProcessing; options: TOptionReaderWrapper);
 begin
-  str:=UpperCase(e);
-  outputEncoding:=eUnknown;
-  case str of
-    'UTF-8', 'UTF8': outputEncoding:=eUTF8;
-    'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': outputEncoding:=eWindows1252;
-    'UTF-16BE', 'UTF16BE': outputEncoding:=eUTF16BE;
-    'UTF-16LE', 'UTF16LE': outputEncoding:=eUTF16LE;
-    'UTF-32BE', 'UTF32BE': outputEncoding:=eUTF32BE; //utf-32 seems to be broken, but no one is using anyways. TODO: Fix sometime
-    'UTF-32LE', 'UTF32LE': outputEncoding:=eUTF32LE;
-    'OEM': outputEncoding:=eUnknownUser1
-  end;
+  SetLength(actions, length(actions) + 1);
+  actions[high(actions)] := action;
+  actions[high(actions)].parent := self;
+  actions[high(actions)].readOptions(options);
+end;
+
+procedure TProcessingContext.assignOptions(other: TProcessingContext);
+begin
+  //neither dataSources nor actions: array of TDataProcessing; ?? todo
+
+  {follow := other.follow;
+  followExclude := other.followExclude;
+  followInclude := other.followInclude;
+  followTo := other.followTo ; //todo ??? disabled, leads to endless recursion
+  }
+
+  wait := other.wait;
+  userAgent := other.userAgent;
+  proxy := other.proxy;
+  printReceivedHeaders:=other.printReceivedHeaders;
+
+  quiet := other.quiet;
+
+  compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
+  compatibilityNoObjects := other.compatibilityNoObjects;
+  compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
+  compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
+end;
+
+procedure TProcessingContext.assignActions(other: TProcessingContext);
+var i: integer;
+begin
+  setlength(actions, length(other.actions));
+  for i := 0 to high(actions) do
+    actions[i] := other.actions[i].clone;
+end;
+
+function TProcessingContext.clone: TDataProcessing;
+var
+  i: Integer;
+begin
+  result := TProcessingContext.Create;
+  TProcessingContext(result).assignOptions(self);
+  TProcessingContext(result).assignActions(self);
+  setlength(TProcessingContext(result).dataSources, length(dataSources));
+  for i := 0 to high(TProcessingContext(result).dataSources) do
+    TProcessingContext(result).dataSources[i] := dataSources[i].clone;
+  if nextSibling <> nil then
+    TProcessingContext(result).nextSibling := nextSibling.clone as TProcessingContext;
 end;
 
 function encodingName(e: TEncoding): string;
@@ -422,55 +1021,97 @@ end;
 
 
 
-procedure TProcessingRequest.deleteUrl0;
+function TProcessingContext.process(data: TData): TFollowToList;
+var next, res: TFollowToList;
+  procedure subProcess(data: TData);
+  var
+    i: Integer;
+    tempProto, tempHost, tempPath: string;
+  begin
+    printStatus('**** Processing:'+data.fullurl+' ****');
+
+    //alreadyProcessed.Add(urls[0]+#1+post);
+    htmlparser.variableChangeLog.add('url', data.fullurl);
+    decodeURL(data.fullurl, tempProto, tempHost, tempPath);
+    htmlparser.variableChangeLog.add('host', tempHost);
+    htmlparser.variableChangeLog.add('path', tempPath);
+
+
+    for i := 0 to high(actions) do
+      next.merge(actions[i].process(data));
+    if follow <> '' then begin
+      if res = nil then res := TFollowToList.Create;
+
+      htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
+
+      if follow[1] = '<' then begin //assume my template
+        htmlparser.parseTemplate(follow); //todo reuse existing parser
+        htmlparser.parseHTML(data.rawdata, data.fullurl, data.contenttype); //todo: optimize
+        for i:=0 to htmlparser.variableChangeLog.count-1 do
+          if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getName(i)) = -1)) or
+             ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getName(i)) > -1)) then
+            res.merge(htmlparser.variableChangeLog.get(i), data, self);
+      end else begin
+        //assume xpath
+        htmlparser.parseHTMLSimple(data.rawdata, data.fullurl, data.contenttype);
+        xpathparser.RootElement := htmlparser.HTMLTree;
+        xpathparser.ParentElement := xpathparser.RootElement;
+        xpathparser.StaticContext. BaseUri := data.fullurl;
+        if strBeginsWith(follow, 'xquery') then xpathparser.parseXQuery1(follow)
+        else xpathparser.parseXPath2(follow);
+        res.merge(xpathparser.evaluate(), data, self);
+      end;
+
+      if followTo <> nil then
+        for i := 0 to res.Count - 1 do
+          followto.process(TFollowTo(res[i]).retrieve(self));
+    end;
+  end;
+
 var
   i: Integer;
 begin
-  for i:=1 to high(urls) do begin
-    urls[i-1] := urls[i];
-    urlsLevel[i-1]:=urlsLevel[i];
-  end;
-  setlength(urls,length(urls)-1);
-  setlength(urlsLevel,length(urlsLevel)-1);
-end;
 
-procedure TProcessingRequest.addBasicValueUrl(dest: IXQValue; baseurl: string);
-  procedure activateNewUrl;
-  begin
-    if length(urlsLevel) > 0 then arrayAdd(urlsLevel, urlsLevel[0])
-    else arrayAdd(urlsLevel, stepLevel);
-    if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(urls[high(urls)]) = rtFile) then
-      urls[high(urls)] := strResolveURI(urls[high(urls)], baseurl);
+  //init
+  xpathparser.AllowVariableUseInStringLiterals:= not compatibilityNoExtendedStrings;
+  xpathparser.VariableChangelog.allowObjects:=not compatibilityNoObjects;
+  htmlparser.variableChangeLog.allowObjects:=xpathparser.VariableChangelog.allowObjects;
+  xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
+  xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
+
+  //apply all actions to all data source
+  next := TFollowToList.Create;
+  res := nil;
+  if data <> nil then subProcess(data);
+  for i := 0 to high(dataSources) do
+    next.merge(dataSources[i].process(nil));
+  if (length(actions) = 0) and (follow = '') then
+    exit(next);
+  while next.Count > 0 do begin
+    subProcess(next.First.retrieve(self));
+    if wait > 0.001 then Sleep(trunc(wait * 1000));
+    next.Delete(0);
   end;
 
-var
-  n: TTreeNode;
-  x: IXQValue;
-begin
-  case dest.kind of
-    pvkUndefined: exit;
-    pvkNode: begin
-      n := dest.toNode;
-      if n = nil then exit;
-      if n.typ <> tetOpen then arrayAdd(urls, dest.toString)
-      else if SameText(n.value, 'a') then arrayAdd(urls, n.getAttribute('href', ''))
-      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then arrayAdd(urls, n.getAttribute('src', ''))
-      else arrayAdd(urls, n.deepNodeText());
-      activateNewUrl;
-    end;
-    pvkSequence:
-      for x in dest do
-        addBasicValueUrl(x, baseurl);
-    else begin
-      arrayAdd(urls, dest.toString);
-      activateNewUrl;
-    end;
+  result := res;
+  if nextSibling <> nil then begin
+    res := nextSibling.process(nil);
+    if result = nil then result := res
+    else result.merge(res);
   end;
-end;
+  { some examples:
+      [ -e //title -f //a  ]
+      http://www.google.de http://www.example.org -e //title
 
-procedure TExtraction.printStatus(s: string);
-begin
-  if not quiet then writeln(stderr, s);
+      http://www.google.de -e //a1 http://www.example.org -e //a2
+
+      [ http://www.google.de  http://www.example.org ] -e //a2
+
+      http://example.org -f //a [ -e //title ]
+
+      http://example.org  [ -f //a -e //title -f //x ]
+
+      http://example.org  [ http://google.de -e //title ]}
 end;
 
 procedure TExtraction.printExtractedValue(value: IXQValue);
@@ -533,8 +1174,6 @@ begin
     printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **');
 end;
 
-procedure followTo(dest: IXQValue); forward;
-
 procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 var
   i: Integer;
@@ -547,8 +1186,90 @@ begin
   printExtractedVariables(parser);
 
   for i := 0 to parser.variableChangeLog.count-1 do
-    if parser.variableChangeLog.getName(i) = '_follow' then
-      followTo(parser.variableChangeLog.get(i));
+    if parser.variableChangeLog.getName(i) = '_follow' then begin
+      if currentFollowList = nil then currentFollowList := TFollowToList.Create;
+      currentFollowList.merge(parser.variableChangeLog.get(i), currentData, parent);
+    end;
+end;
+
+function TExtraction.process(data: TData): TFollowToList;
+begin
+  //set flags when first processed
+  if extract = '-' then extract:=strReadFromStdin;
+  if extractKind = ekAuto then
+    if (extract <> '') and (extract[1] = '<') then extractKind:=ekTemplate
+    else if strBeginsWith(extract, 'xquery') then extractKind:=ekXQuery
+    else extractKind:=ekXPath;
+
+
+  currentFollowList := nil;
+  currentData:=data;
+
+  if outputEncoding = eUnknown then htmlparser.OutputEncoding := outputEncoding
+  else htmlparser.OutputEncoding := eUTF8;
+
+  case extractKind of
+    ekTemplate: begin
+      htmlparser.UnnamedVariableName:=defaultName;
+      htmlparser.parseTemplate(extract); //todo reuse existing parser
+      htmlparser.parseHTML(data.rawdata, makeAbsoluteFilePath(data.fullurl), data.contenttype); //todo: full url is abs?
+      pageProcessed(nil,htmlparser);
+    end;
+    ekXPath, ekCSS, ekXQuery: begin
+      if firstExtraction then begin
+        firstExtraction := false;
+        if outputFormat = ofXMLWrapped then wln('<e>');
+      end else wln(outputArraySeparator[outputFormat]);
+
+      htmlparser.parseHTMLSimple(data.rawdata, data.fullurl, data.contenttype);
+      xpathparser.RootElement := htmlparser.HTMLTree;
+      xpathparser.ParentElement := xpathparser.RootElement;
+      xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.fullurl);
+      case extractKind of
+        ekCSS: xpathparser.parseCSS3(extract); //todo: optimize
+        ekXPath: xpathparser.parseXPath2(extract);
+        ekXQuery: xpathparser.parseXQuery1(extract);
+      end;
+      printExtractedValue(xpathparser.evaluate());
+      wln;
+    end;
+    ekMultipage: if assigned (onPrepareInternet) then begin
+      multipage.onPageProcessed:=@pageProcessed;
+      multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy);
+      multipagetemp := TMultiPageTemplate.create();
+      multipagetemp.loadTemplateFromString(extract);
+      multipage.setTemplate(multipagetemp);
+      multipage.perform(templateActions);
+      multipage.setTemplate(nil);
+      multipagetemp.free;
+    end
+    else raise Exception.Create('Impossible');
+  end;
+
+  result := currentFollowList;
+  currentFollowList := nil;
+end;
+
+procedure TExtraction.assignOptions(other: TExtraction);
+begin
+  extract := other.extract;
+  extractExclude := other.extractExclude; SetLength(extractExclude, length(extractExclude));
+  extractInclude := other.extractInclude; SetLength(extractInclude, length(extractInclude));
+  extractKind := other.extractKind;
+  templateActions := other.templateActions;
+  SetLength(templateActions, length(templateActions));
+
+  defaultName := other.defaultName;
+  printVariables := other.printVariables;
+  printTypeAnnotations := other.printTypeAnnotations;
+  hideVariableNames := other.hideVariableNames;
+  printedNodeFormat := other.printedNodeFormat;
+end;
+
+function TExtraction.clone: TDataProcessing;
+begin
+  result := TExtraction.create;
+  TExtraction(result).assignOptions(self);
 end;
 
 
@@ -566,7 +1287,7 @@ var
   values: IXQValue;
   j: Integer;
 begin
-  printStatus(state);
+  parent.printStatus(state);
   case outputFormat of
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
@@ -644,68 +1365,15 @@ begin
   end;
 end;
 
-var
-  baserequests, requests: array of TProcessingRequest;
-
-procedure followTo(dest: IXQValue);
-var
-  refRequest: integer;
-  x: IXQValue;
-begin
-  if (length(requests) > 1) and (requests[0].stepLevel = requests[1].stepLevel - 1) then
-    refRequest := 1
-   else
-    refRequest := 0;
-
-  case dest.kind of
-    pvkObject: begin //this can't imho be in addBasicValueUrl, because you can't reliable call a method on a  record in an array that will be modified
-      SetLength(requests, length(requests) + 1);
-      requests[high(requests)] := requests[refRequest];
-      requests[high(requests)].mergeWithObject(dest as TXQValueObject);
-    end;
-    pvkSequence:
-      for x in dest do
-        followTo(x);
-    else requests[refRequest].addBasicValueUrl(dest, requests[0].urls[0])
-  end;
-end;
 
 
-function makeAbsoluteFilePath(s: string): string;
-begin
-  result := s;
-  if strContains('://', s) then exit;
-  if s = '' then exit;
-  if s[1] in AllowDirectorySeparators then exit;
-  if (length(s) >= 3) and (s[2] = ':') and (s[3] in AllowDirectorySeparators) then exit;
-  result := ExpandFileName(s)
-end;
 
-type
 
-{ THtmlTemplateParserBreaker }
 
- THtmlTemplateParserBreaker = class(THtmlTemplateParser)
-  procedure parseHTMLSimple(html,uri,contenttype: string);
-end;
-
- TTemplateReaderBreaker = class(TMultipageTemplateReader)
-   constructor create();
-   procedure setTemplate(atemplate: TMultiPageTemplate);
-   procedure perform(actions: TStringArray);
-   procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
- end;
-
-var htmlparser:THtmlTemplateParserBreaker;
-    i: Integer;
+var i: Integer;
     temp: TStringArray;
     j: Integer;
-    data, downloadTo: string;
 
-    alreadyProcessed: TStringList;
-    xpathparser: TXQueryEngine;
-    multipage: TTemplateReaderBreaker;
-    multipagetemp: TMultiPageTemplate;
 
 { TMultiPageTemplateBreaker }
 
@@ -825,17 +1493,34 @@ begin
   SetLength(nameless, 0);
 end;
 
+var currentContext: TProcessingContext;
+    cmdlineWrapper: TOptionReaderFromCommandLine;
+
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
 begin
-  if (name = 'follow') or (name = 'follow-file') or ((name = '') and (length(requests[high(requests)].extractions) > 0))  then begin
+  if (name = 'follow') or (name = 'follow-file') or ((name = '') and (length(currentContext.actions) > 0))  then begin
     if name = 'follow-file' then
       if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('follow', '-')
       else TCommandLineReaderBreaker(sender).overrideVar('follow', strLoadFromFileChecked(value));
 
     //writeln(stderr,name,'=',value);
-    requests[high(requests)].initFromCommandLine(TCommandLineReader(sender), length(requests) - 1);
+    currentContext.readOptions(cmdlineWrapper);
     TCommandLineReaderBreaker(sender).clearNameless;
-    SetLength(requests, length(requests) + 1);
+
+    if name <> '' then begin
+      //following (applying the later commands to the data read by the current context)
+      currentContext.followTo := TProcessingContext.Create;
+      currentContext.followTo.assignOptions(currentContext);
+      currentContext.followTo.parent := currentcontext;
+      currentContext := currentContext.followTo;
+    end else begin
+      //sibling (later commands form a new context, unrelated to the previous one)
+      currentContext.nextSibling := TProcessingContext.Create;
+      currentContext.nextSibling.assignOptions(currentContext);
+      currentContext.nextSibling.parent := currentContext.parent;
+      currentContext := currentContext.nextSibling;
+      currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    end;
 
     TCommandLineReaderBreaker(sender).overrideVar('follow', '');
     TCommandLineReaderBreaker(sender).overrideVar('extract', '');
@@ -849,12 +1534,16 @@ begin
       TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
     end;
 
-    SetLength(requests[high(requests)].extractions, length(requests[high(requests)].extractions) + 1);
-    requests[high(requests)].extractions[high(requests[high(requests)].extractions)].initFromCommandLine(TCommandLineReader(sender));
-
-    //if name = 'template-file' then TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'auto');
-  end else if name = 'download' then
-    arrayAdd(requests[high(requests)].downloads, value);
+    TCommandLineReaderBreaker(sender).overrideVar(name, value);
+    currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
+  end else if name = 'download' then begin
+    TCommandLineReaderBreaker(sender).overrideVar(name, value);
+    currentContext.readNewAction(TDownload.Create, cmdlineWrapper)
+  end else if (name = '') then begin
+    {if value = '[' then pushCommandLineOptions
+    else if value = ']' then popCommandLineOptions
+    else todo } currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+  end;
 end;
 
 procedure printVersion;
@@ -890,14 +1579,7 @@ end;
 
 procedure perform;
 var
-  tempvalue: IXQValue;
-  realUrl: string;
-  tempHost: string;
-  realPath: String;
-  realFile: String;
-  tempProto: string;
-  contenttype: String;
-  outputHeader: String;
+  baseContext: TProcessingContext;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -917,7 +1599,7 @@ begin
 
   mycmdLine.declareString('extract', joined(['Expression to extract from the data.','If it starts with < it is interpreted as template, otherwise as XPath 2 expression']));
   mycmdline.addAbbreviation('e');
-  mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow,_url)', '_follow');
+  mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow)', '_follow');
   mycmdLine.declareString('extract-include', 'If not empty, comma separated list of variables to use in an extract template (white list)');
   mycmdLine.declareFile('extract-file', 'File containing an extract expression (for longer expressions)');
   mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, xquery, css, template or multipage', 'auto');
@@ -952,12 +1634,11 @@ begin
   mycmdLine.declareFlag('quiet','Do not print status information to stderr', 'q');
   mycmdLine.declareString('default-variable-name', 'Variable name for values read in the template without explicitely given variable name', 'result');
   mycmdLine.declareString('print-variables', joined(['Which of the separate variable lists are printed', 'Comma separated list of:', '  log: Prints every variable value', '  final: Prints only the final value of a variable, if there are multiple assignments to it', '  condensed-log: Like log, but removes assignments to object properties(default)']), 'condensed-log');
-  mycmdLine.declareString('print-variables-time', joined(['When the template variables are printed. ', 'Comma separated list of:', '  immediate: Prints the variable values after processing each file (default)', '  final: Print the variable values after processing all pages']), 'immediate');
   mycmdLine.declareFlag('print-type-annotations','Prints all variable values with type annotations (e.g. string: abc, instead of abc)');
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
-  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf8');
+  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
@@ -970,10 +1651,11 @@ begin
   mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
 
-  SetLength(requests,1);
+  currentContext := TProcessingContext.Create;
+  baseContext := currentContext;
 
+  cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
   mycmdLine.parse();
-
 
   if mycmdline.readFlag('version') then
     printVersion;
@@ -982,21 +1664,26 @@ begin
     exit;
   end;
 
-  requests[high(requests)].initFromCommandLine(mycmdLine, length(requests) - 1);
+  currentContext.readOptions(cmdlineWrapper);
+  if length(currentContext.actions) <> 0 then currentContext.actions[high(currentContext.actions)].readOptions(cmdlineWrapper);
 
-  if (length(requests) >= 2) and (length(requests[high(requests)].extractions) = 0) and (length(requests[high(requests)].downloads) = 0) then begin
-    requests[high(requests)].extractions := requests[high(requests)-1].extractions;
-    requests[high(requests)].downloads := requests[high(requests)-1].downloads;
-    requests[high(requests)].follow := requests[high(requests)-1].follow;
+  if (currentContext.parent <> nil) and (length(currentContext.actions) = 0) and (length(currentContext.dataSources) = 0) then begin
+    //this allows a trailing follow to recurse
+    currentContext.follow := currentContext.parent.follow;
+    currentContext.followExclude := currentContext.parent.followExclude;
+    currentContext.followInclude := currentContext.parent.followInclude;
+    currentContext.followTo := currentContext;
+    currentContext.actions := currentContext.parent.actions;
+    SetLength(currentContext.actions, length(currentContext.actions));
+    for i := 0 to high(currentContext.actions) do
+      currentContext.actions[i] := currentContext.actions[i].clone;
   end;
 
-  if (length(requests) = 1) and (length(requests[0].urls) = 0) and (length(requests[0].extractions) > 0) then begin
-    arrayAdd(requests[0].urls, '<empty/>');
-    arrayAdd(requests[0].urlsLevel, 0);
+  if (currentContext.parent = nil) and (length(currentContext.dataSources) = 0) and (length(currentContext.actions) > 0) then begin
+    //this allows data less evaluations, like xidel -e 1+2+3
+    currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress('<empty/>'), cmdlineWrapper);
   end;
-
-  baserequests := requests;
-  setlength(baserequests, length(baserequests));
+  cmdlineWrapper.Free;
 
   outputHeader := mycmdline.readString('output-header');
   if mycmdLine.readString('output-format') = 'adhoc' then
@@ -1031,176 +1718,9 @@ begin
   end;
   xpathparser := htmlparser.QueryEngine;
 
-  alreadyProcessed := TStringList.Create;
-
-
-
+  globalDuplicationList := TFollowToList.Create;
   try
-    while length(requests) > 0 do begin
-      while (length(requests[0].urls) > 0)
-            and  ((alreadyProcessed.indexOf(requests[0].urls[0]+#1+requests[0].post) >= 0) or
-                 (requests[0].urlsLevel[0] > requests[0].followMaxLevel)) do
-        requests[0].deleteUrl0;
-
-      if length(requests[0].urls) = 0 then begin
-        for i:=1 to high(requests) do
-          requests[i-1] := requests[i];
-        setlength(requests,length(requests)-1);
-        continue;
-      end;
-
-      with requests[0] do begin
-        xpathparser.AllowVariableUseInStringLiterals:= not compatibilityNoExtendedStrings;
-        xpathparser.VariableChangelog.allowObjects:=not compatibilityNoObjects;
-        htmlparser.variableChangeLog.allowObjects:=xpathparser.VariableChangelog.allowObjects;
-        xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
-        xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
-
-
-        urls[0] := htmlparser.replaceVars(trim(urls[0]));
-        if urls[0] = '' then begin deleteUrl0; continue; end;
-
-        data := urls[0];
-        if not cgimode then begin
-          if data = '-' then data := strReadFromStdin()
-          else if allowInternetAccess then begin
-            if assigned(onPrepareInternet) then  internet := onPrepareInternet(userAgent, proxy);
-            printStatus('**** Retrieving:'+urls[0]+' ****');
-            if post <> '' then printStatus('Post: '+post);
-            if assigned(onRetrieve) then data := onRetrieve(method, urls[0], post);
-            if printReceivedHeaders and assigned(internet) then begin
-              printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
-              for j:=0 to internet.lastHTTPHeaders.Count-1 do
-                wln(internet.lastHTTPHeaders[j]);
-            end;
-            if Assigned(internet) then contenttype := internet.getLastHTTPHeader('Content-Type');
-          end
-        end;
-
-        alreadyProcessed.Add(urls[0]+#1+post);
-        htmlparser.variableChangeLog.add('url', urls[0]);
-        decodeURL(urls[0], tempProto, tempHost, realUrl);
-        htmlparser.variableChangeLog.add('host', tempHost);
-        htmlparser.variableChangeLog.add('path', realUrl);
-
-
-        printStatus('**** Processing:'+urls[0]+' ****');
-        for j := 0 to high(extractions) do begin
-          if outputEncoding = eUnknown then htmlparser.OutputEncoding := outputEncoding
-          else htmlparser.OutputEncoding := eUTF8;
-
-          case extractions[j].extractKind of
-            ekTemplate: begin
-              htmlparser.UnnamedVariableName:=extractions[j].defaultName;
-              htmlparser.parseTemplate(extractions[j].extract); //todo reuse existing parser
-              htmlparser.parseHTML(data, makeAbsoluteFilePath(urls[0]), contenttype);
-              extractions[j].pageProcessed(nil,htmlparser);
-            end;
-            ekXPath, ekCSS, ekXQuery: begin
-              if firstExtraction then begin
-                firstExtraction := false;
-                if outputFormat = ofXMLWrapped then wln('<e>');
-              end else wln(outputArraySeparator[outputFormat]);
-
-              htmlparser.parseHTMLSimple(data, urls[0], contenttype);
-              xpathparser.RootElement := htmlparser.HTMLTree;
-              xpathparser.ParentElement := xpathparser.RootElement;
-              xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(urls[0]);
-              case extractions[j].extractKind of
-                ekCSS: xpathparser.parseCSS3(extractions[j].extract);
-                ekXPath: xpathparser.parseXPath2(extractions[j].extract);
-                ekXQuery: xpathparser.parseXQuery1(extractions[j].extract);
-              end;
-              tempvalue :=xpathparser.evaluate();
-              extractions[j].printExtractedValue(tempvalue);
-              wln;
-            end;
-            ekMultipage: if assigned (onPrepareInternet) then begin
-              multipage.onPageProcessed:=@extractions[j].pageProcessed;
-              multipage.internet := onPrepareInternet(userAgent, proxy);;
-              multipagetemp := TMultiPageTemplate.create();
-              multipagetemp.loadTemplateFromString(extractions[j].extract);
-              multipage.setTemplate(multipagetemp);
-              multipage.perform(extractions[j].templateActions);
-              multipage.setTemplate(nil);
-              multipagetemp.free;
-            end
-            else raise Exception.Create('Impossible');
-          end;
-        end;
-
-        if not cgimode and allowFileAccess and (length(downloads) > 0) then begin
-          realUrl := strSplitGet('?', realUrl);
-          realUrl := strSplitGet('#', realUrl);
-          j := strRpos('/', realUrl);
-          if j = 0 then begin
-            realPath := '';
-            realFile := realUrl;
-          end else begin
-            realPath := copy(realUrl, 1, j);
-            realFile := copy(realUrl, j + 1, length(realUrl) - j)
-          end;
-          if strBeginsWith(realPath, '/') then delete(realPath,1,1);
-
-          for j := 0 to high(downloads) do begin
-            downloadTo := htmlparser.replaceVars(downloads[j]);
-            {$ifdef win32}
-            downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
-            {$endif}
-            //Download abc/def/index.html
-            //    foo/bar/xyz   save in directory foo/bar with name xyz
-            //    foo/bar/      save in directory foo/bar/abc/def with name index.html
-            //    foo/bar/.     save in directory foo/bar with name index.html
-            //    foo           save in current directory/abc/def with name foo
-            //    ./            save in current directory/abc/def with name index.html
-            //    ./.           save in current directory with name index.html
-            //    .             save in current directory with name index.html
-            //    -             print to stdout
-            if downloadTo = '-' then begin
-              w(data);
-              continue;
-            end;
-            if downloadTo = './.' then downloadTo:=realPath+realFile
-            else if strEndsWith(downloadTo, '/.') then begin
-              SetLength(downloadto,Length(downloadTo)-1);
-              downloadTo:=downloadTo+realFile;
-            end else if strEndsWith(downloadTo, '/') then begin
-              downloadTo:=downloadTo+realPath+realFile;
-            end;
-            if strEndsWith(downloadTo, '/') or (downloadTo = '') then downloadTo += 'index.html';
-            printStatus('**** Save as: '+downloadTo+' ****');
-            if pos('/', downloadTo) > 0 then
-              ForceDirectories(StringReplace(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]), '/', DirectorySeparator, [rfReplaceAll]));
-            strSaveToFileUTF8(StringReplace(downloadTo, '/', DirectorySeparator, [rfReplaceAll]), data);
-          end;
-        end;
-
-        if follow <> '' then begin
-          htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
-
-          if follow[1] = '<' then begin //assume my template
-            htmlparser.parseTemplate(follow); //todo reuse existing parser
-            htmlparser.parseHTML(data, urls[0], contenttype);
-            for i:=0 to htmlparser.variableChangeLog.count-1 do
-              if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getName(i)) = -1)) or
-                 ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getName(i)) > -1)) then
-                followTo(htmlparser.variableChangeLog.get(i));
-          end else begin
-            //assume xpath
-            htmlparser.parseHTMLSimple(data, urls[0], contenttype);
-            xpathparser.RootElement := htmlparser.HTMLTree;
-            xpathparser.ParentElement := xpathparser.RootElement;
-            xpathparser.StaticContext. BaseUri := urls[0];
-            if strBeginsWith(follow, 'xquery') then xpathparser.parseXQuery1(follow)
-            else xpathparser.parseXPath2(follow);
-            followTo(xpathparser.evaluate());
-          end;
-        end;
-
-        deleteUrl0;
-        if wait > 0.001 then Sleep(trunc(wait * 1000));
-      end;
-    end;
+    baseContext.process(nil);
   except
     on e: EHTMLParseException do begin
       displayError(e, true);
@@ -1222,7 +1742,7 @@ begin
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
   mycmdLine.free;
-  alreadyProcessed.Free;
+  globalDuplicationList.Free;
 
   if outputFormat = ofJsonWrapped then wln(']')
   else if outputFormat = ofXMLWrapped then begin
