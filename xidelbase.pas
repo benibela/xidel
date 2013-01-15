@@ -385,7 +385,9 @@ TProcessingContext = class(TDataProcessing)
   procedure readOptions(reader: TOptionReaderWrapper); override;
   procedure mergeWithObject(obj: TXQValueObject); override;
 
+  procedure addNewDataSource(source: TDataProcessing);
   procedure readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
+  procedure addNewAction(action: TDataProcessing);
   procedure readNewAction(action: TDataProcessing; options: TOptionReaderWrapper);
 
   procedure assignOptions(other: TProcessingContext);
@@ -947,20 +949,30 @@ begin
   tempreader.free;
 end;
 
-procedure TProcessingContext.readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
+procedure TProcessingContext.addNewDataSource(source: TDataProcessing);
 begin
   SetLength(dataSources, length(dataSources) + 1);
-  dataSources[high(dataSources)] := TFollowToWrapper.Create;
+  dataSources[high(dataSources)] := source;
   dataSources[high(dataSources)].parent := self;
+end;
+
+procedure TProcessingContext.readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
+begin
+  addNewDataSource(TFollowToWrapper.Create);
   TFollowToWrapper(dataSources[high(dataSources)]).followTo := data;
   TFollowToWrapper(dataSources[high(dataSources)]).readOptions(options);
 end;
 
-procedure TProcessingContext.readNewAction(action: TDataProcessing; options: TOptionReaderWrapper);
+procedure TProcessingContext.addNewAction(action: TDataProcessing);
 begin
   SetLength(actions, length(actions) + 1);
   actions[high(actions)] := action;
   actions[high(actions)].parent := self;
+end;
+
+procedure TProcessingContext.readNewAction(action: TDataProcessing; options: TOptionReaderWrapper);
+begin
+  addNewAction(action);
   actions[high(actions)].readOptions(options);
 end;
 
@@ -1028,8 +1040,14 @@ var next, res: TFollowToList;
     i: Integer;
     tempProto, tempHost, tempPath: string;
   begin
-    printStatus('**** Processing:'+data.fullurl+' ****');
+    if follow <> '' then printStatus('**** Processing:'+data.fullurl+' ****')
+    else for i := 0 to high(actions) do
+      if actions[i] is TExtraction then begin
+        printStatus('**** Processing:'+data.fullurl+' ****');
+        break; //useless printing message if no extraction is there
+      end;
 
+    //printStatus(strFromPtr(self) + data.rawdata);
     //alreadyProcessed.Add(urls[0]+#1+post);
     htmlparser.variableChangeLog.add('url', data.fullurl);
     decodeURL(data.fullurl, tempProto, tempHost, tempPath);
@@ -1062,9 +1080,11 @@ var next, res: TFollowToList;
         res.merge(xpathparser.evaluate(), data, self);
       end;
 
-      if followTo <> nil then
+      if followTo <> nil then begin
         for i := 0 to res.Count - 1 do
           followto.process(TFollowTo(res[i]).retrieve(self));
+        res.Clear;
+      end;
     end;
   end;
 
@@ -1201,6 +1221,7 @@ begin
     else if strBeginsWith(extract, 'xquery') then extractKind:=ekXQuery
     else extractKind:=ekXPath;
 
+  //parent.printStatus(strFromPtr(self) + data.rawdata + ' :: ' + extract);
 
   currentFollowList := nil;
   currentData:=data;
@@ -1475,10 +1496,13 @@ end;
 type
 
 { TCommandLineReaderBreaker }
-
+TPropertyArray = array of TProperty;
 TCommandLineReaderBreaker = class(TCommandLineReader)
   procedure overrideVar(const name, value: string);
   procedure clearNameless;
+  procedure setProperties(newProperties: TPropertyArray);
+  function getProperties(): TPropertyArray;
+
 end;
 
 { TCommandLineReaderBreaker }
@@ -1493,12 +1517,42 @@ begin
   SetLength(nameless, 0);
 end;
 
+procedure TCommandLineReaderBreaker.setProperties(newProperties: TPropertyArray);
+begin
+  propertyArray := newProperties;
+end;
+
+function TCommandLineReaderBreaker.getProperties: TPropertyArray;
+begin
+  result := propertyArray;
+end;
+
 var currentContext: TProcessingContext;
     cmdlineWrapper: TOptionReaderFromCommandLine;
+    commandLineStack: array of array of TProperty;
+    contextStack: array of TProcessingContext;
+
+procedure pushCommandLineState;
+begin
+  SetLength(commandLineStack, length(commandLineStack) + 1);
+  commandLineStack[high(commandLineStack)] := TCommandLineReaderBreaker(mycmdline).getProperties;
+  SetLength(commandLineStack[high(commandLineStack)], length(commandLineStack[high(commandLineStack)]));
+  SetLength(contextStack, length(contextStack) + 2);
+  contextStack[high(contextStack) - 1] := currentContext;
+  contextStack[high(contextStack)] := nil;
+end;
+
+function popCommandLineState: TProcessingContext;
+begin
+  result := contextStack[high(contextStack) - 1];
+  SetLength(contextStack, length(contextStack) - 2);
+  TCommandLineReaderBreaker(mycmdline).setProperties(commandLineStack[high(commandLineStack)]);
+  SetLength(commandLineStack, high(commandLineStack));
+end;
 
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
 begin
-  if (name = 'follow') or (name = 'follow-file') or ((name = '') and (length(currentContext.actions) > 0))  then begin
+  if (name = 'follow') or (name = 'follow-file') or ((name = '') and (value <> '[') and (value <> ']') and (length(currentContext.actions) > 0))  then begin
     if name = 'follow-file' then
       if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('follow', '-')
       else TCommandLineReaderBreaker(sender).overrideVar('follow', strLoadFromFileChecked(value));
@@ -1540,9 +1594,26 @@ begin
     TCommandLineReaderBreaker(sender).overrideVar(name, value);
     currentContext.readNewAction(TDownload.Create, cmdlineWrapper)
   end else if (name = '') then begin
-    {if value = '[' then pushCommandLineOptions
-    else if value = ']' then popCommandLineOptions
-    else todo } currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    if value = '[' then begin
+      pushCommandLineState;
+      currentContext := TProcessingContext.Create;
+      currentContext.readOptions(cmdlineWrapper);
+      contextStack[high(contextStack)] := currentContext;
+    end
+    else if value = ']' then begin
+      if length(contextStack) <= 1 then raise Exception.Create('Closing ] without opening [');
+      currentContext.readOptions(cmdlineWrapper);
+
+      if ( (currentContext = contextStack[high(contextStack)]) and (length(currentContext.actions) = 0) and (length(currentContext.dataSources) > 0) ) //like in [ foobar xyz ]
+         or ((currentContext.follow <> '') and (length(contextStack[high(contextStack)].dataSources) > 0)) //like in [ http://example.org -e /tmp -f foobar -f //a ]
+         then
+        contextStack[high(contextStack) - 1].addNewDataSource(contextStack[high(contextStack)])
+       else
+        contextStack[high(contextStack) - 1].addNewAction(contextStack[high(contextStack)]);
+
+      currentContext := popCommandLineState;
+
+    end else currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
   end;
 end;
 
@@ -1653,6 +1724,8 @@ begin
 
   currentContext := TProcessingContext.Create;
   baseContext := currentContext;
+  SetLength(contextStack, 1);
+  contextStack[0] := baseContext;
 
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
   mycmdLine.parse();
@@ -1665,7 +1738,8 @@ begin
   end;
 
   currentContext.readOptions(cmdlineWrapper);
-  if length(currentContext.actions) <> 0 then currentContext.actions[high(currentContext.actions)].readOptions(cmdlineWrapper);
+  if (length(currentContext.actions) <> 0) and not (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
+    currentContext.actions[high(currentContext.actions)].readOptions(cmdlineWrapper); //last options wrap back, unless in [ ]
 
   if (currentContext.parent <> nil) and (length(currentContext.actions) = 0) and (length(currentContext.dataSources) = 0) then begin
     //this allows a trailing follow to recurse

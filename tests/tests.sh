@@ -48,6 +48,26 @@ tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json #deprecated option
 
+#Nesting
+tests/test.sh nest0a [ ]
+tests/test.sh nest0b '<empty/>'   [ ]
+tests/test.sh nest0c tests/a.xml  [ ]
+tests/test.sh nest1a tests/a.xml  [ -e //title ]
+tests/test.sh nest1b tests/b.xml  [ -e //title ]
+tests/test.sh nest1ab tests/a.xml  tests/b.xml [ -e //title ]
+tests/test.sh nest1ab2 tests/a.xml  tests/b.xml -e //title [ -e //title ] 
+tests/test.sh nest1ab3 tests/a.xml  tests/b.xml [ -e //title ] -e //title
+tests/test.sh nest1ab4 tests/a.xml  tests/b.xml -e 'concat("X", //title)' [ -e //title ] 
+tests/test.sh nest1ab5 tests/a.xml  tests/b.xml [ -e //title ] -e 'concat("Y", //title)'
+tests/test.sh nest2a tests/a.xml  [ -f //a -e //title ]
+tests/test.sh nest2b tests/a.xml -e //title [ -f //a -e //title ]
+tests/test.sh nest2c tests/a.xml  [ -f //a -e //title ] -e //title
+tests/test.sh nest2d tests/a.xml -e //title [ -f //a -e //title ] -e //title
+tests/test.sh nest3a [ tests/a.xml tests/b.xml ] -e //title
+tests/test.sh nest3a tests/a.xml tests/b.xml -e //title
+tests/test.sh nest3a -e //title [ tests/a.xml tests/b.xml ]  #brackets prevent sibling creation (good??)
+#tests/test.sh nest3a -e //title tests/a.xml tests/b.xml #only left match ? good??
+
 #Online test
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
 
