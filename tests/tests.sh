@@ -4,6 +4,10 @@ tests/test.sh t1   tests/a.xml
 tests/test.sh te   tests/a.xml -e //title 
 #Follow all a, print all titles
 tests/test.sh tfe  tests/a.xml -f //a     -e //title
+tests/test.sh tfe2 tests/b.xml -f //a     -e //title
+tests/test.sh tfe3 tests/c.xml -f //a     -e //title
+tests/test.sh tfe4 tests/d.xml -f //a     -e //title
+tests/test.sh tfe5 tests/dpre.xml -f //a     -e //title
 #Print all titles in all files that can be followed to
 tests/test.sh tef  tests/a.xml -e //title -f //a
 tests/test.sh tefe tests/a.xml -e //title -f //a      -e //title
@@ -22,6 +26,12 @@ tests/test.sh sibling1e "<a/>"  -e "a:=17" -e 'a:=$a+1'  tests/a.xml -e 'a:=$a+2
 tests/test.sh sibling2  '<a>123</a>' '<a>456</a>' -e '<a>{$x}</a>'
 tests/test.sh sibling2  -e '<a>{$x}</a>' '<a>123</a>' '<a>456</a>' 
 tests/test.sh sibling2b '<a>123</a>' -e '<a>{$x}</a>' '<a>456</a>' 
+tests/test.sh sibling3a '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")'
+tests/test.sh sibling3b -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' #extract applied to previous data (think that is good, right?)
+tests/test.sh sibling3c -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")' 
+
+tests/test.sh tfe  tests/a.xml -f //a     -e //title
+tests/test.sh tfe2 tests/b.xml -f //a     -e //title
 
 #read title from both
 tests/test.sh 2urls tests/a.xml -e //title tests/b.xml -e //title 
@@ -89,6 +99,9 @@ tests/test.sh nest5c -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
 tests/test.sh nest6a [ -e 1+2 ] 
 tests/test.sh nest6b [ -e 1+2 ] [ -e 3+4 ]
 tests/test.sh nest6c [ -e 1+2 ] [ -e 3+4 ] [ -e 5+6 ]
+tests/test.sh nest7 [ tests/a.xml -f //a     -e //title ] [ tests/dpre.xml -f //a     -e //title ]
+tests/test.sh nest8 tests/a.xml [ -f //a     -e //title   tests/dpre.xml -f //a     -e //title ]
+tests/test.sh nest8 tests/a.xml   -f //a  [  -e //title   tests/dpre.xml -f //a     -e //title ]
 
 #Online test
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"

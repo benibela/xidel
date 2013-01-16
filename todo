@@ -37,16 +37,19 @@ fix xml/html output format with variables (currently it just prints the adhoc va
 
 --------
 
+think about siblings.
 
-xidel -e concat(//title, "a") http://www.example.org -e concat(//title, "b") http://www.google.com 
+Is
 
-xidel http://www.example.org -e concat(//title, "b") http://www.google.com -e concat(//title, "c") 
+ ./xidel tests/a.xml -f //a     -e //title  tests/dpre.xml -f //a     -e //title
 
-xidel -e concat(//title, "a") http://www.example.org -e concat(//title, "b") http://www.google.com -e concat(//title, "c") 
+tests/test.sh nest7 [ tests/a.xml -f //a     -e //title ] [ tests/dpre.xml -f //a     -e //title ]
 
-should print (example, "a"), (google b), (google c) ?
-or     print (example, "a"), (example b), (google c) ?
+or
 
+tests/test.sh nest8 tests/a.xml [ -f //a     -e //title   tests/dpre.xml -f //a     -e //title ]
+
+?
 
 http://xx -e value:=//. --post='name=$value;' http://www.google.de -e //g
 
