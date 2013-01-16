@@ -395,6 +395,7 @@ TProcessingContext = class(TDataProcessing)
 
   function clone: TDataProcessing; override;
 
+  procedure insertFictiveDatasourceIfNeeded; //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
 
   function process(data: TData): TFollowToList; override;
 end;
@@ -632,6 +633,7 @@ end;
 
 function TDirectDataRequest.equalTo(ft: TFollowTo): boolean;
 begin
+  if data = '<empty/>' then exit(false); //it is just a placeholder anyways
   result := (ft is TDirectDataRequest) and (TDirectDataRequest(ft).data = data);
 end;
 
@@ -960,7 +962,8 @@ procedure TProcessingContext.readNewDataSource(data: TFollowTo; options: TOption
 begin
   addNewDataSource(TFollowToWrapper.Create);
   TFollowToWrapper(dataSources[high(dataSources)]).followTo := data;
-  TFollowToWrapper(dataSources[high(dataSources)]).readOptions(options);
+  if options <> nil then
+    TFollowToWrapper(dataSources[high(dataSources)]).readOptions(options);
 end;
 
 procedure TProcessingContext.addNewAction(action: TDataProcessing);
@@ -1019,6 +1022,27 @@ begin
     TProcessingContext(result).dataSources[i] := dataSources[i].clone;
   if nextSibling <> nil then
     TProcessingContext(result).nextSibling := nextSibling.clone as TProcessingContext;
+end;
+
+procedure TProcessingContext.insertFictiveDatasourceIfNeeded;
+var
+  i: Integer;
+  needDatasource: Boolean;
+begin
+  if Length(dataSources) > 0 then exit();
+  if Length(actions) = 0 then exit();
+  needDatasource := false;
+  for i := 0 to high(actions) do
+    if not (actions[i] is TProcessingContext) then begin
+      needDatasource := true;
+      break;
+    end;
+  if needDatasource then
+    readNewDataSource(TFollowTo.createFromRetrievalAddress('<empty/>'), nil)
+   else for i := 0 to high(actions) do
+    if actions[i] is TProcessingContext then
+      TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded;
+  exit();
 end;
 
 function encodingName(e: TEncoding): string;
@@ -1107,11 +1131,18 @@ begin
     next.merge(dataSources[i].process(nil));
   if (length(actions) = 0) and (follow = '') then
     exit(next);
+
+  if (data = nil) and (length(dataSources) = 0) and (length(actions) > 0) then
+    for i := 0 to high(actions) do
+      if actions[i] is TProcessingContext then //evaluate subexpressions, even if there is no data source (they might have their own sources)
+        next.merge(actions[i].process(nil));
+
   while next.Count > 0 do begin
     subProcess(next.First.retrieve(self));
     if wait > 0.001 then Sleep(trunc(wait * 1000));
     next.Delete(0);
   end;
+
 
   result := res;
   if nextSibling <> nil then begin
@@ -1222,7 +1253,6 @@ begin
     else extractKind:=ekXPath;
 
   //parent.printStatus(strFromPtr(self) + data.rawdata + ' :: ' + extract);
-
   currentFollowList := nil;
   currentData:=data;
 
@@ -1753,10 +1783,18 @@ begin
       currentContext.actions[i] := currentContext.actions[i].clone;
   end;
 
-  if (currentContext.parent = nil) and (length(currentContext.dataSources) = 0) and (length(currentContext.actions) > 0) then begin
-    //this allows data less evaluations, like xidel -e 1+2+3
-    currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress('<empty/>'), cmdlineWrapper);
+  if (currentContext.parent = nil) and (baseContext.nextSibling = currentContext) and (length(baseContext.dataSources) = 0) and (length(currentContext.actions) = 0) and (currentContext.follow = '') then begin
+    //wrap command lines exactly like -e query data1 data2... to data1 data2... -e query, (for e.g. xargs)
+    currentContext.actions := baseContext.actions;
+    SetLength(baseContext.actions,0);
+    baseContext.nextSibling := nil;
+    baseContext.free;
+    baseContext := currentContext;
   end;
+
+
+  baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
+
   cmdlineWrapper.Free;
 
   outputHeader := mycmdline.readString('output-header');

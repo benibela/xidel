@@ -13,10 +13,22 @@ tests/test.sh direct_hidden_vars1 --hide-variable-names '<a>foobar</a>' -e '<a>{
 tests/test.sh direct_hidden_vars2 '<a>foobar</a>' --hide-variable-names -e '<a>{.}</a>' 
 tests/test.sh direct_hidden_vars3 '<a>foobar</a>' -e '<a>{.}</a>' --hide-variable-names
 
+#"sibling tests"
+tests/test.sh sibling1a '<empty/>' -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
+tests/test.sh sibling1b "<a/>"  -e "a:=17"  tests/a.xml -e 'a:=909'
+tests/test.sh sibling1c "<a/>"  -e "a:=17"  tests/a.xml -e 'a:=909' -e 'a:=10'
+tests/test.sh sibling1d "<a/>"  -e "a:=17" -e 'a:=$a+1'  tests/a.xml -e 'a:=$a+2' -e 'a:=$a+3'
+tests/test.sh sibling1e "<a/>"  -e "a:=17" -e 'a:=$a+1'  tests/a.xml -e 'a:=$a+2' -e 'a:=$a+3' '<b/>' -e 'a:=$a+4' -e 'a:=$a+5'
+tests/test.sh sibling2  '<a>123</a>' '<a>456</a>' -e '<a>{$x}</a>'
+tests/test.sh sibling2  -e '<a>{$x}</a>' '<a>123</a>' '<a>456</a>' 
+tests/test.sh sibling2b '<a>123</a>' -e '<a>{$x}</a>' '<a>456</a>' 
+
 #read title from both
 tests/test.sh 2urls tests/a.xml -e //title tests/b.xml -e //title 
 #not separated urls
 tests/test.sh 2urls2read tests/a.xml tests/b.xml -e //title -e //title
+
+
 
 #stdin
 echo '<test>123<x/>foo<abc>bar</abc>def<x/></test>' | tests/test.sh stdin1 - -e //abc
@@ -67,6 +79,16 @@ tests/test.sh nest3a [ tests/a.xml tests/b.xml ] -e //title
 tests/test.sh nest3a tests/a.xml tests/b.xml -e //title
 tests/test.sh nest3a -e //title [ tests/a.xml tests/b.xml ]  #brackets prevent sibling creation (good??)
 #tests/test.sh nest3a -e //title tests/a.xml tests/b.xml #only left match ? good??
+tests/test.sh nest4 -e 1+2
+tests/test.sh nest4 [ -e 1+2 ]
+tests/test.sh nest4 [ [ -e 1+2 ] ]
+tests/test.sh nest4 [ [ [ -e 1+2 ] ] ] 
+tests/test.sh nest5a [ "<a/>"  -e "a:=17" ] [  tests/a.xml -e 'a:=909'  ]
+tests/test.sh nest5b [ "<a/>"  -e "a:=17" ] [  tests/a.xml -e 'a:=909'  ] [ -e '$a' ] 
+tests/test.sh nest5c -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
+tests/test.sh nest6a [ -e 1+2 ] 
+tests/test.sh nest6b [ -e 1+2 ] [ -e 3+4 ]
+tests/test.sh nest6c [ -e 1+2 ] [ -e 3+4 ] [ -e 5+6 ]
 
 #Online test
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
