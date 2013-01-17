@@ -216,6 +216,7 @@ TProcessingContext = class;
 { TFollowTo }
 
 TFollowTo = class
+  nextAction: integer; //the next action after the action yielding the data, so an action does not process its own follows
   class function createFromRetrievalAddress(data: string): TFollowTo;
   function clone: TFollowTo; virtual; abstract;
   function retrieve(parent: TProcessingContext): TData; virtual; abstract;
@@ -266,6 +267,16 @@ TStdinDataRequest = class(TFollowTo)
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
+{ TFollowToProcessedData }
+
+TFollowToProcessedData = class(TFollowTo)
+  data: TData;
+  constructor create(d: TData);
+  function clone: TFollowTo; override;
+  function retrieve(parent: TProcessingContext): TData; override;
+  function equalTo(ft: TFollowTo): boolean; override;
+end;
+
 {TFollowXQV = class(TFollowTo)
   xqv: TXQValue;
   //can be url/http-request, file(?), data
@@ -278,7 +289,7 @@ end;}
 
 TFollowToList = class(TFpObjectList)
   constructor Create;
-  procedure merge(l: TFollowToList);
+  procedure merge(l: TFollowToList; nextAction: integer = 0);
   function first: TFollowTo;
 
   procedure add(ft: TFollowTo);
@@ -380,6 +391,8 @@ TProcessingContext = class(TDataProcessing)
 
   compatibilityNoExtendedStrings,compatibilityNoObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
 
+  yieldDataToParent: boolean;
+
   procedure printStatus(s: string);
 
   procedure readOptions(reader: TOptionReaderWrapper); override;
@@ -395,12 +408,36 @@ TProcessingContext = class(TDataProcessing)
 
   function clone: TDataProcessing; override;
 
+  function last: TProcessingContext; //returns the last context in this sibling/follow chain
+
   procedure insertFictiveDatasourceIfNeeded; //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
 
   function process(data: TData): TFollowToList; override;
 end;
 
 type EInvalidArgument = Exception;
+
+{ TFollowToProcessedData }
+
+constructor TFollowToProcessedData.create(d: TData);
+begin
+  data := d;
+end;
+
+function TFollowToProcessedData.clone: TFollowTo;
+begin
+  result :=  TFollowToProcessedData.Create(data);
+end;
+
+function TFollowToProcessedData.retrieve(parent: TProcessingContext): TData;
+begin
+  result := data;
+end;
+
+function TFollowToProcessedData.equalTo(ft: TFollowTo): boolean;
+begin
+  result := (ft is TFollowToProcessedData) and (TFollowToProcessedData(ft).data = data);
+end;
 
 { TOptionReaderFromObject }
 
@@ -710,13 +747,15 @@ begin
   OwnsObjects:=true;
 end;
 
-procedure TFollowToList.merge(l: TFollowToList);
+procedure TFollowToList.merge(l: TFollowToList; nextAction: integer = 0);
 var
   i: Integer;
 begin
   if l = nil then exit;
-  for i := 0 to l.Count-1 do
+  for i := 0 to l.Count-1 do begin
+    TFollowTo(l[i]).nextAction := nextAction;
     inherited add(TFollowTo(l[i]));
+  end;
   l.OwnsObjects:=false;
   l.free;
 end;
@@ -1024,6 +1063,13 @@ begin
     TProcessingContext(result).nextSibling := nextSibling.clone as TProcessingContext;
 end;
 
+function TProcessingContext.last: TProcessingContext;
+begin
+  if nextSibling <> nil then exit(nextSibling.last);
+  if followTo <> nil then exit(followTo.last);
+  exit(self);
+end;
+
 procedure TProcessingContext.insertFictiveDatasourceIfNeeded;
 var
   i: Integer;
@@ -1059,13 +1105,13 @@ end;
 
 function TProcessingContext.process(data: TData): TFollowToList;
 var next, res: TFollowToList;
-  procedure subProcess(data: TData);
+  procedure subProcess(data: TData; skipActions: integer = 0);
   var
     i: Integer;
     tempProto, tempHost, tempPath: string;
   begin
     if follow <> '' then printStatus('**** Processing:'+data.fullurl+' ****')
-    else for i := 0 to high(actions) do
+    else for i := skipActions to high(actions) do
       if actions[i] is TExtraction then begin
         printStatus('**** Processing:'+data.fullurl+' ****');
         break; //useless printing message if no extraction is there
@@ -1078,9 +1124,15 @@ var next, res: TFollowToList;
     htmlparser.variableChangeLog.add('host', tempHost);
     htmlparser.variableChangeLog.add('path', tempPath);
 
+    if yieldDataToParent then begin
+      if res = nil then res := TFollowToList.Create;
+      res.add(TFollowToProcessedData.create(data));
+    end;
 
-    for i := 0 to high(actions) do
-      next.merge(actions[i].process(data));
+
+    for i := skipActions to high(actions) do
+      next.merge(actions[i].process(data), i + 1);
+
     if follow <> '' then begin
       if res = nil then res := TFollowToList.Create;
 
@@ -1134,10 +1186,10 @@ begin
   if (data = nil) and (length(dataSources) = 0) and (length(actions) > 0) then
     for i := 0 to high(actions) do
       if actions[i] is TProcessingContext then //evaluate subexpressions, even if there is no data source (they might have their own sources)
-        next.merge(actions[i].process(nil));
+        next.merge(actions[i].process(nil), i + 1);
 
   while next.Count > 0 do begin
-    subProcess(next.First.retrieve(self));
+    subProcess(next.First.retrieve(self), next.first.nextAction);
     if wait > 0.001 then Sleep(trunc(wait * 1000));
     next.Delete(0);
   end;
@@ -1578,6 +1630,8 @@ begin
     TCommandLineReaderBreaker(sender).clearNameless;
 
     if name <> '' then begin
+      if (length(currentContext.actions) > 0) and (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
+        TProcessingContext(currentContext.actions[high(currentContext.actions)]).last.yieldDataToParent := true; //a follow directly after a closing bracket like ] -f // will apply it to the last data there
       //following (applying the later commands to the data read by the current context)
       currentContext.followTo := TProcessingContext.Create;
       currentContext.followTo.assignOptions(currentContext);

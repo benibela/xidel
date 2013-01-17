@@ -29,7 +29,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="[ tests/a.xml  -e //title -f //a ] -e //title"/>
+        <CommandLineParams Value="[ tests/a.xml  -e //title ] -f //a  -e 'concat(//title, &quot;x&quot;)'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
