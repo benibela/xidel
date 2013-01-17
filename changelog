@@ -1,0 +1,36 @@
+Some important changes:
+
+--------Xidel 0.7--------
+
+* Improved handling of extract/follow command line chains:
+  Following occurs in depth-first-search
+  Brackets [ ] can be used to group arguments together (e.g. [ -f //a -e //title ] to read the titles of all pages linked on the current page, without changing the current page)
+
+* The old json/xml output formats are now called json-wrapped and xml-wrapped
+* Added html and xml output formats, which will just print the elements in their format 
+  with the respective headers  
+
+* Fix a few xml/html parsing and serialization bugs (e.g. added closing tags for <link>)
+* Added an option to print elements as html, instead as xml
+
+* Added outer-html, inner-html functions to the XPath engine which will serialize the element
+  in a string
+
+* Added support for different http request methods (e.g. PUT)
+
+
+--------Xidel 0.6--------
+
+* Full XQuery 1 support (except XML schema and static type checking, but these are XQuery optional features)
+
+* Added a match function to perform pattern matching between XML documents
+* Added a form function to convert a html form in a http request
+
+* Handle '-single quotes in Windows command line
+* Support for Windows console OEM encoding
+
+* Fix a few XPath 2 interpreter bugs (e.g. wrong namespace for functions)
+
+--------Xidel 0.5--------
+
+Initial release
