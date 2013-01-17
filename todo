@@ -35,21 +35,10 @@ add system function to pxp
 
 fix xml/html output format with variables (currently it just prints the adhoc value)
 
+ignore namespace option
+
 --------
 
-think about siblings.
-
-Is
-
- ./xidel tests/a.xml -f //a     -e //title  tests/dpre.xml -f //a     -e //title
-
-tests/test.sh nest7 [ tests/a.xml -f //a     -e //title ] [ tests/dpre.xml -f //a     -e //title ]
-
-or
-
-tests/test.sh nest8 tests/a.xml [ -f //a     -e //title   tests/dpre.xml -f //a     -e //title ]
-
-?
 
 http://xx -e value:=//. --post='name=$value;' http://www.google.de -e //g
 

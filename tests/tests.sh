@@ -29,6 +29,7 @@ tests/test.sh sibling2b '<a>123</a>' -e '<a>{$x}</a>' '<a>456</a>'
 tests/test.sh sibling3a '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")'
 tests/test.sh sibling3b -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' #extract applied to previous data (think that is good, right?)
 tests/test.sh sibling3c -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")' 
+tests/test.sh sibling4 tests/a.xml  -f //a     -e //title   tests/dpre.xml -f //a     -e //title  # dpre is bound to the followed link not a, so you can access the variables defined there
 
 tests/test.sh tfe  tests/a.xml -f //a     -e //title
 tests/test.sh tfe2 tests/b.xml -f //a     -e //title
@@ -118,9 +119,17 @@ tests/test.sh nest10 tests/a.xml -e //title [ -f //a -e //title ]
 tests/test.sh nest10 [ tests/a.xml ] -e //title -f //a -e //title 
 tests/test.sh nest10 [ tests/a.xml  -e //title -f //a ] -e //title 
 tests/test.sh nest10b [ tests/a.xml  -e //title -f //a ] -e 'concat(//title, "x")'
+tests/test.sh nest10 [ tests/a.xml  -e //title ] -f //a  -e //title 
+tests/test.sh nest10b [ tests/a.xml  -e //title ] -f //a -e 'concat(//title, "x")'
+tests/test.sh nest10b [ tests/a.xml ] -e //title  -f //a -e 'concat(//title, "x")'
+tests/test.sh nest10b tests/a.xml [ -e //title ] -f //a -e 'concat(//title, "x")'
+tests/test.sh nest10c tests/a.xml [ -e //title  -f //a ] -e 'concat(//title, "x")' # this blocks the follow to ascend to the parent (good ? yielding becomes confusing if there are many nested blocks yielding to each other (and it would still apply to a.xml) )
 
-#Online test
+#Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
+tests/test.sh post1a  --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
+tests/test.sh post1b  --post test http://videlibri.sourceforge.net/xidelecho.php -e //raw
+
 
 #Regressions tests for bugs that have been fixed and should not appear again
 tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a></r>'

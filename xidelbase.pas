@@ -222,6 +222,7 @@ TFollowTo = class
   function retrieve(parent: TProcessingContext): TData; virtual; abstract;
   procedure replaceVariables; virtual;
   function equalTo(ft: TFollowTo): boolean; virtual; abstract;
+  procedure readOptions(reader: TOptionReaderWrapper); virtual;
 end;
 
 { THTTPRequest }
@@ -235,6 +236,7 @@ THTTPRequest = class(TFollowTo)
   function retrieve(parent: TProcessingContext): TData; override;
   procedure replaceVariables; override;
   function equalTo(ft: TFollowTo): boolean; override;
+  procedure readOptions(reader: TOptionReaderWrapper); override;
 end;
 
 { TFileRequest }
@@ -366,6 +368,7 @@ end;
 
 TFollowToWrapper = class(TDataProcessing)
   followTo: TFollowTo;
+  procedure readOptions(reader: TOptionReaderWrapper); override;
   function process(data: TData): TFollowToList; override;
   function clone: TDataProcessing; override;
 end;
@@ -621,6 +624,15 @@ begin
   result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data);
 end;
 
+procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
+var temp: string;
+begin
+  reader.read('post', data);
+  if reader.read('method', temp) then method:=temp
+  else if data <> '' then method:='POST'
+  else method:='GET';
+end;
+
 { TFileRequest }
 
 constructor TFileRequest.create(aurl: string);
@@ -720,7 +732,17 @@ begin
   //empty
 end;
 
+procedure TFollowTo.readOptions(reader: TOptionReaderWrapper);
+begin
+  //empty
+end;
+
 { TFollowToWrapper }
+
+procedure TFollowToWrapper.readOptions(reader: TOptionReaderWrapper);
+begin
+  followTo.readOptions(reader);
+end;
 
 function TFollowToWrapper.process(data: TData): TFollowToList;
 var
