@@ -82,13 +82,21 @@ tests/test.sh nest1ab3 tests/a.xml  tests/b.xml [ -e //title ] -e //title
 tests/test.sh nest1ab4 tests/a.xml  tests/b.xml -e 'concat("X", //title)' [ -e //title ] 
 tests/test.sh nest1ab5 tests/a.xml  tests/b.xml [ -e //title ] -e 'concat("Y", //title)'
 tests/test.sh nest2a tests/a.xml  [ -f //a -e //title ]
+tests/test.sh nest2a tests/a.xml  -f //a [ -e //title ]
 tests/test.sh nest2b tests/a.xml -e //title [ -f //a -e //title ]
+tests/test.sh nest2b tests/a.xml -e //title -f //a [ -e //title ]
 tests/test.sh nest2c tests/a.xml  [ -f //a -e //title ] -e //title
 tests/test.sh nest2d tests/a.xml -e //title [ -f //a -e //title ] -e //title
+tests/test.sh nest2e tests/a.xml  -f //a [ -e //title ] -e //title
 tests/test.sh nest3a [ tests/a.xml tests/b.xml ] -e //title
 tests/test.sh nest3a tests/a.xml tests/b.xml -e //title
-tests/test.sh nest3a -e //title [ tests/a.xml tests/b.xml ]  #brackets prevent sibling creation (good??)
-#tests/test.sh nest3a -e //title tests/a.xml tests/b.xml #only left match ? good??
+tests/test.sh nest3a tests/a.xml [ tests/b.xml -e //title ]
+tests/test.sh nest3a tests/a.xml [ tests/b.xml [ -e //title ] ]
+tests/test.sh nest3a -e //title tests/a.xml tests/b.xml
+tests/test.sh nest3a -e //title [ tests/a.xml tests/b.xml ] 
+tests/test.sh nest3a -e //title tests/a.xml [ tests/b.xml ]  
+tests/test.sh nest3a tests/a.xml -e //title  [ tests/b.xml ]  #brackets prevent sibling creation (good??)
+tests/test.sh nest3b tests/a.xml -e //title  tests/b.xml 
 tests/test.sh nest4 -e 1+2
 tests/test.sh nest4 [ -e 1+2 ]
 tests/test.sh nest4 [ [ -e 1+2 ] ]
@@ -102,6 +110,14 @@ tests/test.sh nest6c [ -e 1+2 ] [ -e 3+4 ] [ -e 5+6 ]
 tests/test.sh nest7 [ tests/a.xml -f //a     -e //title ] [ tests/dpre.xml -f //a     -e //title ]
 tests/test.sh nest8 tests/a.xml [ -f //a     -e //title   tests/dpre.xml -f //a     -e //title ]
 tests/test.sh nest8 tests/a.xml   -f //a  [  -e //title   tests/dpre.xml -f //a     -e //title ]
+tests/test.sh nest9a tests/a.xml -f //a -e //title -f //a -e //title
+tests/test.sh nest9b tests/a.xml [ -f //a -e //title -f //a ] -e //title
+tests/test.sh nest9c tests/a.xml [ -f //a -e //title -f //a -e //title ] -e //title
+tests/test.sh nest10 tests/a.xml [ -e //title -f //a -e //title ] 
+tests/test.sh nest10 tests/a.xml -e //title [ -f //a -e //title ] 
+tests/test.sh nest10 [ tests/a.xml ] -e //title -f //a -e //title 
+tests/test.sh nest10 [ tests/a.xml  -e //title -f //a ] -e //title 
+tests/test.sh nest10b [ tests/a.xml  -e //title -f //a ] -e 'concat(//title, "x")'
 
 #Online test
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"

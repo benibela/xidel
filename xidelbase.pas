@@ -1103,7 +1103,6 @@ var next, res: TFollowToList;
         else xpathparser.parseXPath2(follow);
         res.merge(xpathparser.evaluate(), data, self);
       end;
-
       if followTo <> nil then begin
         for i := 0 to res.Count - 1 do
           followto.process(TFollowTo(res[i]).retrieve(self));
@@ -1150,19 +1149,6 @@ begin
     if result = nil then result := res
     else result.merge(res);
   end;
-  { some examples:
-      [ -e //title -f //a  ]
-      http://www.google.de http://www.example.org -e //title
-
-      http://www.google.de -e //a1 http://www.example.org -e //a2
-
-      [ http://www.google.de  http://www.example.org ] -e //a2
-
-      http://example.org -f //a [ -e //title ]
-
-      http://example.org  [ -f //a -e //title -f //x ]
-
-      http://example.org  [ http://google.de -e //title ]}
 end;
 
 procedure TExtraction.printExtractedValue(value: IXQValue);
@@ -1635,10 +1621,15 @@ begin
       currentContext.readOptions(cmdlineWrapper);
 
       if ( (currentContext = contextStack[high(contextStack)]) and (length(currentContext.actions) = 0) and (length(currentContext.dataSources) > 0) ) //like in [ foobar xyz ]
-         or ((currentContext.follow <> '') and (length(contextStack[high(contextStack)].dataSources) > 0)) //like in [ http://example.org -e /tmp -f foobar -f //a ]
-         then
-        contextStack[high(contextStack) - 1].addNewDataSource(contextStack[high(contextStack)])
-       else
+         or ((currentContext.parent <> nil) and (currentContext.parent.follow <> '') and (length(currentContext.actions) = 0) and (length(contextStack[high(contextStack)].dataSources) > 0)) //like in [ http://example.org -e /tmp -f foobar -f //a ]
+         then begin
+        contextStack[high(contextStack) - 1].addNewDataSource(contextStack[high(contextStack)]);
+        if (currentContext.parent <> nil) and (currentContext.parent.followTo = currentContext)  then begin
+          currentContext := currentContext.parent;
+          currentContext.followTo.free;
+          currentContext.followTo := nil; //remove follow, so addresses are yielded to parent
+        end;
+       end else
         contextStack[high(contextStack) - 1].addNewAction(contextStack[high(contextStack)]);
 
       currentContext := popCommandLineState;

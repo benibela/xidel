@@ -80,12 +80,6 @@ Input Stack, Extract Stack, Follow Stack
   -f ...              push on follow stack,  commit input stack, commit extract stack
 ???
 
-  Or plain data, begin new independent block!
-
-xidel http://example.org -f //a -e //title http://google.com -f //a -e //title 
-
-xidel http://example.org -f //a http://google.com -e //title 
-
 
 
 
