@@ -627,10 +627,16 @@ end;
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
 begin
-  reader.read('post', data);
-  if reader.read('method', temp) then method:=temp
-  else if data <> '' then method:='POST'
-  else method:='GET';
+  method:='GET';
+  if reader.read('post', data) then
+    method:='POST';
+  if reader.read('method', temp) then begin
+    method:=temp;
+    if method = '-' then
+      method := trim(strReadFromStdin);
+  end;
+  if data = '-' then
+    data := strReadFromStdin;
 end;
 
 { TFileRequest }
