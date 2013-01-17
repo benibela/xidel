@@ -616,7 +616,9 @@ end;
 
 procedure THTTPRequest.replaceVariables;
 begin
-  inherited replaceVariables;
+  url := htmlparser.replaceVars(url);
+  method := htmlparser.replaceVars(method);
+  data := htmlparser.replaceVars(data);
 end;
 
 function THTTPRequest.equalTo(ft: TFollowTo): boolean;
