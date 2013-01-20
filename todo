@@ -27,7 +27,7 @@ FIX:
 
 FIX: follow urls containing # anchor reference
 
-removed http: prefix
+removed http: prefix (done with download??)
 
 add download option to multipage template
 
@@ -37,15 +37,11 @@ fix xml/html output format with variables (currently it just prints the adhoc va
 
 ignore namespace option
 
+fix memory leaks
+
+add $raw (or raw()) variable/function containing the raw text
+
 --------
-
-
-http://xx -e value:=//. --post='name=$value;' http://www.google.de -e //g
-
-http://xx -e value:=//. [ --post='name=$value;' http://www.google.de -e //g ]
-
-http://xxx -e value:=// --post='name=$value' -f //form/@action
-
 
 Realworld:
 
@@ -59,16 +55,6 @@ multiple link interpretation:
 recursion:
 
 xidel "http://www.reddit.com/user/username/" --extract "<t:loop><div class='usertext-body'><div>{outer-xml(.)}</div></div><ul class='flat-list buttons'><a><t:s>link:=@href</t:s>permalink</a></ul></div></div></t:loop>" --follow "<a rel='nofollow next'>{.}</a>?" 
-
-
-
-Input Stack, Extract Stack, Follow Stack
-
-  http://something    push on input stack
-  -e ...              push on extract stack, commit input stack
-  -f ...              push on follow stack,  commit input stack, commit extract stack
-???
-
 
 
 
@@ -107,9 +93,6 @@ Parse DFS if no brackets are given BFS otherwise
 
 
 
-Parse arguments LTR 
-Modifiers affect following command (--extract-kind css --extract .)
-
 
 add --no-repetition-check
 
@@ -144,7 +127,6 @@ PASCAL:
         
         how to handle differnt post data to different urls
         
-  TODO: PUT requests!
   	
   TEST: for ' " encoding in multipage template serialization
   

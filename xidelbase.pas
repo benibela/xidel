@@ -218,6 +218,7 @@ TProcessingContext = class;
 TFollowTo = class
   nextAction: integer; //the next action after the action yielding the data, so an action does not process its own follows
   class function createFromRetrievalAddress(data: string): TFollowTo;
+
   function clone: TFollowTo; virtual; abstract;
   function retrieve(parent: TProcessingContext): TData; virtual; abstract;
   procedure replaceVariables; virtual;
@@ -516,7 +517,7 @@ end;
 
 function TDownload.process(data: TData): TFollowToList;
 var
-  realUrl: String;
+  temp, realUrl: String;
   j: LongInt;
   realPath: String;
   realFile: String;
@@ -526,7 +527,10 @@ begin
   if cgimode or not allowFileAccess then
     raise Exception.Create('Download not permitted');
 
-  realUrl := strSplitGet('?', data.fullurl);
+  realUrl := data.fullurl;
+  if guessType(realUrl) = rtRemoteURL then decodeURL(realUrl, temp, temp, realUrl);
+
+  realUrl := strSplitGet('?', realUrl);
   realUrl := strSplitGet('#', realUrl);
   j := strRpos('/', realUrl);
   if j = 0 then begin
@@ -536,34 +540,35 @@ begin
     realPath := copy(realUrl, 1, j);
     realFile := copy(realUrl, j + 1, length(realUrl) - j)
   end;
-  if strBeginsWith(realPath, '/') then delete(realPath,1,1);
+  while strBeginsWith(realPath, '/') do delete(realPath,1,1);
 
   downloadTo := htmlparser.replaceVars(Self.downloadTarget);
   {$ifdef win32}
   downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
   {$endif}
 
-  //Download abc/def/index.html
+  //If downloadTo is a file                               : save with that name
+  //If downloadTo is a directory and does not end with /  : save with basename
+  //If downloadTo is a directory and does     end with /  : save with path and basename
+  //If downloadTo is -                                    : print to stdout
+
+  //example: Download abc/def/index.html
   //    foo/bar/xyz   save in directory foo/bar with name xyz
   //    foo/bar/      save in directory foo/bar/abc/def with name index.html
   //    foo/bar/.     save in directory foo/bar with name index.html
-  //    foo           save in current directory/abc/def with name foo
+  //    foo           save in current directory with name foo
   //    ./            save in current directory/abc/def with name index.html
   //    ./.           save in current directory with name index.html
-  //    .             save in current directory with name index.html        TODO: fix
+  //    .             save in current directory with name index.html
   //    -             print to stdout
   if downloadTo = '-' then begin
     w(data.rawdata);
     exit;
   end;
-  if downloadTo = './.' then downloadTo:=realPath+realFile
-  else if strEndsWith(downloadTo, '/.') then begin
-    SetLength(downloadto,Length(downloadTo)-1);
-    downloadTo:=downloadTo+realFile;
-  end else if strEndsWith(downloadTo, '/') then begin
-    downloadTo:=downloadTo+realPath+realFile;
-  end;
-  if strEndsWith(downloadTo, '/') or (downloadTo = '') then downloadTo += 'index.html';
+  if strEndsWith(downloadTo, '/.') then downloadTo := downloadTo + '/' + realFile
+  else if strEndsWith(downloadTo, '/') then downloadTo := downloadTo + '/' + realPath + realFile
+  else if DirectoryExists(downloadTo) or (downloadTo = '.' { <- redunant check, but safety first }) then downloadTo := downloadTo + '/' + realFile;
+  if strEndsWith(downloadTo, '/') or (downloadTo = '') then downloadTo += 'index.html'; //sometimes realFile is empty
   parent.printStatus('**** Save as: '+downloadTo+' ****');
   if pos('/', downloadTo) > 0 then
     ForceDirectories(StringReplace(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]), '/', DirectorySeparator, [rfReplaceAll]));
@@ -658,6 +663,7 @@ begin
   if not allowFileAccess then raise Exception.Create('File access not permitted');
   parent.printStatus('**** Retrieving:'+url+' ****');
   result := tdata.create(strLoadFromFileUTF8(url), url);
+
 end;
 
 procedure TFileRequest.replaceVariables;
