@@ -71,6 +71,19 @@ tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json #deprecated option
 
+tests/test.sh adhoc4 -e '"<foobar>"' 
+tests/test.sh xml4 -e '"<foobar>"' --output-format xml-wrapped
+tests/test.sh json4 -e '"<foobar>"' --output-format json-wrapped
+tests/test.sh xmlraw4 -e '"<foobar>"' --output-format xml
+tests/test.sh htmlraw4 -e '"<foobar>"' --output-format html
+
+tests/test.sh adhoc4b -e 'xquery version "1.0"; <foobar/>' 
+tests/test.sh xml4b -e 'xquery version "1.0"; <foobar/>' --output-format xml-wrapped
+tests/test.sh json4b -e 'xquery version "1.0"; <foobar/>' --output-format json-wrapped
+tests/test.sh xmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format xml
+tests/test.sh htmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format html
+
+
 #Nesting
 tests/test.sh nest0a [ ]
 tests/test.sh nest0b '<empty/>'   [ ]

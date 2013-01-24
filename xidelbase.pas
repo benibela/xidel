@@ -48,13 +48,13 @@ implementation
 
 //{$R xidelbase.res}
 
-type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped);
+type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML);
 var //output options
     outputFormat: TOutputFormat;
     outputEncoding: TEncoding = eUTF8;  //default to utf-8
-    outputHeader: string;
+    outputHeader, outputFooter: string;
     firstExtraction: boolean = true;
-    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>');
+    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
 
     internet: TInternetAccess;
@@ -363,7 +363,7 @@ TExtraction = class(TDataProcessing)
 
  procedure setVariables(v: string);
 
- procedure printExtractedValue(value: IXQValue);
+ procedure printExtractedValue(value: IXQValue; invariable: boolean);
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
@@ -1293,20 +1293,36 @@ begin
   inherited destroy;
 end;
 
-procedure TExtraction.printExtractedValue(value: IXQValue);
+procedure needRawWrapper;
+begin
+  if outputFooter <> '' then exit;
+  case outputFormat of
+    ofRawHTML: begin
+      wln('<html><body>');
+      outputFooter := '</body></html>';
+    end;
+    ofRawXML: begin
+      wln('<xml>');
+      outputFooter := '</xml>';
+    end;
+  end;
+end;
+
+procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
 var
   i: Integer;
   temp: TXQValueObject;
   x: IXQValue;
 begin
   case outputFormat of
-    ofAdhoc: begin
+    ofAdhoc, ofRawHTML, ofRawXML: begin
       if printTypeAnnotations then w(value.typeName+': ');
       if value is TXQValueSequence then begin
+        if (outputFormat <> ofAdhoc) and (value.getSequenceCount > 0) and not invariable then needRawWrapper;
         i := 0;
         for x in value do begin
           if i <> 0 then wln();
-          printExtractedValue(x);
+          printExtractedValue(x, true);
           i += 1;
         end;
       end else if value is TXQValueNode then begin
@@ -1320,17 +1336,48 @@ begin
       else if value is TXQValueObject then begin
         x := value.clone;
         temp := x as TXQValueObject;
-        w('{');
-        if temp.values.count > 0 then begin
-          w(temp.values.getName(0)+': '); printExtractedValue(temp.values.get(0));
-          for i:=1 to temp.values.count-1 do begin
-            w(', '+ temp.values.getName(i)+ ': ');
-            printExtractedValue(temp.values.get(i));
+        case outputFormat of
+          ofAdhoc: begin
+            w('{');
+            if temp.values.count > 0 then begin
+              w(temp.values.getName(0)+': '); printExtractedValue(temp.values.get(0), true);
+              for i:=1 to temp.values.count-1 do begin
+                w(', '+ temp.values.getName(i)+ ': ');
+                printExtractedValue(temp.values.get(i), true);
+              end;
+            end;
+            w('}');
+          end;
+          ofRawXML: begin
+            w('<object>');
+            if temp.values.count > 0 then begin
+              w('<'+temp.values.getName(0)+'>');printExtractedValue(temp.values.get(0), true); w('</'+temp.values.getName(0)+'>');
+              for i:=1 to temp.values.count-1 do begin
+                w(LineEnding+'<'+temp.values.getName(i)+'>');printExtractedValue(temp.values.get(i), true); w('</'+temp.values.getName(i)+'>');
+              end;
+            end;
+            w('</object>');
+          end;
+          ofRawHTML: begin
+            w('<div class="object">');
+            if temp.values.count > 0 then begin
+              w('<span class="' + temp.values.getName(0)+'">');printExtractedValue(temp.values.get(0), true); w('</span>');
+              for i:=1 to temp.values.count-1 do begin
+                w(LineEnding + '<span class="' + temp.values.getName(i)+'">');printExtractedValue(temp.values.get(i), true); w('</span>');
+              end;
+            end;
+            w('</div>');
           end;
         end;
-        w('}');
       end
-      else w(value.toString);
+      else begin
+        if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+        case outputFormat of
+          ofAdhoc: w(value.toString);
+          ofRawHTML: w(htmlStrEscape(value.toString));
+          ofRawXML: w(xmlStrEscape(value.toString));
+        end;
+      end;
     end;
     ofJsonWrapped: begin
       w(value.jsonSerialize(printedNodeFormat));
@@ -1409,7 +1456,7 @@ begin
         ekXPath: xpathparser.parseXPath2(extract);
         ekXQuery: xpathparser.parseXQuery1(extract);
       end;
-      printExtractedValue(xpathparser.evaluate());
+      printExtractedValue(xpathparser.evaluate(), false);
       wln;
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
@@ -1472,8 +1519,26 @@ begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
            if not hideVariableNames then w(vars.Names[i] + ': ');
-           printExtractedValue(vars.get(i));
+           printExtractedValue(vars.get(i), not hideVariableNames);
            wln;
+         end;
+    end;
+    ofRawXML: begin
+      if vars.count > 1 then needRawWrapper;
+      for i:=0 to vars.count-1 do
+         if acceptName(vars.Names[i])  then begin
+           if not hideVariableNames then w('<'+vars.Names[i] + '>');
+           printExtractedValue(vars.get(i), not hideVariableNames);
+           if not hideVariableNames then wln('</'+vars.Names[i] + '>');
+         end;
+    end;
+    ofRawHTML: begin
+      if vars.count > 1 then needRawWrapper;
+      for i:=0 to vars.count-1 do
+         if acceptName(vars.Names[i])  then begin
+           if not hideVariableNames then w('<span class="'+vars.Names[i] + '">');
+           printExtractedValue(vars.get(i), not hideVariableNames);
+           if not hideVariableNames then wln('</span>');
          end;
     end;
     ofJsonWrapped:
@@ -1484,7 +1549,7 @@ begin
           if acceptName(vars.Names[i]) then begin
             if first then first := false
             else wln(', ');
-            printExtractedValue(vars.get(i));
+            printExtractedValue(vars.get(i), true);
           end;
         end;
         wln(']');
@@ -1500,13 +1565,13 @@ begin
             else wln(',');
             w(jsonStrEscape(vars.Names[i]) + ': ');
             values := vars.getAll(vars.Names[i]);
-            if values.getSequenceCount = 1 then printExtractedValue(values)
+            if values.getSequenceCount = 1 then printExtractedValue(values, true)
             else begin
               w('[');
-              printExtractedValue(values.getChild(1));
+              printExtractedValue(values.getChild(1), true);
               for j:=2 to values.getSequenceCount do begin
                 w(', ');
-                printExtractedValue(values.getChild(j));
+                printExtractedValue(values.getChild(j), true);
               end;
               w(']');
             end;
@@ -1525,7 +1590,7 @@ begin
           if acceptName(vars.Names[i]) then begin
             if first then begin first := false; w('<e>');end
             else w('</e><e>');
-            printExtractedValue(vars.get(i));
+            printExtractedValue(vars.get(i), true);
           end;
         end;
         if not first then w('</e>');
@@ -1535,7 +1600,7 @@ begin
         for i:=0 to vars.count-1 do
            if acceptName(vars.Names[i])  then begin
              w('<'+vars.Names[i] + '>');
-             printExtractedValue(vars.Values[i]);
+             printExtractedValue(vars.Values[i], true);
              wln('</'+vars.Names[i] + '>');
            end;
         wln('</object>');
@@ -1623,7 +1688,7 @@ begin
       if cgimode then
         sayln(']');
     end;
-    ofXMLWrapped: begin
+    ofXMLWrapped, ofRawXML, ofRawHTML: begin
       sayln('<error>');
       sayln('<message>'+xmlStrEscape(e.Message)+'</message>');
       if printPartialMatches then begin
@@ -1935,19 +2000,21 @@ begin
   cmdlineWrapper.Free;
 
   outputHeader := mycmdline.readString('output-header');
+  outputFooter := mycmdline.readString('output-footer');
   if mycmdLine.readString('output-format') = 'adhoc' then
     outputFormat:=ofAdhoc
   else if mycmdLine.readString('output-format') = 'html' then begin
-    outputFormat:=ofAdhoc;
+    outputFormat:=ofRawHTML;
     if not mycmdline.existsProperty('output-header') then outputHeader:='<!DOCTYPE html>'+LineEnding;
   end else if mycmdLine.readString('output-format') = 'xml' then begin
-    outputFormat:=ofAdhoc;
+    outputFormat:=ofRawXML;
     if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
   end else if mycmdLine.readString('output-format') = 'xml-wrapped' then begin
     outputFormat:=ofXMLWrapped;
     if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
   end else if (mycmdLine.readString('output-format') = 'json') or (mycmdLine.readString('output-format') = 'json-wrapped') then begin
     outputFormat:=ofJsonWrapped;
+    if (mycmdLine.readString('output-format') = 'json') then writeln(stderr, 'Warning: Output-format json is deprecated, use json-wrapped instead');
   end else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
 
   if assigned(onPreOutput) then onPreOutput();
@@ -1991,8 +2058,8 @@ begin
   end;
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
-  mycmdLine.free;
   globalDuplicationList.Free;
+  mycmdLine.free;
 
   if outputFormat = ofJsonWrapped then wln(']')
   else if outputFormat = ofXMLWrapped then begin
@@ -2000,8 +2067,8 @@ begin
     wln('</seq>');
   end;
 
-  if mycmdline.existsProperty('output-footer') then
-    wln(mycmdline.readString('output-footer'));
+  if outputfooter <> '' then
+    wln(outputFooter);
 
 end;
 
