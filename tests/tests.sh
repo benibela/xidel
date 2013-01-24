@@ -54,22 +54,33 @@ tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*"
 tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml-wrapped
 tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json  #deprecated
+tests/test.sh xmlraw1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml
+tests/test.sh htmlraw1 tests/a.xml --extract "<a>{.}</a>*" --output-format html
 tests/test.sh xml1b tests/a.xml --output-format xml-wrapped --extract "<a>{.}</a>*" 
 tests/test.sh json1b tests/a.xml --output-format json-wrapped --extract "<a>{.}</a>*" 
 tests/test.sh json1b tests/a.xml --output-format json --extract "<a>{.}</a>*"  #deprecated
+tests/test.sh xmlraw1b tests/a.xml --output-format xml --extract "<a>{.}</a>*" 
+tests/test.sh htmlraw1b tests/a.xml --output-format html --extract "<a>{.}</a>*" 
 
 tests/test.sh adhoc2 tests/a.xml tests/b.xml -e "<a>{.}</a>*"
 tests/test.sh xml2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format xml-wrapped
 tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format json  #deprecated
+tests/test.sh xmlraw2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format xml
+tests/test.sh htmlraw2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format html
 tests/test.sh xml2b tests/a.xml tests/b.xml --output-format xml-wrapped -e "<a>{.}</a>*" 
 tests/test.sh json2b tests/a.xml tests/b.xml --output-format json-wrapped -e "<a>{.}</a>*" 
 tests/test.sh json2b tests/a.xml tests/b.xml --output-format json -e "<a>{.}</a>*"  #deprecated
+tests/test.sh xmlraw2b tests/a.xml tests/b.xml --output-format xml -e "<a>{.}</a>*" 
+tests/test.sh htmlraw2b tests/a.xml tests/b.xml --output-format html -e "<a>{.}</a>*" 
 
 tests/test.sh adhoc3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*"  
 tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml-wrapped
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json #deprecated option
+tests/test.sh xmlraw3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml
+tests/test.sh htmlraw3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format html
+
 
 tests/test.sh adhoc4 -e '"<foobar>"' 
 tests/test.sh xml4 -e '"<foobar>"' --output-format xml-wrapped

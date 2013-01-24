@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+<title><title>AAA</title></title>
+<result><a href="b.xml">b</a></result>
+<result><a href="c.xml">c</a></result>
+
+<title><title>BBB</title></title>
+<result><a href="c.xml">c</a></result>
+<result><a href="b1.xml">b1</a></result>
+<result><a href="b2.xml">b2</a></result>
+</xml>

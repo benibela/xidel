@@ -364,7 +364,7 @@ TExtraction = class(TDataProcessing)
  procedure setVariables(v: string);
 
  procedure printExtractedValue(value: IXQValue; invariable: boolean);
- procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string);
+ procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string; showDefaultVariable: boolean);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
  function process(data: IData): TFollowToList; override;
@@ -1391,13 +1391,13 @@ end;
 procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser);
 begin
   if pvFinal in printVariables then
-    printExtractedVariables(parser.variables, '** Current variable state: **');
+    printExtractedVariables(parser.variables, '** Current variable state: **', parser.hasRealVariableDefinitions);
 
   if pvLog in printVariables then
-    printExtractedVariables(parser.variableChangeLog, '** Current variable state: **');
+    printExtractedVariables(parser.variableChangeLog, '** Current variable state: **', parser.hasRealVariableDefinitions);
 
   if pvCondensedLog in printVariables then
-    printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **');
+    printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **', parser.hasRealVariableDefinitions);
 end;
 
 procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
@@ -1499,11 +1499,15 @@ begin
 end;
 
 
-procedure TExtraction.printExtractedVariables(vars: TXQVariableChangeLog; state: string);
+procedure TExtraction.printExtractedVariables(vars: TXQVariableChangeLog; state: string; showDefaultVariable: boolean);
   function acceptName(n: string): boolean;
   begin
     result := ((length(extractInclude) = 0) and (arrayIndexOf(extractExclude, n) = -1)) or
               ((length(extractInclude) > 0) and (arrayIndexOf(extractInclude, n) > -1));
+  end;
+  function showVar(n: string): boolean;
+  begin
+    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName));
   end;
 
 var
@@ -1518,8 +1522,8 @@ begin
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if not hideVariableNames then w(vars.Names[i] + ': ');
-           printExtractedValue(vars.get(i), not hideVariableNames);
+           if showVar(vars.Names[i]) then w(vars.Names[i] + ': ');
+           printExtractedValue(vars.get(i), showVar(vars.Names[i]));
            wln;
          end;
     end;
@@ -1527,18 +1531,18 @@ begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if not hideVariableNames then w('<'+vars.Names[i] + '>');
-           printExtractedValue(vars.get(i), not hideVariableNames);
-           if not hideVariableNames then wln('</'+vars.Names[i] + '>');
+           if showVar(vars.Names[i]) then w('<'+vars.Names[i] + '>');
+           printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
+           if showVar(vars.Names[i]) then wln('</'+vars.Names[i] + '>');
          end;
     end;
     ofRawHTML: begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if not hideVariableNames then w('<span class="'+vars.Names[i] + '">');
-           printExtractedValue(vars.get(i), not hideVariableNames);
-           if not hideVariableNames then wln('</span>');
+           if showVar(vars.Names[i]) then w('<span class="'+vars.Names[i] + '">');
+           printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
+           if showVar(vars.Names[i]) then wln('</span>');
          end;
     end;
     ofJsonWrapped:
