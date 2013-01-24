@@ -1876,6 +1876,7 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
+  mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </xml> if you want to wrap everything in an xml node)', '');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -1998,6 +1999,9 @@ begin
     if not firstExtraction then wln('</e>');
     wln('</seq>');
   end;
+
+  if mycmdline.existsProperty('output-footer') then
+    wln(mycmdline.readString('output-footer'));
 
 end;
 

@@ -15,6 +15,7 @@ array[property]=value
 
 source $(xidel -e '<td>abc</td><td>{$var}</td><td>foo</td><td>{$xyz}</td>' --output-format bash)
 
+output-header/footer should evaluate {} 
 
 <?xml version="1.0" encoding="UTF-8"?>
 **** Processing:<empty/> ****
