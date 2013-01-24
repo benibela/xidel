@@ -2,7 +2,8 @@ program xidel;
 
 {$mode objfpc}{$H+}
 
-uses simpleinternet, internetaccess, multipagetemplate, bbutils,
+uses //heaptrc,
+     simpleinternet, internetaccess, multipagetemplate, bbutils,
      xidelbase,
      rcmdline  //<< if you don't have this command line parser unit, you can download it from www.benibela.de
      ;

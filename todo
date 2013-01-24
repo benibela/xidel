@@ -15,6 +15,49 @@ array[property]=value
 
 source $(xidel -e '<td>abc</td><td>{$var}</td><td>foo</td><td>{$xyz}</td>' --output-format bash)
 
+
+<?xml version="1.0" encoding="UTF-8"?>
+**** Processing:<empty/> ****
+<
+benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml -e "xquery version '1.0'; <a/>"
+<?xml version="1.0" encoding="UTF-8"?>
+**** Processing:<empty/> ****
+<a/>
+benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrappedd -e "'<'"
+An unhandled exception occurred at $0000000000471B39 :
+Exception : Unknown output format: xml-wrappedd
+  $0000000000471B39 line 1895 of xidelbase.pas
+  $0000000000412031 line 47 of xidel.pas
+
+benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrapped -e "'<'"
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+**** Processing:<empty/> ****
+<e>
+&lt;
+</e>
+</seq>
+benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrapped -e "xquery version '1.0'; <a/>"
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+**** Processing:<empty/> ****
+<e>
+
+</e>
+</seq>
+benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrapped --printed-node-format xml -e "xquery version '1.0'; <a/>"
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+**** Processing:<empty/> ****
+<e>
+&lt;a/&gt;
+</e>
+</seq>
+
+test why it fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
+
+translate win internet access / from german to english
+
 optimization for context less queries
 
 better extract kind autodetection (at least trimmed for xqueryo)
@@ -27,7 +70,7 @@ FIX:
 
 FIX: follow urls containing # anchor reference
 
-removed http: prefix (done with download??)
+removed http: prefix (done with download??. No?)
 
 add download option to multipage template
 
@@ -36,8 +79,6 @@ add system function to pxp
 fix xml/html output format with variables (currently it just prints the adhoc value)
 
 ignore namespace option
-
-fix memory leaks
 
 add $raw (or raw()) variable/function containing the raw text
 

@@ -196,16 +196,29 @@ type
 
 type
 
+IData = interface //data interface, so we do not have to care about memory managment
+  function rawData: string;
+  function fullUrl: string;
+  function contenttype: string;
+end;
+
 { TData }
 
-TData = class
+{ TDataObject }
+
+TDataObject = class(TInterfacedObject, IData)
 {private todo: optimize
   fparsed: TTreeDocument;
   function GetParsed: TTreeDocument;
 public}
-  rawdata: string;
-  fullurl: string;
-  contenttype: string;
+private
+  frawdata: string;
+  ffullurl: string;
+  fcontenttype: string;
+public
+  function rawData: string;
+  function fullUrl: string;
+  function contentType: string;
   constructor create(somedata: string; aurl: string; acontenttype: string = '');
   //property parsed:TTreeDocument read GetParsed;
 end;
@@ -220,7 +233,7 @@ TFollowTo = class
   class function createFromRetrievalAddress(data: string): TFollowTo;
 
   function clone: TFollowTo; virtual; abstract;
-  function retrieve(parent: TProcessingContext): TData; virtual; abstract;
+  function retrieve(parent: TProcessingContext): IData; virtual; abstract;
   procedure replaceVariables; virtual;
   function equalTo(ft: TFollowTo): boolean; virtual; abstract;
   procedure readOptions(reader: TOptionReaderWrapper); virtual;
@@ -234,7 +247,7 @@ THTTPRequest = class(TFollowTo)
   data: string;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): TData; override;
+  function retrieve(parent: TProcessingContext): IData; override;
   procedure replaceVariables; override;
   function equalTo(ft: TFollowTo): boolean; override;
   procedure readOptions(reader: TOptionReaderWrapper); override;
@@ -246,7 +259,7 @@ TFileRequest = class(TFollowTo)
   url: string;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): TData; override;
+  function retrieve(parent: TProcessingContext): IData; override;
   procedure replaceVariables; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
@@ -257,7 +270,7 @@ TDirectDataRequest = class(TFollowTo)
   data: string;
   constructor create(adata: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): TData; override;
+  function retrieve(parent: TProcessingContext): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
   //procedure replaceVariables;  do not replace vars in direct data
 end;
@@ -266,17 +279,17 @@ end;
 
 TStdinDataRequest = class(TFollowTo)
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): TData; override;
+  function retrieve(parent: TProcessingContext): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
 { TFollowToProcessedData }
 
 TFollowToProcessedData = class(TFollowTo)
-  data: TData;
-  constructor create(d: TData);
+  data: IData;
+  constructor create(d: IData);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): TData; override;
+  function retrieve(parent: TProcessingContext): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
@@ -296,7 +309,7 @@ TFollowToList = class(TFpObjectList)
   function first: TFollowTo;
 
   procedure add(ft: TFollowTo);
-  procedure merge(dest: IXQValue; basedata: TData; parent: TProcessingContext);
+  procedure merge(dest: IXQValue; basedata: IData; parent: TProcessingContext);
 
   function containsEqual(ft: TFollowTo): boolean;
 private
@@ -309,7 +322,7 @@ end;
 
 TDataProcessing = class
   parent: TProcessingContext;
-  function process(data: TData): TFollowToList; virtual; abstract;
+  function process(data: IData): TFollowToList; virtual; abstract;
 
   procedure readOptions(reader: TOptionReaderWrapper); virtual;
   procedure initFromCommandLine(cmdLine: TCommandLineReader); virtual;
@@ -323,7 +336,7 @@ end;
 
 TDownload = class(TDataProcessing)
   downloadTarget: string;
-  function process(data: TData): TFollowToList; override;
+  function process(data: IData): TFollowToList; override;
   procedure readOptions(reader: TOptionReaderWrapper); override;
   function clone: TDataProcessing; override;
 end;
@@ -354,13 +367,13 @@ TExtraction = class(TDataProcessing)
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string);
  procedure printExtractedVariables(parser: THtmlTemplateParser);
 
- function process(data: TData): TFollowToList; override;
+ function process(data: IData): TFollowToList; override;
 
  procedure assignOptions(other: TExtraction);
  function clone: TDataProcessing; override;
 private
  currentFollowList: TFollowToList;
- currentData: TData;
+ currentData: IData;
  procedure pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 end;
 
@@ -370,8 +383,9 @@ end;
 TFollowToWrapper = class(TDataProcessing)
   followTo: TFollowTo;
   procedure readOptions(reader: TOptionReaderWrapper); override;
-  function process(data: TData): TFollowToList; override;
+  function process(data: IData): TFollowToList; override;
   function clone: TDataProcessing; override;
+  destructor Destroy; override;
 end;
 
 { TProcessingContext }
@@ -416,14 +430,34 @@ TProcessingContext = class(TDataProcessing)
 
   procedure insertFictiveDatasourceIfNeeded; //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
 
-  function process(data: TData): TFollowToList; override;
+  function process(data: IData): TFollowToList; override;
+
+  destructor destroy; override;
 end;
 
 type EInvalidArgument = Exception;
 
+{ TDataObject }
+
+function TDataObject.rawData: string;
+begin
+  result := frawdata;
+end;
+
+function TDataObject.fullUrl: string;
+begin
+  result := ffullurl;
+end;
+
+function TDataObject.contentType: string;
+begin
+  result := fcontenttype;
+end;
+
+
 { TFollowToProcessedData }
 
-constructor TFollowToProcessedData.create(d: TData);
+constructor TFollowToProcessedData.create(d: IData);
 begin
   data := d;
 end;
@@ -433,7 +467,7 @@ begin
   result :=  TFollowToProcessedData.Create(data);
 end;
 
-function TFollowToProcessedData.retrieve(parent: TProcessingContext): TData;
+function TFollowToProcessedData.retrieve(parent: TProcessingContext): IData;
 begin
   result := data;
 end;
@@ -515,7 +549,7 @@ end;
 
 { TDownload }
 
-function TDownload.process(data: TData): TFollowToList;
+function TDownload.process(data: IData): TFollowToList;
 var
   temp, realUrl: String;
   j: LongInt;
@@ -601,7 +635,7 @@ begin
   THTTPRequest(result).data:=data;
 end;
 
-function THTTPRequest.retrieve(parent: TProcessingContext): TData;
+function THTTPRequest.retrieve(parent: TProcessingContext): IData;
 var
   i: Integer;
 begin
@@ -609,14 +643,14 @@ begin
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
   parent.printStatus('**** Retrieving:'+url+' ****');
   if data <> '' then parent.printStatus('Data: '+data);
-  result := tdata.create('', url);
-  if assigned(onRetrieve) then result.rawdata := onRetrieve(method, url, data);
+  result := TDataObject.create('', url);
+  if assigned(onRetrieve) then (result as TDataObject).frawdata := onRetrieve(method, url, data);
   if parent.printReceivedHeaders and assigned(internet) then begin
     parent.printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
     for i:=0 to internet.lastHTTPHeaders.Count-1 do
       wln(internet.lastHTTPHeaders[i]);
   end;
-  if Assigned(internet) then result.contenttype := internet.getLastHTTPHeader('Content-Type');
+  if Assigned(internet) then (result as TDataObject).fcontenttype := internet.getLastHTTPHeader('Content-Type');
 end;
 
 procedure THTTPRequest.replaceVariables;
@@ -658,11 +692,11 @@ begin
   result := TFileRequest.create(url);
 end;
 
-function TFileRequest.retrieve(parent: TProcessingContext): TData;
+function TFileRequest.retrieve(parent: TProcessingContext): IData;
 begin
   if not allowFileAccess then raise Exception.Create('File access not permitted');
   parent.printStatus('**** Retrieving:'+url+' ****');
-  result := tdata.create(strLoadFromFileUTF8(url), url);
+  result := TDataObject.create(strLoadFromFileUTF8(url), url);
 
 end;
 
@@ -688,10 +722,10 @@ begin
   result := TDirectDataRequest.create(data);
 end;
 
-function TDirectDataRequest.retrieve(parent: TProcessingContext): TData;
+function TDirectDataRequest.retrieve(parent: TProcessingContext): IData;
 begin
-  result := tdata.Create(data, copy(data, 1, 128));
-  if length(data) > length(result.fullurl) then result.fullurl := result.fullurl + '...';
+  result := TDataObject.Create(data, copy(data, 1, 128));
+  if length(data) > length(result.fullurl) then (result as TDataObject).ffullurl := (result as TDataObject).ffullurl + '...';
 end;
 
 function TDirectDataRequest.equalTo(ft: TFollowTo): boolean;
@@ -700,11 +734,11 @@ begin
   result := (ft is TDirectDataRequest) and (TDirectDataRequest(ft).data = data);
 end;
 
-constructor TData.create(somedata: string; aurl: string; acontenttype: string);
+constructor TDataObject.create(somedata: string; aurl: string; acontenttype: string);
 begin
-  rawdata := somedata;
-  fullurl := aurl;
-  contenttype := acontenttype;
+  frawdata := somedata;
+  ffullurl := aurl;
+  fcontenttype := acontenttype;
 end;
 
 { TStdinDataRequest }
@@ -714,9 +748,9 @@ begin
   result := TStdinDataRequest.create;
 end;
 
-function TStdinDataRequest.retrieve(parent: TProcessingContext): TData;
+function TStdinDataRequest.retrieve(parent: TProcessingContext): IData;
 begin
-  result := TData.Create(strReadFromStdin(), '-');
+  result := TDataObject.Create(strReadFromStdin(), '-');
 end;
 
 function TStdinDataRequest.equalTo(ft: TFollowTo): boolean;
@@ -758,7 +792,7 @@ begin
   followTo.readOptions(reader);
 end;
 
-function TFollowToWrapper.process(data: TData): TFollowToList;
+function TFollowToWrapper.process(data: IData): TFollowToList;
 var
   res: TFollowTo;
 begin
@@ -773,6 +807,12 @@ function TFollowToWrapper.clone: TDataProcessing;
 begin
   result := TFollowToWrapper.Create;
   TFollowToWrapper(result).followTo := followTo.clone;
+end;
+
+destructor TFollowToWrapper.Destroy;
+begin
+  followTo.free;
+  inherited Destroy;
 end;
 
 { TFollowToList }
@@ -806,14 +846,14 @@ var globalDuplicationList: TFollowToList;
 procedure TFollowToList.add(ft: TFollowTo);
 begin
   if (globalDuplicationList <> nil) and (self <> globalDuplicationList) then begin
-    if globalDuplicationList.containsEqual(ft) then exit;
+    if globalDuplicationList.containsEqual(ft) then begin ft.free; exit; end;
     globalDuplicationList.add(ft.clone);
   end;
   inherited add(ft);
 end;
 
 
-procedure TFollowToList.merge(dest: IXQValue; basedata: TData; parent: TProcessingContext);
+procedure TFollowToList.merge(dest: IXQValue; basedata: IData; parent: TProcessingContext);
 var x: IXQValue;
     temp: TProcessingContext;
     n: TTreeNode;
@@ -1124,7 +1164,6 @@ begin
    else for i := 0 to high(actions) do
     if actions[i] is TProcessingContext then
       TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded;
-  exit();
 end;
 
 function encodingName(e: TEncoding): string;
@@ -1139,9 +1178,9 @@ end;
 
 
 
-function TProcessingContext.process(data: TData): TFollowToList;
+function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
-  procedure subProcess(data: TData; skipActions: integer = 0);
+  procedure subProcess(data: IData; skipActions: integer = 0);
   var
     i: Integer;
     tempProto, tempHost, tempPath: string;
@@ -1193,7 +1232,7 @@ var next, res: TFollowToList;
       end;
       if followTo <> nil then begin
         for i := 0 to res.Count - 1 do
-          followto.process(TFollowTo(res[i]).retrieve(self));
+          followto.process(TFollowTo(res[i]).retrieve(self)).free;
         res.Clear;
       end;
     end;
@@ -1216,8 +1255,10 @@ begin
   if data <> nil then subProcess(data);
   for i := 0 to high(dataSources) do
     next.merge(dataSources[i].process(nil));
-  if (length(actions) = 0) and (follow = '') then
+  if (length(actions) = 0) and (follow = '') then begin
+    if res <> nil then res.free; //does this ever happen?
     exit(next);
+  end;
 
   if (data = nil) and (length(dataSources) = 0) and (length(actions) > 0) then
     for i := 0 to high(actions) do
@@ -1237,6 +1278,19 @@ begin
     if result = nil then result := res
     else result.merge(res);
   end;
+
+  next.free;
+end;
+
+destructor TProcessingContext.destroy;
+var
+  i: Integer;
+begin
+  for i := 0 to high(dataSources) do dataSources[i].free;
+  for i := 0 to high(actions) do actions[i].free;
+  nextSibling.free;
+  if followTo <> self then followTo.free;
+  inherited destroy;
 end;
 
 procedure TExtraction.printExtractedValue(value: IXQValue);
@@ -1317,7 +1371,7 @@ begin
     end;
 end;
 
-function TExtraction.process(data: TData): TFollowToList;
+function TExtraction.process(data: IData): TFollowToList;
 begin
   //set flags when first processed
   if extract = '-' then extract:=strReadFromStdin;
@@ -1845,6 +1899,7 @@ begin
     printVersion;
   if mycmdline.readFlag('usage') then begin
     printUsage;
+    baseContext.free;
     exit;
   end;
 
@@ -1913,7 +1968,8 @@ begin
 
   globalDuplicationList := TFollowToList.Create;
   try
-    baseContext.process(nil);
+    baseContext.process(nil).free;
+    baseContext.Free;
   except
     on e: EHTMLParseException do begin
       displayError(e, true);
