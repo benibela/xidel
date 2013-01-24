@@ -94,6 +94,34 @@ tests/test.sh json4b -e 'xquery version "1.0"; <foobar/>' --output-format json-w
 tests/test.sh xmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format xml
 tests/test.sh htmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format html
 
+   #testing, if text nodes are surrounded by a text and if node ares escaped
+tests/test.sh adhoc5 '<x>123</x>'  -e '/x/text()' 
+tests/test.sh xml5 '<x>123</x>' -e '/x/text()' --output-format xml-wrapped
+tests/test.sh json5 '<x>123</x>' -e '/x/text()' --output-format json-wrapped
+tests/test.sh xmlraw5 '<x>123</x>' -e '/x/text()' --output-format xml
+tests/test.sh htmlraw5 '<x>123</x>' -e '/x/text()' --output-format html
+tests/test.sh adhoc5 '<x>123</x>'  -e '/x' --printed-node-format text 
+tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped --printed-node-format text
+tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped --printed-node-format text
+tests/test.sh xmlraw5 '<x>123</x>' -e '/x' --output-format xml --printed-node-format text
+tests/test.sh htmlraw5 '<x>123</x>' -e '/x' --output-format html --printed-node-format text
+tests/test.sh adhoc5 '<x>123</x>'  -e '/x' 
+tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped 
+tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped 
+tests/test.sh xmlraw5b '<x>123</x>' -e '/x' --output-format xml 
+tests/test.sh htmlraw5b '<x>123</x>' -e '/x' --output-format html 
+tests/test.sh adhoc5c '<x>123</x>'  -e '/x' --printed-node-format xml
+tests/test.sh xml5c '<x>123</x>' -e '/x' --output-format xml-wrapped --printed-node-format xml
+tests/test.sh json5c '<x>123</x>' -e '/x' --output-format json-wrapped --printed-node-format xml
+tests/test.sh xmlraw5c '<x>123</x>' -e '/x' --output-format xml --printed-node-format xml
+tests/test.sh htmlraw5c '<x>123</x>' -e '/x' --output-format html --printed-node-format xml
+
+tests/test.sh adhoc5d '<x>123</x>'  -e '<x>{temp:=text()}</x>' 
+tests/test.sh xml5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml-wrapped
+tests/test.sh json5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format json-wrapped
+tests/test.sh xmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml
+tests/test.sh htmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format html
+
 
 #Nesting
 tests/test.sh nest0a [ ]

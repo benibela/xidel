@@ -1326,6 +1326,7 @@ begin
           i += 1;
         end;
       end else if value is TXQValueNode then begin
+        if (outputFormat <> ofAdhoc) and (not (value.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText)) and not invariable then needRawWrapper;
         case printedNodeFormat of
           tnsText: w(value.toString);
           tnsXML: w(value.toNode.outerXML());
