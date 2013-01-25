@@ -32,8 +32,6 @@ FIX:
 
  xidel http://fordgroup.ca/links_full_clean.xht -f "(//a)[position() < 3]" -f '//meta[@property="og:image"]/@content' --download $url
 
-FIX: follow urls containing # anchor reference (multiple #!#)
-
 removed http: prefix (done with download??. No?)
 
 add download option to multipage template
