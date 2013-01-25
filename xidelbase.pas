@@ -1243,7 +1243,7 @@ var
 begin
 
   //init
-  xpathparser.AllowVariableUseInStringLiterals:= not compatibilityNoExtendedStrings;
+  xpathparser.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
   xpathparser.VariableChangelog.allowObjects:=not compatibilityNoObjects;
   htmlparser.variableChangeLog.allowObjects:=xpathparser.VariableChangelog.allowObjects;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
