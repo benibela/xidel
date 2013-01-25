@@ -29,7 +29,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-e 'x&quot;as{1+2}asas&quot;'"/>
+        <CommandLineParams Value="http://www.reddit.com/r/specart/?limit=1  -e '$links := css(&quot;.entry .title a&quot;)'    [ -f '$links[matches(@href, &quot;[.](jpeg|jpg|png|gif)$&quot;)]' --download .   ]          --follow &quot;&lt;a rel='nofollow next'>{.}&lt;/a>?&quot;"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>

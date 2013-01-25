@@ -328,7 +328,7 @@ TDataProcessing = class
   procedure initFromCommandLine(cmdLine: TCommandLineReader); virtual;
   procedure mergeWithObject(obj: TXQValueObject); virtual;
 
-  function clone: TDataProcessing; virtual; abstract;
+  function clone(newparent: TProcessingContext): TDataProcessing; virtual; abstract;
 end;
 
 
@@ -338,7 +338,7 @@ TDownload = class(TDataProcessing)
   downloadTarget: string;
   function process(data: IData): TFollowToList; override;
   procedure readOptions(reader: TOptionReaderWrapper); override;
-  function clone: TDataProcessing; override;
+  function clone(newparent: TProcessingContext): TDataProcessing; override;
 end;
 
 { TExtraction }
@@ -370,7 +370,7 @@ TExtraction = class(TDataProcessing)
  function process(data: IData): TFollowToList; override;
 
  procedure assignOptions(other: TExtraction);
- function clone: TDataProcessing; override;
+ function clone(newparent: TProcessingContext): TDataProcessing; override;
 private
  currentFollowList: TFollowToList;
  currentData: IData;
@@ -384,7 +384,7 @@ TFollowToWrapper = class(TDataProcessing)
   followTo: TFollowTo;
   procedure readOptions(reader: TOptionReaderWrapper); override;
   function process(data: IData): TFollowToList; override;
-  function clone: TDataProcessing; override;
+  function clone(newparent: TProcessingContext): TDataProcessing; override;
   destructor Destroy; override;
 end;
 
@@ -424,7 +424,7 @@ TProcessingContext = class(TDataProcessing)
   procedure assignOptions(other: TProcessingContext);
   procedure assignActions(other: TProcessingContext);
 
-  function clone: TDataProcessing; override;
+  function clone(newparent: TProcessingContext): TDataProcessing; override;
 
   function last: TProcessingContext; //returns the last context in this sibling/follow chain
 
@@ -614,9 +614,10 @@ begin
   reader.read('download', downloadTarget);
 end;
 
-function TDownload.clone: TDataProcessing;
+function TDownload.clone(newparent: TProcessingContext): TDataProcessing;
 begin
   result := TDownload.Create;
+  result.parent := newparent;
   TDownload(result).downloadTarget:=downloadTarget;
 end;
 
@@ -803,9 +804,10 @@ begin
   Result.Add(res);
 end;
 
-function TFollowToWrapper.clone: TDataProcessing;
+function TFollowToWrapper.clone(newparent: TProcessingContext): TDataProcessing;
 begin
   result := TFollowToWrapper.Create;
+  result.parent := newparent;
   TFollowToWrapper(result).followTo := followTo.clone;
 end;
 
@@ -1097,13 +1099,6 @@ end;
 procedure TProcessingContext.assignOptions(other: TProcessingContext);
 begin
   //neither dataSources nor actions: array of TDataProcessing; ?? todo
-
-  {follow := other.follow;
-  followExclude := other.followExclude;
-  followInclude := other.followInclude;
-  followTo := other.followTo ; //todo ??? disabled, leads to endless recursion
-  }
-
   wait := other.wait;
   userAgent := other.userAgent;
   proxy := other.proxy;
@@ -1122,21 +1117,30 @@ var i: integer;
 begin
   setlength(actions, length(other.actions));
   for i := 0 to high(actions) do
-    actions[i] := other.actions[i].clone;
+    actions[i] := other.actions[i].clone(self);
 end;
 
-function TProcessingContext.clone: TDataProcessing;
+function TProcessingContext.clone(newparent: TProcessingContext): TDataProcessing;
 var
   i: Integer;
 begin
   result := TProcessingContext.Create;
+  result.parent := newparent;
   TProcessingContext(result).assignOptions(self);
   TProcessingContext(result).assignActions(self);
   setlength(TProcessingContext(result).dataSources, length(dataSources));
   for i := 0 to high(TProcessingContext(result).dataSources) do
-    TProcessingContext(result).dataSources[i] := dataSources[i].clone;
-  if nextSibling <> nil then
-    TProcessingContext(result).nextSibling := nextSibling.clone as TProcessingContext;
+    TProcessingContext(result).dataSources[i] := dataSources[i].clone(TProcessingContext(result));
+  if nextSibling <> nil then begin
+    TProcessingContext(result).nextSibling := nextSibling.clone(TProcessingContext(result)) as TProcessingContext;
+  end;
+
+  TProcessingContext(result).follow := follow;
+  TProcessingContext(result).followExclude := followExclude;
+  TProcessingContext(result).followInclude := followInclude;
+  if followTo <> nil then
+    if followTo = self then TProcessingContext(result).followTo := TProcessingContext(result)
+    else TProcessingContext(result).followTo := TProcessingContext(followTo.clone(TProcessingContext(result)));
 end;
 
 function TProcessingContext.last: TProcessingContext;
@@ -1493,9 +1497,10 @@ begin
   printedNodeFormat := other.printedNodeFormat;
 end;
 
-function TExtraction.clone: TDataProcessing;
+function TExtraction.clone(newparent: TProcessingContext): TDataProcessing;
 begin
   result := TExtraction.create;
+  result.parent := newparent;
   TExtraction(result).assignOptions(self);
 end;
 
@@ -1987,7 +1992,7 @@ begin
     currentContext.actions := currentContext.parent.actions;
     SetLength(currentContext.actions, length(currentContext.actions));
     for i := 0 to high(currentContext.actions) do
-      currentContext.actions[i] := currentContext.actions[i].clone;
+      currentContext.actions[i] := currentContext.actions[i].clone(currentContext);
   end;
 
   if (currentContext.parent = nil) and (baseContext.nextSibling = currentContext) and (length(baseContext.dataSources) = 0) and (length(currentContext.actions) = 0) and (currentContext.follow = '') then begin
