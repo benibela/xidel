@@ -17,43 +17,6 @@ source $(xidel -e '<td>abc</td><td>{$var}</td><td>foo</td><td>{$xyz}</td>' --out
 
 output-header/footer should evaluate {} 
 
-<?xml version="1.0" encoding="UTF-8"?>
-**** Processing:<empty/> ****
-<
-benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml -e "xquery version '1.0'; <a/>"
-<?xml version="1.0" encoding="UTF-8"?>
-**** Processing:<empty/> ****
-<a/>
-benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrappedd -e "'<'"
-An unhandled exception occurred at $0000000000471B39 :
-Exception : Unknown output format: xml-wrappedd
-  $0000000000471B39 line 1895 of xidelbase.pas
-  $0000000000412031 line 47 of xidel.pas
-
-benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrapped -e "'<'"
-<?xml version="1.0" encoding="UTF-8"?>
-<seq>
-**** Processing:<empty/> ****
-<e>
-&lt;
-</e>
-</seq>
-benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrapped -e "xquery version '1.0'; <a/>"
-<?xml version="1.0" encoding="UTF-8"?>
-<seq>
-**** Processing:<empty/> ****
-<e>
-
-</e>
-</seq>
-benito@hostname:~$ hg/programs/internet/xidel/xidel --output-format xml-wrapped --printed-node-format xml -e "xquery version '1.0'; <a/>"
-<?xml version="1.0" encoding="UTF-8"?>
-<seq>
-**** Processing:<empty/> ****
-<e>
-&lt;a/&gt;
-</e>
-</seq>
 
 test why it fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
 
@@ -69,7 +32,7 @@ FIX:
 
  xidel http://fordgroup.ca/links_full_clean.xht -f "(//a)[position() < 3]" -f '//meta[@property="og:image"]/@content' --download $url
 
-FIX: follow urls containing # anchor reference
+FIX: follow urls containing # anchor reference (multiple #!#)
 
 removed http: prefix (done with download??. No?)
 
@@ -138,21 +101,6 @@ Parse DFS if no brackets are given BFS otherwise
 
 add --no-repetition-check
 
---------------------
-
-change strings: 
-
-
-x""     -  like xquery strings within a single tag, entities, {(1,2,3)} become 1 2 3
-
-x''     -  like x"" but do not parse entities
-
-remove "$abc;"  colon is not consistent
-
-default to x'' in multipage template 
-           x"" in cli (so you can write '&lt;' in windows, because '<' does not work (contrary to "<"))
-
-----------------
 
 
 GUI:

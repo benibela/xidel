@@ -47,7 +47,7 @@ echo //abc2 | tests/test.sh stdin2 '<test>123<x/>foo<abc2>bar2!</abc2>def<x/></t
 
 #multipage template
 tests/test.sh multipage --extract '<action><page url="tests/a.xml"><template><title>{.}</title></template></page></action>' --extract-kind=multipage
-tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="$page;"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage
+tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage
 
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
@@ -195,10 +195,10 @@ tests/test.sh post4d [  --post "123" http://videlibri.sourceforge.net/xidelecho.
 tests/test.sh post4d [  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ]  http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' 
 echo TEST | tests/test.sh post5  --post - http://videlibri.sourceforge.net/xidelecho.php -e //raw
 
-tests/test.sh post6 '<foo>bar</foo>' -e 'v:=/foo' --post 'data=$v;'  http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh post6 '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' --post 'data=$v;'  http://videlibri.sourceforge.net/xidelecho.php -e //raw 
-tests/test.sh post6b '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ --post 'data=$v;'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] # [ causes it to process both data. Does not make much sense, but is logical
-tests/test.sh post6c '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ -e "" --post 'data=$v;'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] 
+tests/test.sh post6 '<foo>bar</foo>' -e 'v:=/foo' --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post6 '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw 
+tests/test.sh post6b '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] # [ causes it to process both data. Does not make much sense, but is logical
+tests/test.sh post6c '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ -e "" --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] 
 
 tests/test.sh put1a  --method=PUT --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
 tests/test.sh put1a  --method=POST --post test --method=PUT http://videlibri.sourceforge.net/xidelecho.php -e //meth    #override last

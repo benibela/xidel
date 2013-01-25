@@ -576,7 +576,7 @@ begin
   end;
   while strBeginsWith(realPath, '/') do delete(realPath,1,1);
 
-  downloadTo := htmlparser.replaceVars(Self.downloadTarget);
+  downloadTo := htmlparser.replaceEnclosedExpressions(Self.downloadTarget);
   {$ifdef win32}
   downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
   {$endif}
@@ -655,9 +655,9 @@ end;
 
 procedure THTTPRequest.replaceVariables;
 begin
-  url := htmlparser.replaceVars(url);
-  method := htmlparser.replaceVars(method);
-  data := htmlparser.replaceVars(data);
+  url := htmlparser.replaceEnclosedExpressions(url);
+  method := htmlparser.replaceEnclosedExpressions(method);
+  data := htmlparser.replaceEnclosedExpressions(data);
 end;
 
 function THTTPRequest.equalTo(ft: TFollowTo): boolean;
@@ -702,7 +702,7 @@ end;
 
 procedure TFileRequest.replaceVariables;
 begin
-  url := htmlparser.replaceVars(url);
+  url := htmlparser.replaceEnclosedExpressions(url);
 end;
 
 function TFileRequest.equalTo(ft: TFollowTo): boolean;
@@ -1950,10 +1950,10 @@ begin
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
-  mycmdline.declareFlag('no-extended-strings', 'Disables the replacements of variables in double quoted strings, like "$varname;"');
   mycmdline.declareFlag('no-objects', 'Disables the object.property syntax like in (object(("a", x)).a)');
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
+  mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');
 
   mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');

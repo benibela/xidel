@@ -92,11 +92,9 @@ command line parameter listing printed by --help).
 Switched to full standard compatible mode, its implementation passes 99.3% of the XPath 2 only tests and 
 97.8% of the XQuery 1 tests in the XQuery Testsuite (skipping tests for invalid input queries)
 
-However, in the default mode, there are the following important changes:
+However, in the default mode, there are the following important extensions:
 
   Syntax:
-  
-    Within double-quoted strings variables are replaced, so "$var;xyz" is the same as concat($var, "xyz")
     
     You can assign values to variables like:                           var := value       
       
@@ -108,6 +106,10 @@ However, in the default mode, there are the following important changes:
     The object-constructor can take a sequence with initial parameters, e.g. obj:=object(("a", 1, "b", 2)) 
     will create an object $obj, with $obj.a = 1 and $obj.b = 2.
 
+    A string prefixes with x is evaluated like the value of a direct attribute constructor, i.e. all 
+    expressions with in {..} brackets are evaluated. 
+    So x"foo{$var}bar" is the same as concat("foo", $var, "bar")
+      (Warning: This was changed in Xidel 0.7. Xidel <= 0.6 used "foo$var;bar" without prefix for this)
   
   Semantic:
      
@@ -303,7 +305,8 @@ E.g.
 All pages are downloaded with GET or respectively POST requests, and processed with the given template.
 The page-node also accepts a "test" attribute, which gives an XPath expression that needs to be true, 
 if the page element should be used.
-You can use $..; variables in the attributes and post-nodes. 
+In the attributes and the text of post-nodes, everything enclosed in {..} parentheses is evaluated
+as xpath expression. (like in an extended x".." string, see above)
 
 Since this would be cumbersome to pass directly to --extract, you can also specify the containing file
 with the --template-file argument.
