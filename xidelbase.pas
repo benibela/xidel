@@ -63,7 +63,9 @@ type
 
 { THtmlTemplateParserBreaker }
 
- THtmlTemplateParserBreaker = class(THtmlTemplateParser)
+THtmlTemplateParserBreaker = class(THtmlTemplateParser)
+  procedure initParsingModel(html,uri,contenttype: string);
+  procedure parseHTML(html,uri,contenttype: string);
   procedure parseHTMLSimple(html,uri,contenttype: string);
 end;
 
@@ -1634,8 +1636,20 @@ var i: Integer;
 
 { THtmlTemplateParserBreaker }
 
+procedure THtmlTemplateParserBreaker.initParsingModel(html,uri,contenttype: string);
+begin
+  HTMLParser.repairMissingStartTags := strEndsWith(uri, 'html') or strEndsWith(uri, 'htm') or striContains(contenttype, 'html') or striContains(html, '<html>');
+end;
+
+procedure THtmlTemplateParserBreaker.parseHTML(html, uri, contenttype: string);
+begin
+  initParsingModel(html, uri, contenttype);
+  inherited parseHTML(html, uri, contenttype);
+end;
+
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
 begin
+  initParsingModel(html, uri, contenttype);
   inherited parseHTMLSimple(html, uri, contenttype);
 end;
 
@@ -2037,6 +2051,7 @@ begin
 
   htmlparser:=THtmlTemplateParserBreaker.create;
   htmlparser.TemplateParser.parsingModel:=pmHTML;
+
   htmlparser.KeepPreviousVariables:=kpvKeepValues;
   if allowInternetAccess then begin
     multipage := TTemplateReaderBreaker.create();
