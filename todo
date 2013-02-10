@@ -18,7 +18,12 @@ source $(xidel -e '<td>abc</td><td>{$var}</td><td>foo</td><td>{$xyz}</td>' --out
 output-header/footer should evaluate {} 
 
 
-test why it fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
+fix path for doc inside of "xidel --extract-file something" to be relative to current directory or something file
+
+test why download fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
+
+better failing handling: retry on 4xx/5xx? ignore and continue with next datasource?
+ 
 
 translate win internet access / from german to english
 
@@ -27,22 +32,19 @@ optimization for context less queries
 better extract kind autodetection (at least trimmed for xqueryo)
 --xpath2 --xquery1 --css --template parameters
 
-FIX:
- xidel http://fordgroup.ca/links_full_clean.xht -f "(//a)[position() < 3]" -f '//meta[@property="og:image"]/@content' --download .
-
- xidel http://fordgroup.ca/links_full_clean.xht -f "(//a)[position() < 3]" -f '//meta[@property="og:image"]/@content' --download $url
-
-removed http: prefix (done with download??. No?)
+removed http: prefix (done with download??. No?) don't create http:// directory?
 
 add download option to multipage template
 
 add system function to pxp
 
-fix xml/html output format with variables (currently it just prints the adhoc value)
+print variables defined in normal xpath extract expressions?
 
 ignore namespace option
 
 add $raw (or raw()) variable/function containing the raw text
+
+
 
 --------
 
@@ -95,7 +97,7 @@ Parse DFS if no brackets are given BFS otherwise
 [ .. ] returns list of ext-urls, like http://google.de, http://example.org
 
 
-
+  
 
 add --no-repetition-check
 
