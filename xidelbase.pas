@@ -24,7 +24,7 @@ interface
 
 uses
   Classes,         {$ifdef win32} windows, {$endif}
-  extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
+  extendedhtmlparser,  xquery, xquery_json, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess, contnrs,
   rcmdline
   ;
