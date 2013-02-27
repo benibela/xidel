@@ -49,8 +49,14 @@ Fix doc: ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> 
  ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("../../../tmp/so.xml"))'
   ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("http://google.de"))'
 
+latter: need onRetrieveDoc event
+
 Xidel: compatibility options in CGI
 
+Check for url in pxp:json
+
+Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
+       check for .json extension, application/json content-type
 --------
 
 Realworld:
