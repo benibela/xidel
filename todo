@@ -45,6 +45,11 @@ ignore namespace option
 add $raw (or raw()) variable/function containing the raw text
 
 
+Fix doc: ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("/tmp/so.xml"))'
+ ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("../../../tmp/so.xml"))'
+  ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("http://google.de"))'
+
+Xidel: compatibility options in CGI
 
 --------
 
@@ -171,3 +176,27 @@ MULTI PAGE
 
   follow with post data
   
+  
+  bugs in the JSONiq spec:   
+    "thursday"" ]
+    
+    for $key in json:keys($map)
+    
+     return jn:object($object1, $object2) wrong arity
+    
+    EBV ( [1], jn:null() )  
+    
+    formatting: Example 6.9. Retrieving the size of an array
+    
+    title: Example 6.11. Addition
+    
+    is-null(()) is a type error, intended?? is-null(null) with disabled literals
+    
+    jn:decode-from-roundtrip(jn:encode-for-roundtrip( X )) does not return X, if X has the format of a roundtrip encoding.
+    E.g. jn:decode-from-roundtrip(jn:encode-for-roundtrip( jn:encode-for-roundtrip( X ) ))  is X, but should be jn:encode-for-roundtrip( X )
+    
+    That makes it kind of useless for roundtripping.
+    
+    
+    members2($x) = typeswitch ($x) case array() return members($x) default return $x 
+        
