@@ -409,7 +409,7 @@ TProcessingContext = class(TDataProcessing)
 
   quiet: boolean;
 
-  compatibilityNoExtendedStrings,compatibilityNoObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityNoDotNotation, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
 
   yieldDataToParent: boolean;
 
@@ -1030,6 +1030,13 @@ begin
   reader.read('follow-include', tempstr); followInclude := strSplit(tempstr, ',', false);
 //todo  reader.read('follow-level', followMaxLevel);
 
+  reader.read('no-json', compatibilityNoJSON);
+  reader.read('no-json-literals', compatibilityNoJSONliterals);
+  reader.read('no-dot-notation', compatibilityNoDotNotation);
+  reader.read('strict-type-checking', compatibilityStrictTypeChecking);
+  reader.read('strict-namespaces', compatibilityStrictNamespaces);
+  reader.read('no-extended-strings', compatibilityNoExtendedStrings);
+
 
 //deprecated:   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
 //    arrayAdd(urls, '<empty/>');
@@ -1109,7 +1116,9 @@ begin
   quiet := other.quiet;
 
   compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
-  compatibilityNoObjects := other.compatibilityNoObjects;
+  compatibilityNoJSON := other.compatibilityNoJSON;
+  compatibilityNoJSONliterals := other.compatibilityNoJSONliterals;
+  compatibilityNoDotNotation := other.compatibilityNoDotNotation;
   compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
 end;
@@ -1250,8 +1259,10 @@ begin
 
   //init
   xpathparser.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
-  xpathparser.VariableChangelog.allowObjects:=not compatibilityNoObjects;
-  htmlparser.variableChangeLog.allowObjects:=xpathparser.VariableChangelog.allowObjects;
+  xpathparser.AllowJSON:=not compatibilityNoJSON;
+  xpathparser.AllowJSONLiterals:=not compatibilityNoJSONliterals;
+  xpathparser.VariableChangelog.allowPropertyDotNotation:=not compatibilityNoDotNotation;
+  htmlparser.variableChangeLog.allowPropertyDotNotation:=xpathparser.VariableChangelog.allowPropertyDotNotation;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
 
@@ -1969,7 +1980,9 @@ begin
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
-  mycmdline.declareFlag('no-objects', 'Disables the object.property syntax like in (object(("a", x)).a)');
+  mycmdline.declareFlag('no-json', 'Disables the JSONiq syntax extensions (like [1,2,3] and {"a": 1, "b": 2})');
+  mycmdline.declareFlag('no-json-literals', 'Disables the json true/false/null literals');
+  mycmdline.declareFlag('no-dot-notation', 'Disables the dot notation for property access, like in $object.property ');
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
   mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');

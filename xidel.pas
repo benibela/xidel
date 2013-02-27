@@ -22,6 +22,7 @@ begin
     simpleinternet.defaultInternet.internetConfig^.setProxy(proxy);
   end;
   result := simpleinternet.defaultInternet;
+  defaultInternetAccessClass := TInternetAccessClass( result.ClassType);
 end;
 
 function retrieve(const method, url, post: string): string;
