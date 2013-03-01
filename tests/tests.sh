@@ -48,6 +48,8 @@ echo //abc2 | tests/test.sh stdin2 '<test>123<x/>foo<abc2>bar2!</abc2>def<x/></t
 #multipage template
 tests/test.sh multipage --extract '<action><page url="tests/a.xml"><template><title>{.}</title></template></page></action>' --extract-kind=multipage
 tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage
+tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{filter(., "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
+tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{filter($raw, "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
 
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
@@ -206,6 +208,8 @@ tests/test.sh put1b  --method=POST --post test --method=PUT http://videlibri.sou
 tests/test.sh foobarmeth --method foobar  http://videlibri.sourceforge.net/xidelecho.php -e //meth
 echo foobar | tests/test.sh foobarmeth2 --method -  http://videlibri.sourceforge.net/xidelecho.php -e //meth
 
+tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
+tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
 
 #Regressions tests for bugs that have been fixed and should not appear again
 tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a></r>'
