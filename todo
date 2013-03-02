@@ -29,13 +29,11 @@ translate win internet access / from german to english
 optimization for context less queries
 
 better extract kind autodetection (at least trimmed for xqueryo)
---xpath2 --xquery1 --css --template parameters
+--template parameters
 
 removed http: prefix (done with download??. No?) don't create http:// directory?
 
 add download option to multipage template
-
-print variables defined in normal xpath extract expressions?
 
 ignore namespace option
 

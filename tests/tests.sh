@@ -186,6 +186,15 @@ tests/test.sh nest10b [ tests/a.xml ] -e //title  -f //a -e 'concat(//title, "x"
 tests/test.sh nest10b tests/a.xml [ -e //title ] -f //a -e 'concat(//title, "x")'
 tests/test.sh nest10c tests/a.xml [ -e //title  -f //a ] -e 'concat(//title, "x")' # this blocks the follow to ascend to the parent (good ? yielding becomes confusing if there are many nested blocks yielding to each other (and it would still apply to a.xml) )
 
+#type selection
+tests/test.sh css '<a>hallo<b>cc</b></a>' --css b
+tests/test.sh xpath1 '<a>hallo<b>cc</b></a>' --xpath b
+tests/test.sh xpath2 '<a>hallo<b>cc</b></a>' --xpath b
+tests/test.sh xpath3 --xpath "'&gt;'"
+tests/test.sh xpath3 -e "'&gt;'"
+tests/test.sh xquery --xquery "'&gt;'"
+tests/test.sh xquerypath --xquery "'&gt;'" -e "'&gt;'"
+
 #other stuff
 tests/test.sh system -e 'system("echo 123") * 8'
 

@@ -1792,6 +1792,7 @@ type
 TPropertyArray = array of TProperty;
 TCommandLineReaderBreaker = class(TCommandLineReader)
   procedure overrideVar(const name, value: string);
+  procedure removeVar(const name: string);
   procedure clearNameless;
   procedure setProperties(newProperties: TPropertyArray);
   function getProperties(): TPropertyArray;
@@ -1801,8 +1802,21 @@ end;
 { TCommandLineReaderBreaker }
 
 procedure TCommandLineReaderBreaker.overrideVar(const name, value: string);
+var
+  tempprop: PProperty;
 begin
-  findProperty(name)^.strvalue:=value;
+  tempprop := findProperty(name);
+  tempprop^.strvalue:=value;
+  tempprop^.found:=true;
+end;
+
+procedure TCommandLineReaderBreaker.removeVar(const name: string);
+var
+  tempprop: PProperty;
+begin
+  tempprop := findProperty(name);
+  tempprop^.strvalue:=tempprop^.strvalueDefault;
+  tempprop^.found:=false;
 end;
 
 procedure TCommandLineReaderBreaker.clearNameless;
@@ -1844,6 +1858,8 @@ begin
 end;
 
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
+var
+  specialized: string;
 begin
   if (name = 'follow') or (name = 'follow-file') or ((name = '') and (value <> '[') and (value <> ']') and (length(currentContext.actions) > 0))  then begin
     if name = 'follow-file' then
@@ -1871,20 +1887,29 @@ begin
       currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
     end;
 
-    TCommandLineReaderBreaker(sender).overrideVar('follow', '');
-    TCommandLineReaderBreaker(sender).overrideVar('extract', '');
-    TCommandLineReaderBreaker(sender).overrideVar('download', '');
-  end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') then begin
-    if name = 'extract-file' then begin
-      if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
-      else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
-    end else if name = 'template-file' then begin
-      TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'multipage');
-      TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+    TCommandLineReaderBreaker(sender).removeVar('follow');
+    TCommandLineReaderBreaker(sender).removeVar('extract');
+    TCommandLineReaderBreaker(sender).removeVar('download');
+  end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') or (name = 'css') or (name = 'xpath') or (name = 'xquery') then begin
+    specialized := '';
+    case name of
+      'extract-file':
+        if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
+        else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+      'template-file': begin
+        TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'multipage');
+        TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+      end;
+      'xpath', 'xquery', 'css': specialized:=name;
+    end;
+    if specialized <> '' then begin
+      TCommandLineReaderBreaker(sender).overrideVar('extract', value);
+      TCommandLineReaderBreaker(sender).overrideVar('extract-kind', specialized);
     end;
 
     TCommandLineReaderBreaker(sender).overrideVar(name, value);
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
+    if specialized <> '' then TCommandLineReaderBreaker(sender).removeVar('extract-kind');
   end else if name = 'download' then begin
     TCommandLineReaderBreaker(sender).overrideVar(name, value);
     currentContext.readNewAction(TDownload.Create, cmdlineWrapper)
@@ -1974,6 +1999,9 @@ begin
   mycmdLine.declareString('extract-include', 'If not empty, comma separated list of variables to use in an extract template (white list)');
   mycmdLine.declareFile('extract-file', 'File containing an extract expression (for longer expressions)');
   mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, xquery, css, template or multipage', 'auto');
+  mycmdLine.declareString('css', 'Abbreviation for --extract-kind=css --extract=...');
+  mycmdLine.declareString('xpath', 'Abbreviation for --extract-kind=xpath --extract=...');
+  mycmdLine.declareString('xquery', 'Abbreviation for --extract-kind=xquery --extract=...');
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
   mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions are allowed with comma separated values)');
 
