@@ -186,6 +186,9 @@ tests/test.sh nest10b [ tests/a.xml ] -e //title  -f //a -e 'concat(//title, "x"
 tests/test.sh nest10b tests/a.xml [ -e //title ] -f //a -e 'concat(//title, "x")'
 tests/test.sh nest10c tests/a.xml [ -e //title  -f //a ] -e 'concat(//title, "x")' # this blocks the follow to ascend to the parent (good ? yielding becomes confusing if there are many nested blocks yielding to each other (and it would still apply to a.xml) )
 
+#other stuff
+tests/test.sh system -e 'system("echo 123") * 8'
+
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
 tests/test.sh get1  http://videlibri.sourceforge.net/xidelecho.php -e //meth
