@@ -39,7 +39,14 @@ tests/test.sh 2urls tests/a.xml -e //title tests/b.xml -e //title
 #not separated urls
 tests/test.sh 2urls2read tests/a.xml tests/b.xml -e //title -e //title
 
-
+#variable tests
+tests/test.sh var1 '<a>hello</a>' -e 'var:=.' 
+tests/test.sh var2 '<a>hello</a>' -e 'var:=.' -e 'var2 := 17'
+tests/test.sh var3 '<a>hello</a>' -e 'var:=.' -e 'var2 := 17' -e '<a>{var3:=.}</a>'
+tests/test.sh novar '<a>hello</a>' -e '.' 
+tests/test.sh novar2 '<a>hello</a>' -e '.'  -e '<a>{.}</a>'
+tests/test.sh varmix '<a>hello</a>' -e '.'  -e '<a>{temp:=.}</a>' -e '3+4' -e 'res:=$result'
+tests/test.sh varmixb '<a>hello</a>' -e 'concat(">", ., "<")'  -e '<a>{temp:=$result}</a>' -e '3+4' -e 'res:=$result'
 
 #stdin
 echo '<test>123<x/>foo<abc>bar</abc>def<x/></test>' | tests/test.sh stdin1 - -e //abc

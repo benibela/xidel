@@ -67,7 +67,10 @@ THtmlTemplateParserBreaker = class(THtmlTemplateParser)
   procedure initParsingModel(html,uri,contenttype: string);
   procedure parseHTML(html,uri,contenttype: string);
   procedure parseHTMLSimple(html,uri,contenttype: string);
+  procedure closeVariableLog;
 end;
+
+ { TTemplateReaderBreaker }
 
  TTemplateReaderBreaker = class(TMultipageTemplateReader)
    constructor create();
@@ -367,7 +370,7 @@ TExtraction = class(TDataProcessing)
 
  procedure printExtractedValue(value: IXQValue; invariable: boolean);
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string; showDefaultVariable: boolean);
- procedure printExtractedVariables(parser: THtmlTemplateParser);
+ procedure printExtractedVariables(parser: THtmlTemplateParser; showDefaultVariableOverride: boolean);
 
  function process(data: IData): TFollowToList; override;
 
@@ -1406,19 +1409,7 @@ begin
   end;
 end;
 
-procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser);
-begin
-  if pvFinal in printVariables then
-    printExtractedVariables(parser.variables, '** Current variable state: **', parser.hasRealVariableDefinitions);
-
-  if pvLog in printVariables then
-    printExtractedVariables(parser.variableChangeLog, '** Current variable state: **', parser.hasRealVariableDefinitions);
-
-  if pvCondensedLog in printVariables then
-    printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **', parser.hasRealVariableDefinitions);
-end;
-
-procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
+procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser; showDefaultVariableOverride: boolean);
 var
   i: Integer;
 begin
@@ -1427,7 +1418,14 @@ begin
     if outputFormat = ofXMLWrapped then wln('<e>');
   end else wln(outputArraySeparator[outputFormat]);
 
-  printExtractedVariables(parser);
+  if pvFinal in printVariables then
+    printExtractedVariables(parser.variables, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
+
+  if pvLog in printVariables then
+    printExtractedVariables(parser.variableChangeLog, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
+
+  if pvCondensedLog in printVariables then
+    printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
 
   for i := 0 to parser.variableChangeLog.count-1 do
     if parser.variableChangeLog.getName(i) = '_follow' then begin
@@ -1436,7 +1434,26 @@ begin
     end;
 end;
 
+procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
+begin
+  printExtractedVariables(parser, false);
+end;
+
 function TExtraction.process(data: IData): TFollowToList;
+  function termContainsVariableDefinition(term: TXQTerm): boolean;
+  var
+    i: Integer;
+  begin
+    if term = nil then exit(false);
+    if term is TXQTermDefineVariable then exit(true);
+    for i := 0 to high(term.children) do
+      if termContainsVariableDefinition(term.children[i]) then exit(true);
+    exit(false);
+  end;
+
+var
+  query: IXQuery;
+  value: IXQValue;
 begin
   //set flags when first processed
   if extract = '-' then extract:=strReadFromStdin;
@@ -1470,11 +1487,20 @@ begin
       xpathparser.ParentElement := xpathparser.RootElement;
       xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.fullurl);
       case extractKind of
-        ekCSS: xpathparser.parseCSS3(extract); //todo: optimize
-        ekXPath: xpathparser.parseXPath2(extract);
-        ekXQuery: xpathparser.parseXQuery1(extract);
+        ekCSS: query := xpathparser.parseCSS3(extract); //todo: optimize
+        ekXPath: query := xpathparser.parseXPath2(extract);
+        ekXQuery: query := xpathparser.parseXQuery1(extract);
       end;
-      printExtractedValue(xpathparser.evaluate(), false);
+
+      if termContainsVariableDefinition(query.Term) then begin
+        THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
+        xpathparser.evaluate();
+        printExtractedVariables(htmlparser, true);
+      end else begin
+        value := xpathparser.evaluate();
+        printExtractedValue(value, false);
+        htmlparser.oldVariableChangeLog.add(defaultName, value);
+      end;
       wln;
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
@@ -1664,6 +1690,13 @@ begin
   inherited parseHTMLSimple(html, uri, contenttype);
 end;
 
+procedure THtmlTemplateParserBreaker.closeVariableLog;
+begin
+  FreeAndNil(FVariables);
+  oldVariableChangeLog.takeFrom(variableChangeLog);
+  FreeAndNil(FVariableLogCondensed);
+end;
+
 constructor TTemplateReaderBreaker.create;
 begin
   onLog:=@selfLog;
@@ -1692,6 +1725,7 @@ begin
   if debugLevel <> 0 then exit;
   writeln(stderr, logged);
 end;
+
 
 procedure displayError(e: Exception; printPartialMatches: boolean = false);
   procedure sayln(s: string);

@@ -1,4 +1,3 @@
-do not show default variable (if is the only one?)
 
 Add a export variables to bash (possible?)
 
@@ -56,7 +55,12 @@ Xidel: compatibility options in CGI
 Check for url in pxp:json
 
 Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
-       check for .json extension, application/json content-type
+       check for .json extension, application/json content-type 
+       application/json
+       application/x-javascript
+       text/javascript
+       text/x-javascript
+       text/x-json
 --------
 
 Realworld:
@@ -183,26 +187,4 @@ MULTI PAGE
   follow with post data
   
   
-  bugs in the JSONiq spec:   
-    "thursday"" ]
-    
-    for $key in json:keys($map)
-    
-     return jn:object($object1, $object2) wrong arity
-    
-    EBV ( [1], jn:null() )  
-    
-    formatting: Example 6.9. Retrieving the size of an array
-    
-    title: Example 6.11. Addition
-    
-    is-null(()) is a type error, intended?? is-null(null) with disabled literals
-    
-    jn:decode-from-roundtrip(jn:encode-for-roundtrip( X )) does not return X, if X has the format of a roundtrip encoding.
-    E.g. jn:decode-from-roundtrip(jn:encode-for-roundtrip( jn:encode-for-roundtrip( X ) ))  is X, but should be jn:encode-for-roundtrip( X )
-    
-    That makes it kind of useless for roundtripping.
-    
-    
-    members2($x) = typeswitch ($x) case array() return members($x) default return $x 
-        
+ 
