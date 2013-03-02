@@ -35,8 +35,6 @@ removed http: prefix (done with download??. No?) don't create http:// directory?
 
 add download option to multipage template
 
-add system function to pxp
-
 print variables defined in normal xpath extract expressions?
 
 ignore namespace option

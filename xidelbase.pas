@@ -46,6 +46,7 @@ procedure perform;
 
 implementation
 
+uses process;
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML);
@@ -2145,5 +2146,28 @@ begin
 end;
 
 
+function xqfSystem(const args: TXQVArray): IXQValue;
+var
+  proc: TProcess;
+  temps: string;
+begin
+  requiredArgCount(args, 1);
+  proc := TProcess.Create(nil);
+  proc.CommandLine := args[0].toString;
+  try
+    proc.Options := proc.Options + [poUsePipes, poWaitOnExit];
+    proc.Execute;
+    setlength(temps, proc.Output.NumBytesAvailable);
+    proc.Output.Read(temps[1], length(temps));
+    result := xqvalue(temps);
+  finally
+    proc.free;
+  end;
+end;
+
+var pxp: TXQNativeModule;
+initialization
+  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
+  pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
 end.
 
