@@ -1217,6 +1217,7 @@ var next, res: TFollowToList;
     decodeURL(data.fullurl, tempProto, tempHost, tempPath);
     htmlparser.variableChangeLog.add('host', tempHost);
     htmlparser.variableChangeLog.add('path', tempPath);
+    htmlparser.variableChangeLog.add('raw', data.rawData);
 
     if yieldDataToParent then begin
       if res = nil then res := TFollowToList.Create;

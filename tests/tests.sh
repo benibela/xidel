@@ -216,6 +216,11 @@ tests/test.sh xpath8 '<a>3</a>' -e ' . + 3 '
 tests/test.sh xpath9 '<a>3</a>' -e ' . '
 tests/test.sh xpath10 '<a>3</a>' -e ' . eq . '
  
+#magic variables
+tests/test.sh varraw '<a>3</a>' -e '$raw'
+tests/test.sh varurlhostpath 'http://example.org/bar' -e 'concat($url, "||", $host, "||", $path)'
+tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
+
 #other stuff
 tests/test.sh system -e 'system("echo 123") * 8'
 
