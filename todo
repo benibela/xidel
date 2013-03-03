@@ -28,15 +28,13 @@ translate win internet access / from german to english
 
 optimization for context less queries
 
---template parameters
+--template --multipage parameter
 
 removed http: prefix (done with download??. No?) don't create http:// directory?
 
 add download option to multipage template
 
 ignore namespace option
-
-add $raw (or raw()) variable/function containing the raw text
 
 
 Fix doc: ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("/tmp/so.xml"))'
@@ -60,60 +58,9 @@ Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
 change x-string on sequences:  x"{(1,2,3)}" = "1 2 3"
 --------
 
-Realworld:
-
-~/hg/programs/internet/xidel/xidel http://www.reddit.com/r/specart -f 'css(".entry .title a")[matches(@href, "[.](jpeg|jpg|png|gif)$$;")]' --download '././.'
-
-multiple link interpretation:
-
-~/hg/programs/internet/xidel/xidel http://www.reddit.com/r/specart [ -f 'css(".entry .title a")[matches(@href, "[.](jpeg|jpg|png|gif)$$;")]' --download '././.' ] [ -f  'css(".entry .title a")[matches(@href, "[.](jpeg|jpg|png|gif)$$;")] ]
-
-
-recursion:
-
-xidel "http://www.reddit.com/user/username/" --extract "<t:loop><div class='usertext-body'><div>{outer-xml(.)}</div></div><ul class='flat-list buttons'><a><t:s>link:=@href</t:s>permalink</a></ul></div></div></t:loop>" --follow "<a rel='nofollow next'>{.}</a>?" 
-
-
-
-Processing Context:
-
-  - Options
-  - Data source:
-    - file 
-    - data
-    - http (url, method, post data)
-    - bracketized contextes? parent context??
-  - Follows
-  - Extractions
-  - Downloads
-  
-   [ -f //a -e //title ] [ -f // ]
-
-   [ http://google.de -f foo ] [ http://google.de -f bar --recurse ] 
-
-   http://base [ -f //a[@type="A"] --download a/ ] [ -f //a[@type="B"] --download b/ ] 
-
-   http://base -e x [ -f //a[@type="A"] --download a/ ] -e t [ -f //a[@type="B"] --download b/ ] 
-
-   http://base -e x [ -f //a[@type="A"] --download a/ -f wtf? ] -e t [ -f //a[@type="B"] --download b/ ] 
-
-
-???????????
-
-Parse DFS if no brackets are given BFS otherwise
-
- ../../../xidel/xidel http://www.example.org -f //a -e //title
-
- ../../../xidel/xidel [ http://www.example.org -f //a ] -e //title
-
-[ .. ] returns list of ext-urls, like http://google.de, http://example.org
-
-
-  
-
 add --no-repetition-check
 
-
+check follow-level
 
 GUI:
      
@@ -129,36 +76,24 @@ PASCAL:
         
         how to handle differnt post data to different urls
         
-  	
-  TEST: for ' " encoding in multipage template serialization
-  
   TODO: autochoose problematic when regex matches status
   	
   TEST: resolve-uri in multipage template
-  
-  FEATURE: allow arbitrary  $(); ?
-  
-  FIX:  ./xidel http://download.opensuse.org/repositories/home:/jsundermeyer/ -f "<BODY><PRE><A/><A/><A/><A/><t:loop><A>{.}</A></t:loop></PRE></BODY>" -e //title 
+    
 
 ./xidel http://download.opensuse.org/repositories/home:/jsundermeyer/openSUSE_12.2/x86_64/  -e '<BODY><PRE><A/><A/><A/><A/><A>{(u:=resolve-uri(.), translate(concat("(tr)(td)",u,"(/td)(/tr)"), "()", "&lt;&gt;"))}</A></PRE></BODY>' --extract-exclude=u
 
 VIDELIBRI:
   TODO: wrong user/pass check for Stb München
 
-------------------
-  
-TXS: test if script can access the documents language 
  
 -----------------------
 
 delayed
 
 
-PASCAL:
 
-  <ol><li>a<li>b<li>c</ol>
-
-GUI:
+script GUI:
 
   local ignore siblings
 
@@ -178,10 +113,5 @@ attribute matching:
   
   
   reload without scripts
-  
-MULTI PAGE
-
-  follow with post data
-  
-  
+ 
  

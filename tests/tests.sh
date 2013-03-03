@@ -274,3 +274,9 @@ tests/test.sh regression_entity3d '<a>x</a>' -e '<a>{res := "&amp;amp;amp;amp;"}
 
 tests/test.sh regression_object1 -e '($x := xs:object(("b","c")), $x.b)' 
 tests/test.sh regression_object2 -e '($x := xs:object(("b","c")), $x.a)' #allow accessing undefined properties
+
+tests/test.sh regression_multipage1  -e "<action><page url=\"tests/a.xml\"><template><title>{concat(., \"'\", '\"')}</title></template></page></action>" --extract-kind=multipage
+tests/test.sh regression_multipage2 -e "<action><page url=\"tests/a.xml\"><template><title><t:read var=\"res\" source=\" concat(., &quot;'&quot;, '&quot;')\"/></title></template></page></action>" --extract-kind=multipage
+#tests/test.sh regression_multipage3 -e '<action><page url="tests/a.xml"><template><title>{resolve-uri("b.xml")}</title></template></page></action>'
+
+tests/test.sh regression_htmlparse '<ol><li>a<li>b<li>c</ol>' -e '/ol/li'
