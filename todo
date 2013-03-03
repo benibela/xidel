@@ -28,7 +28,6 @@ translate win internet access / from german to english
 
 optimization for context less queries
 
-better extract kind autodetection (at least trimmed for xqueryo)
 --template parameters
 
 removed http: prefix (done with download??. No?) don't create http:// directory?
@@ -57,6 +56,8 @@ Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
        text/javascript
        text/x-javascript
        text/x-json
+       
+change x-string on sequences:  x"{(1,2,3)}" = "1 2 3"
 --------
 
 Realworld:

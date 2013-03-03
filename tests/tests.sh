@@ -189,12 +189,33 @@ tests/test.sh nest10c tests/a.xml [ -e //title  -f //a ] -e 'concat(//title, "x"
 #type selection
 tests/test.sh css '<a>hallo<b>cc</b></a>' --css b
 tests/test.sh xpath1 '<a>hallo<b>cc</b></a>' --xpath b
-tests/test.sh xpath2 '<a>hallo<b>cc</b></a>' --xpath b
+tests/test.sh xpath2 '<a>hallo<b>cc</b></a>' --xpath //b
 tests/test.sh xpath3 --xpath "'&gt;'"
 tests/test.sh xpath3 -e "'&gt;'"
 tests/test.sh xquery --xquery "'&gt;'"
 tests/test.sh xquerypath --xquery "'&gt;'" -e "'&gt;'"
 
+tests/test.sh xpath4 '<html>1<a class="foobar">2</a>3</html>' -e 'html'
+tests/test.sh xpath5 '<html>1<a class="foobar">2</a>3</html>' -e 'a'    #make this CSS??
+tests/test.sh xpath6 '<html>1<a class="foobar">2</a>3</html>' -e '//a'
+tests/test.sh xpath6 '<html>1<a class="foobar">2</a>3</html>' -e '    //a   '
+tests/test.sh css2 '<html>1<a class="foobar">2</a>3</html>' -e 'a.foobar'
+tests/test.sh css2 '<html>1<a class="foobar">2</a>3</html>' -e '   a.foobar   '
+tests/test.sh xquery4 '<html>1<a class="foobar">2</a>3</html>' -e '   let    $x := //a return $x'
+tests/test.sh xquery5 '<html>1<a class="foobar">2</a>3</html>' -e 'let $x := //a return "&gt;"'
+tests/test.sh xquery5 '<html>1<a class="foobar">2</a>3</html>' -e '    let $x := //a return "&gt;"'
+tests/test.sh xpath7 '<html>1<a class="foobar">2</a>3</html>' -e '"&gt;"'
+tests/test.sh xpath7 '<html>1<a class="foobar">2</a>3</html>' -e '     "&gt;"'
+tests/test.sh template '<html>1<a class="foobar">2</a>3</html>' -e '<a class="foobar">{.}</a>'
+tests/test.sh xquery6 -e '   declare     function local:abc(){"&gt;"}; local:abc()'
+tests/test.sh xquery6 -e '   declare     function local:abc($arg as xs:string){"&gt;"}; local:abc("foo")'
+tests/test.sh xquery6 -e '   declare variable $xyz := "a&gt;b"; substring($xyz,2,1)'
+tests/test.sh xquery6 -e '  xquery version "1.0"; "&gt;"'
+tests/test.sh xpath8 '<a>3</a>' -e ' 3 + . '
+tests/test.sh xpath8 '<a>3</a>' -e ' . + 3 '
+tests/test.sh xpath9 '<a>3</a>' -e ' . '
+tests/test.sh xpath10 '<a>3</a>' -e ' . eq . '
+ 
 #other stuff
 tests/test.sh system -e 'system("echo 123") * 8'
 
