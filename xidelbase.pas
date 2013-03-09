@@ -1338,9 +1338,9 @@ var
 begin
   case outputFormat of
     ofAdhoc, ofRawHTML, ofRawXML: begin
-      if printTypeAnnotations then w(value.typeName+': ');
       if value is TXQValueSequence then begin
         if (outputFormat <> ofAdhoc) and (value.getSequenceCount > 0) and not invariable then needRawWrapper;
+        if printTypeAnnotations then w(value.typeName+': ');
         i := 0;
         for x in value do begin
           if i <> 0 then wln();
@@ -1349,6 +1349,7 @@ begin
         end;
       end else if value is TXQValueNode then begin
         if (outputFormat <> ofAdhoc) and (not (value.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText)) and not invariable then needRawWrapper;
+        if printTypeAnnotations then w(value.typeName+': ');
         case printedNodeFormat of
           tnsText: w(value.toString);
           tnsXML: w(value.toNode.outerXML());
@@ -1357,6 +1358,8 @@ begin
         end;
       end
       else if value is TXQValueObject then begin
+
+        if printTypeAnnotations then begin needRawWrapper; w(value.typeName+': '); end;
         x := value.clone;
         temp := x as TXQValueObject;
         case outputFormat of
@@ -1395,6 +1398,7 @@ begin
       end
       else begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+        if printTypeAnnotations then w(value.typeName+': ');
         case outputFormat of
           ofAdhoc: w(value.toString);
           ofRawHTML: w(htmlStrEscape(value.toString));
