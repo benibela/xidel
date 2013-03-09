@@ -49,13 +49,13 @@ implementation
 uses process;
 //{$R xidelbase.res}
 
-type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML);
+type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash);
 var //output options
     outputFormat: TOutputFormat;
     outputEncoding: TEncoding = eUTF8;  //default to utf-8
     outputHeader, outputFooter: string;
     firstExtraction: boolean = true;
-    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '');
+    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
 
     internet: TInternetAccess;
@@ -370,6 +370,7 @@ TExtraction = class(TDataProcessing)
  procedure setVariables(v: string);
 
  procedure printExtractedValue(value: IXQValue; invariable: boolean);
+ procedure printBashVariable(const name: string; const value: IXQValue);
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string; showDefaultVariable: boolean);
  procedure printExtractedVariables(parser: THtmlTemplateParser; showDefaultVariableOverride: boolean);
 
@@ -1330,17 +1331,45 @@ begin
   end;
 end;
 
+function bashStrEscape(s: string): string;
+begin
+  if not strContains(s, #13) and not strContains(s, #10) then
+    exit('''' + StringReplace(s, '''', '''' + '"' + '''' + '"' + ''''  {<- 5 individual characters} , [rfReplaceAll]) + '''');
+  exit ('$''' + StringReplace(StringReplace(StringReplace(StringReplace(s,
+                   '\', '\\', [rfReplaceAll]),
+                   '''', '\''', [rfReplaceAll]),
+                   #10, '\n', [rfReplaceAll]),
+                   #13, '\r', [rfReplaceAll])
+         +  '''');
+end;
+
+
 procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
+  function escape(s: string): string;
+  begin
+    case outputFormat of
+      ofAdhoc: exit(s);
+      ofRawHTML: exit(htmlStrEscape(s));
+      ofRawXML, ofXMLWrapped: exit(xmlStrEscape(s));
+      ofBash: exit(bashStrEscape(s));
+      else raise Exception.Create('Invalid output format');
+    end;
+  end;
+
 var
   i: Integer;
   temp: TXQValueObject;
   x: IXQValue;
 begin
   case outputFormat of
-    ofAdhoc, ofRawHTML, ofRawXML: begin
+    ofAdhoc, ofRawHTML, ofRawXML, ofBash: begin
+      if (outputFormat = ofBash) and not invariable then begin
+        printBashVariable(defaultName, value);
+        exit;
+      end;
       if value is TXQValueSequence then begin
         if (outputFormat <> ofAdhoc) and ((value.getSequenceCount > 0) or printTypeAnnotations) and not invariable then needRawWrapper;
-        if printTypeAnnotations then w(value.typeName+': ');
+        if printTypeAnnotations then w(escape(value.typeName+': '));
         i := 0;
         for x in value do begin
           if i <> 0 then wln();
@@ -1349,9 +1378,9 @@ begin
         end;
       end else if value is TXQValueNode then begin
         if (outputFormat <> ofAdhoc) and (printTypeAnnotations or (not (value.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText))) and not invariable then needRawWrapper;
-        if printTypeAnnotations then w(value.typeName+': ');
+        if printTypeAnnotations then w(escape(value.typeName+': '));
         case printedNodeFormat of
-          tnsText: w(value.toString);
+          tnsText: w(escape(value.toString));
           tnsXML: w(value.toNode.outerXML());
           tnsHTML: w(value.toNode.outerHTML());
           else raise EInvalidArgument.Create('Unknown node print format');
@@ -1359,17 +1388,13 @@ begin
       end
       else if (value is TXQValueObject) or (value is TXQValueJSONArray) then begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-        if printTypeAnnotations then begin needRawWrapper; w(value.typeName+': '); end;
-        w(value.jsonSerialize(printedNodeFormat));
+        if printTypeAnnotations then begin needRawWrapper; w(escape(value.typeName+': ')); end;
+        w(escape(value.jsonSerialize(printedNodeFormat)));
       end
       else begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-        if printTypeAnnotations then w(value.typeName+': ');
-        case outputFormat of
-          ofAdhoc: w(value.toString);
-          ofRawHTML: w(htmlStrEscape(value.toString));
-          ofRawXML: w(xmlStrEscape(value.toString));
-        end;
+        if printTypeAnnotations then w(escape(value.typeName+': '));
+        w(escape(value.toString));
       end;
     end;
     ofJsonWrapped: begin
@@ -1379,6 +1404,39 @@ begin
       w(value.xmlSerialize(printedNodeFormat, 'seq', 'e', 'object'));
     end;
   end;
+end;
+
+var usedBashVariables: array of record
+  name: string;
+  count: longint;
+end;
+
+procedure TExtraction.printBashVariable(const name: string; const value: IXQValue);
+var
+  i: Integer;
+  v: IXQValue;
+begin
+  if value is TXQValueSequence then begin
+    for v in value do
+      printBashVariable(name, v);
+    exit;
+  end;
+
+  for i := 0 to high(usedBashVariables) do
+    if usedBashVariables[i].name = name then begin
+      if usedBashVariables[i].count = 1 then
+        wln(name+'[0]="$'+name+'"');
+      printBashVariable(name+'['+IntToStr(usedBashVariables[i].count)+']', value);
+      usedBashVariables[i].count+=1;
+      exit;
+    end;
+
+  w(name+'=');
+  printExtractedValue(value, true);
+  wln;
+  SetLength(usedBashVariables, length(usedBashVariables)+1);
+  usedBashVariables[high(usedBashVariables)].name:=name;
+  usedBashVariables[high(usedBashVariables)].count:=1;
 end;
 
 procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser; showDefaultVariableOverride: boolean);
@@ -1680,6 +1738,10 @@ begin
            end;
         wln('</object>');
       end;
+    end;
+    ofBash: begin
+      for i:=0 to vars.count-1 do
+        printBashVariable(vars.Names[i], vars.Values[i]);
     end;
   end;
 end;
@@ -2126,21 +2188,29 @@ begin
 
   outputHeader := mycmdline.readString('output-header');
   outputFooter := mycmdline.readString('output-footer');
-  if mycmdLine.readString('output-format') = 'adhoc' then
-    outputFormat:=ofAdhoc
-  else if mycmdLine.readString('output-format') = 'html' then begin
-    outputFormat:=ofRawHTML;
-    if not mycmdline.existsProperty('output-header') then outputHeader:='<!DOCTYPE html>'+LineEnding;
-  end else if mycmdLine.readString('output-format') = 'xml' then begin
-    outputFormat:=ofRawXML;
-    if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
-  end else if mycmdLine.readString('output-format') = 'xml-wrapped' then begin
-    outputFormat:=ofXMLWrapped;
-    if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
-  end else if (mycmdLine.readString('output-format') = 'json') or (mycmdLine.readString('output-format') = 'json-wrapped') then begin
-    outputFormat:=ofJsonWrapped;
-    if (mycmdLine.readString('output-format') = 'json') then writeln(stderr, 'Warning: Output-format json is deprecated, use json-wrapped instead');
-  end else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
+  case mycmdLine.readString('output-format') of
+    'adhoc': outputFormat:=ofAdhoc;
+    'html': begin
+      outputFormat:=ofRawHTML;
+      if not mycmdline.existsProperty('output-header') then outputHeader:='<!DOCTYPE html>'+LineEnding;
+    end;
+    'xml': begin
+      outputFormat:=ofRawXML;
+      if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+    end;
+    'xml-wrapped': begin
+      outputFormat:=ofXMLWrapped;
+      if not mycmdline.existsProperty('output-header') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+    end;
+    'json', 'json-wrapped': begin
+      outputFormat:=ofJsonWrapped;
+      if (mycmdLine.readString('output-format') = 'json') then writeln(stderr, 'Warning: Output-format json is deprecated, use json-wrapped instead');
+    end;
+    'bash': begin
+      outputFormat:=ofBash;
+    end;
+    else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
+  end;
 
   if assigned(onPreOutput) then onPreOutput();
 

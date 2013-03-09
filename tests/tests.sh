@@ -65,6 +65,7 @@ tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json-wra
 tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json  #deprecated
 tests/test.sh xmlraw1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml
 tests/test.sh htmlraw1 tests/a.xml --extract "<a>{.}</a>*" --output-format html
+tests/test.sh bash1 tests/a.xml --extract "<a>{.}</a>*" --output-format bash
 tests/test.sh xml1b tests/a.xml --output-format xml-wrapped --extract "<a>{.}</a>*" 
 tests/test.sh json1b tests/a.xml --output-format json-wrapped --extract "<a>{.}</a>*" 
 tests/test.sh json1b tests/a.xml --output-format json --extract "<a>{.}</a>*"  #deprecated
@@ -77,6 +78,7 @@ tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format jso
 tests/test.sh json2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format json  #deprecated
 tests/test.sh xmlraw2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format xml
 tests/test.sh htmlraw2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format html
+tests/test.sh bash2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format bash
 tests/test.sh xml2b tests/a.xml tests/b.xml --output-format xml-wrapped -e "<a>{.}</a>*" 
 tests/test.sh json2b tests/a.xml tests/b.xml --output-format json-wrapped -e "<a>{.}</a>*" 
 tests/test.sh json2b tests/a.xml tests/b.xml --output-format json -e "<a>{.}</a>*"  #deprecated
@@ -89,6 +91,7 @@ tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title>
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json #deprecated option
 tests/test.sh xmlraw3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml
 tests/test.sh htmlraw3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format html
+tests/test.sh bash3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format bash
 
 
 tests/test.sh adhoc4 -e '"<foobar>"' 
@@ -96,12 +99,14 @@ tests/test.sh xml4 -e '"<foobar>"' --output-format xml-wrapped
 tests/test.sh json4 -e '"<foobar>"' --output-format json-wrapped
 tests/test.sh xmlraw4 -e '"<foobar>"' --output-format xml
 tests/test.sh htmlraw4 -e '"<foobar>"' --output-format html
+tests/test.sh bash4 -e '"<foobar>"' --output-format bash
 
 tests/test.sh adhoc4b -e 'xquery version "1.0"; <foobar/>' 
 tests/test.sh xml4b -e 'xquery version "1.0"; <foobar/>' --output-format xml-wrapped
 tests/test.sh json4b -e 'xquery version "1.0"; <foobar/>' --output-format json-wrapped
 tests/test.sh xmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format xml
 tests/test.sh htmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format html
+tests/test.sh bash4b -e 'xquery version "1.0"; <foobar/>' --output-format bash
 
    #testing, if text nodes are surrounded by a text and if node ares escaped
 tests/test.sh adhoc5 '<x>123</x>'  -e '/x/text()' 
@@ -114,6 +119,7 @@ tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped --printed-no
 tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped --printed-node-format text
 tests/test.sh xmlraw5 '<x>123</x>' -e '/x' --output-format xml --printed-node-format text
 tests/test.sh htmlraw5 '<x>123</x>' -e '/x' --output-format html --printed-node-format text
+tests/test.sh bash5 '<x>123</x>' -e '/x' --output-format bash
 tests/test.sh adhoc5 '<x>123</x>'  -e '/x' 
 tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped 
 tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped 
@@ -130,12 +136,14 @@ tests/test.sh xml5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml-
 tests/test.sh json5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format json-wrapped
 tests/test.sh xmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml
 tests/test.sh htmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format html
+tests/test.sh bash5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format bash
 
 tests/test.sh adhoc6 '<x>123</x>'  -e 'a:=1, b:=2'
 tests/test.sh xml6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format xml-wrapped
 tests/test.sh json6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format json-wrapped
 tests/test.sh xmlraw6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format xml
 tests/test.sh htmlraw6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format html
+tests/test.sh bash6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format bash
 
 
 tests/test.sh adhoc-json -e '[1,2,3,{"a": 123,"b":"c"}]'
@@ -143,6 +151,20 @@ tests/test.sh xml-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml
 tests/test.sh html-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format html
 tests/test.sh xmlw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml-wrapped
 tests/test.sh jsonw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format json-wrapped
+tests/test.sh bash-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format bash
+
+tests/test.sh bash-escape1 --xquery '"1&#xA;2"' --output-format bash
+tests/test.sh bash-escape2 --xquery '"1&#xD;2"' --output-format bash
+tests/test.sh bash-escape3 --xquery "concat('\"', \"'\", '\\\\')" --output-format bash
+tests/test.sh bash-escape4 --xquery "concat('\"', \"'\", '\\\\', '&#xA;')" --output-format bash
+tests/test.sh bash-escape5 --xquery "concat('\"', \"'\", '\\\\', '&#xD;')" --output-format bash
+tests/test.sh bash-escape6 --xquery "concat('\"', \"'\", '\\\\', '&#xA;&#xD;')" --output-format bash
+tests/test.sh bash-escape7 --xquery "concat('\"', \"'\", '\\\\')" --output-format bash --print-type-annotations
+tests/test.sh bash-escape8 --xquery "concat('\"', \"'\", '\\\\', '&#xA;&#xD;')" --output-format bash --print-type-annotations
+
+tests/test.sh bash-combining1 -e 1 -e '(2,3)' -e '4' --output-format bash
+tests/test.sh bash-combining2 -e 1 -e '(2,3)' -e 'temp:=712' -e '4' --output-format bash
+tests/test.sh bash-combining3 -e 1 -e '(2,3)' -e 'temp:=712' -e '4' -e 'temp:=189' --output-format bash
 
 #Nesting
 tests/test.sh nest0a [ ]

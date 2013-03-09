@@ -1,0 +1,17 @@
+result='1'
+
+
+result[0]="$result"
+result[1]='2'
+result[2]='3'
+
+
+temp='712'
+
+
+result[3]='4'
+
+
+temp[0]="$temp"
+temp[1]='189'
+
