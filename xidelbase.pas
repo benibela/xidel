@@ -1503,11 +1503,6 @@ begin
       pageProcessed(nil,htmlparser);
     end;
     ekXPath, ekCSS, ekXQuery: begin
-      if firstExtraction then begin
-        firstExtraction := false;
-        if outputFormat = ofXMLWrapped then wln('<e>');
-      end else wln(outputArraySeparator[outputFormat]);
-
       htmlparser.parseHTMLSimple(data.rawdata, data.fullurl, data.contenttype);
       xpathparser.RootElement := htmlparser.HTMLTree;
       xpathparser.ParentElement := xpathparser.RootElement;
@@ -1523,6 +1518,11 @@ begin
         xpathparser.evaluate();
         printExtractedVariables(htmlparser, true);
       end else begin
+        if firstExtraction then begin
+          firstExtraction := false;
+          if outputFormat = ofXMLWrapped then wln('<e>');
+        end else wln(outputArraySeparator[outputFormat]);
+
         value := xpathparser.evaluate();
         printExtractedValue(value, false);
         htmlparser.oldVariableChangeLog.add(defaultName, value);
