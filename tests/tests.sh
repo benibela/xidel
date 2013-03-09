@@ -131,6 +131,11 @@ tests/test.sh json5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format jso
 tests/test.sh xmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml
 tests/test.sh htmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format html
 
+tests/test.sh adhoc-json -e '[1,2,3,{"a": 123,"b":"c"}]'
+tests/test.sh xml-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml
+tests/test.sh html-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format html
+tests/test.sh xmlw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml-wrapped
+tests/test.sh jsonw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format json-wrapped
 
 #Nesting
 tests/test.sh nest0a [ ]

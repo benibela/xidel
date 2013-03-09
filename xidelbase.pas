@@ -1339,7 +1339,7 @@ begin
   case outputFormat of
     ofAdhoc, ofRawHTML, ofRawXML: begin
       if value is TXQValueSequence then begin
-        if (outputFormat <> ofAdhoc) and (value.getSequenceCount > 0) and not invariable then needRawWrapper;
+        if (outputFormat <> ofAdhoc) and ((value.getSequenceCount > 0) or printTypeAnnotations) and not invariable then needRawWrapper;
         if printTypeAnnotations then w(value.typeName+': ');
         i := 0;
         for x in value do begin
@@ -1348,7 +1348,7 @@ begin
           i += 1;
         end;
       end else if value is TXQValueNode then begin
-        if (outputFormat <> ofAdhoc) and (not (value.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText)) and not invariable then needRawWrapper;
+        if (outputFormat <> ofAdhoc) and (printTypeAnnotations or (not (value.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText))) and not invariable then needRawWrapper;
         if printTypeAnnotations then w(value.typeName+': ');
         case printedNodeFormat of
           tnsText: w(value.toString);
@@ -1357,44 +1357,10 @@ begin
           else raise EInvalidArgument.Create('Unknown node print format');
         end;
       end
-      else if value is TXQValueObject then begin
-
+      else if (value is TXQValueObject) or (value is TXQValueJSONArray) then begin
+        if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
         if printTypeAnnotations then begin needRawWrapper; w(value.typeName+': '); end;
-        x := value.clone;
-        temp := x as TXQValueObject;
-        case outputFormat of
-          ofAdhoc: begin
-            w('{');
-            if temp.values.count > 0 then begin
-              w(temp.values.getName(0)+': '); printExtractedValue(temp.values.get(0), true);
-              for i:=1 to temp.values.count-1 do begin
-                w(', '+ temp.values.getName(i)+ ': ');
-                printExtractedValue(temp.values.get(i), true);
-              end;
-            end;
-            w('}');
-          end;
-          ofRawXML: begin
-            w('<object>');
-            if temp.values.count > 0 then begin
-              w('<'+temp.values.getName(0)+'>');printExtractedValue(temp.values.get(0), true); w('</'+temp.values.getName(0)+'>');
-              for i:=1 to temp.values.count-1 do begin
-                w(LineEnding+'<'+temp.values.getName(i)+'>');printExtractedValue(temp.values.get(i), true); w('</'+temp.values.getName(i)+'>');
-              end;
-            end;
-            w('</object>');
-          end;
-          ofRawHTML: begin
-            w('<div class="object">');
-            if temp.values.count > 0 then begin
-              w('<span class="' + temp.values.getName(0)+'">');printExtractedValue(temp.values.get(0), true); w('</span>');
-              for i:=1 to temp.values.count-1 do begin
-                w(LineEnding + '<span class="' + temp.values.getName(i)+'">');printExtractedValue(temp.values.get(i), true); w('</span>');
-              end;
-            end;
-            w('</div>');
-          end;
-        end;
+        w(value.jsonSerialize(printedNodeFormat));
       end
       else begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;

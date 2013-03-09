@@ -1,0 +1,4 @@
+<!DOCTYPE html>
+<html><body>
+[1, 2, 3, {"a": 123, "b": "c"}]
+</body></html>
