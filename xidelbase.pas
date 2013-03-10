@@ -69,6 +69,8 @@ THtmlTemplateParserBreaker = class(THtmlTemplateParser)
   procedure parseHTML(html,uri,contenttype: string);
   procedure parseHTMLSimple(html,uri,contenttype: string);
   procedure closeVariableLog;
+
+  procedure parseDoc(sender: TXQueryEngine; html,uri,contenttype: string; var node: TTreeNode);
 end;
 
  { TTemplateReaderBreaker }
@@ -79,6 +81,7 @@ end;
    procedure perform(actions: TStringArray);
    procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
  end;
+
 
     //data processing classes
 var htmlparser:THtmlTemplateParserBreaker;
@@ -125,7 +128,7 @@ end;
 function makeAbsoluteFilePath(s: string): string; //todo: check if it really needed where it is used
 begin
   result := s;
-  if strContains('://', s) then exit;
+  if strContains(s, '://') then exit;
   if s = '' then exit;
   if s[1] in AllowDirectorySeparators then exit;
   if (length(s) >= 3) and (s[2] = ':') and (s[3] in AllowDirectorySeparators) then exit;
@@ -204,7 +207,8 @@ type
 
 IData = interface //data interface, so we do not have to care about memory managment
   function rawData: string;
-  function fullUrl: string;
+  function baseUri: string;
+  function displayBaseUri: string;
   function contenttype: string;
 end;
 
@@ -219,11 +223,12 @@ TDataObject = class(TInterfacedObject, IData)
 public}
 private
   frawdata: string;
-  ffullurl: string;
+  fbaseurl, fdisplaybaseurl: string;
   fcontenttype: string;
 public
   function rawData: string;
-  function fullUrl: string;
+  function baseUri: string;
+  function displayBaseUri: string;
   function contentType: string;
   constructor create(somedata: string; aurl: string; acontenttype: string = '');
   //property parsed:TTreeDocument read GetParsed;
@@ -451,9 +456,14 @@ begin
   result := frawdata;
 end;
 
-function TDataObject.fullUrl: string;
+function TDataObject.baseUri: string;
 begin
-  result := ffullurl;
+  result := fbaseurl;
+end;
+
+function TDataObject.displayBaseUri: string;
+begin
+  result := fdisplaybaseurl;
 end;
 
 function TDataObject.contentType: string;
@@ -568,7 +578,7 @@ begin
   if cgimode or not allowFileAccess then
     raise Exception.Create('Download not permitted');
 
-  realUrl := data.fullurl;
+  realUrl := data.baseUri;
   if guessType(realUrl) = rtRemoteURL then decodeURL(realUrl, temp, temp, realUrl);
 
   realUrl := strSplitGet('?', realUrl);
@@ -673,6 +683,11 @@ begin
   result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data);
 end;
 
+function isStdin(s: string): boolean;
+begin
+  result := (s = '-') or (s = 'stdin:///') or (s = 'stdin:') or (s = 'stdin://');
+end;
+
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
 begin
@@ -681,10 +696,10 @@ begin
     method:='POST';
   if reader.read('method', temp) then begin
     method:=temp;
-    if method = '-' then
+    if isStdin(method) then
       method := trim(strReadFromStdin);
   end;
-  if data = '-' then
+  if isStdin(data) then
     data := strReadFromStdin;
 end;
 
@@ -731,9 +746,14 @@ begin
 end;
 
 function TDirectDataRequest.retrieve(parent: TProcessingContext): IData;
+var
+  partialData: String;
 begin
-  result := TDataObject.Create(data, copy(data, 1, 128));
-  if length(data) > length(result.fullurl) then (result as TDataObject).ffullurl := (result as TDataObject).ffullurl + '...';
+  partialData := data;
+  if length(partialData) > 80 then begin SetLength(partialData, 80); partialData += '...'; end;
+  result := TDataObject.Create(data, 'data:,'+partialData);
+  (result as TDataObject).fbaseurl := GetCurrentDir+DirectorySeparator;
+  //if length(data) > length(result.fullurl) then (result as TDataObject).ffullurl := (result as TDataObject).ffullurl + '...';
 end;
 
 function TDirectDataRequest.equalTo(ft: TFollowTo): boolean;
@@ -745,7 +765,8 @@ end;
 constructor TDataObject.create(somedata: string; aurl: string; acontenttype: string);
 begin
   frawdata := somedata;
-  ffullurl := aurl;
+  fbaseurl:=aurl;
+  fdisplaybaseurl:=aurl;
   fcontenttype := acontenttype;
 end;
 
@@ -758,7 +779,8 @@ end;
 
 function TStdinDataRequest.retrieve(parent: TProcessingContext): IData;
 begin
-  result := TDataObject.Create(strReadFromStdin(), '-');
+  result := TDataObject.Create(strReadFromStdin(), 'stdin:///');
+  (Result as TDataObject).fbaseurl := GetCurrentDir + DirectorySeparator;
 end;
 
 function TStdinDataRequest.equalTo(ft: TFollowTo): boolean;
@@ -772,7 +794,7 @@ begin
   data := trim(data);
   if cgimode then
     exit(TDirectDataRequest.create(data));
-  if data = '-' then
+  if isStdin(data) then
     exit(TStdinDataRequest.create());
   case guessType(data) of
     rtRemoteURL: result := THTTPRequest.Create(data);
@@ -885,12 +907,12 @@ begin
     pvkNode: begin
       n := dest.toNode;
       if n = nil then exit;
-      if n.typ <> tetOpen then addBasicUrl(dest.toString, basedata.fullurl)
-      else if SameText(n.value, 'a') then addBasicUrl(n.getAttribute('href', ''), basedata.fullurl)
-      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then addBasicUrl(n.getAttribute('src', ''), basedata.fullurl)
-      else addBasicUrl(n.deepNodeText(), basedata.fullurl);
+      if n.typ <> tetOpen then addBasicUrl(dest.toString, basedata.baseUri)
+      else if SameText(n.value, 'a') then addBasicUrl(n.getAttribute('href', ''), basedata.baseUri)
+      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then addBasicUrl(n.getAttribute('src', ''), basedata.baseUri)
+      else addBasicUrl(n.deepNodeText(), basedata.baseUri);
     end;
-    else addBasicUrl(dest.toString, basedata.fullurl);
+    else addBasicUrl(dest.toString, basedata.baseUri);
   end;
 end;
 
@@ -1205,17 +1227,17 @@ var next, res: TFollowToList;
     i: Integer;
     tempProto, tempHost, tempPath: string;
   begin
-    if follow <> '' then printStatus('**** Processing:'+data.fullurl+' ****')
+    if follow <> '' then printStatus('**** Processing: '+data.displayBaseUri+' ****')
     else for i := skipActions to high(actions) do
       if actions[i] is TExtraction then begin
-        printStatus('**** Processing:'+data.fullurl+' ****');
+        printStatus('**** Processing: '+data.displayBaseUri+' ****');
         break; //useless printing message if no extraction is there
       end;
 
     //printStatus(strFromPtr(self) + data.rawdata);
     //alreadyProcessed.Add(urls[0]+#1+post);
-    htmlparser.variableChangeLog.add('url', data.fullurl);
-    decodeURL(data.fullurl, tempProto, tempHost, tempPath);
+    htmlparser.variableChangeLog.add('url', data.baseUri);
+    decodeURL(data.baseUri, tempProto, tempHost, tempPath);
     htmlparser.variableChangeLog.add('host', tempHost);
     htmlparser.variableChangeLog.add('path', tempPath);
     htmlparser.variableChangeLog.add('raw', data.rawData);
@@ -1236,17 +1258,17 @@ var next, res: TFollowToList;
 
       if follow[1] = '<' then begin //assume my template
         htmlparser.parseTemplate(follow); //todo reuse existing parser
-        htmlparser.parseHTML(data.rawdata, data.fullurl, data.contenttype); //todo: optimize
+        htmlparser.parseHTML(data.rawdata, data.baseUri, data.contenttype); //todo: optimize
         for i:=0 to htmlparser.variableChangeLog.count-1 do
           if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getName(i)) = -1)) or
              ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getName(i)) > -1)) then
             res.merge(htmlparser.variableChangeLog.get(i), data, self);
       end else begin
         //assume xpath
-        htmlparser.parseHTMLSimple(data.rawdata, data.fullurl, data.contenttype);
+        htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
         xpathparser.RootElement := htmlparser.HTMLTree;
         xpathparser.ParentElement := xpathparser.RootElement;
-        xpathparser.StaticContext. BaseUri := data.fullurl;
+        xpathparser.StaticContext. BaseUri := data.baseUri;
         if strBeginsWith(follow, 'xquery') then xpathparser.parseXQuery1(follow)
         else xpathparser.parseXPath2(follow);
         res.merge(xpathparser.evaluate(), data, self);
@@ -1542,7 +1564,7 @@ var
   value: IXQValue;
 begin
   //set flags when first processed
-  if extract = '-' then extract:=strReadFromStdin;
+  if isStdin(extract) then extract:=strReadFromStdin;
   if extractKind = ekAuto then extractKind := guessExtractionKind(extract);
 
 
@@ -1557,14 +1579,14 @@ begin
     ekTemplate: begin
       htmlparser.UnnamedVariableName:=defaultName;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
-      htmlparser.parseHTML(data.rawdata, makeAbsoluteFilePath(data.fullurl), data.contenttype); //todo: full url is abs?
+      htmlparser.parseHTML(data.rawdata, makeAbsoluteFilePath(data.baseUri), data.contenttype); //todo: full url is abs?
       pageProcessed(nil,htmlparser);
     end;
     ekXPath, ekCSS, ekXQuery: begin
-      htmlparser.parseHTMLSimple(data.rawdata, data.fullurl, data.contenttype);
+      htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
       xpathparser.RootElement := htmlparser.HTMLTree;
       xpathparser.ParentElement := xpathparser.RootElement;
-      xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.fullurl);
+      xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.baseUri);
       case extractKind of
         ekCSS: query := xpathparser.parseCSS3(extract); //todo: optimize
         ekXPath: query := xpathparser.parseXPath2(extract);
@@ -1785,6 +1807,12 @@ begin
   FreeAndNil(FVariableLogCondensed);
 end;
 
+procedure THtmlTemplateParserBreaker.parseDoc(sender: TXQueryEngine; html, uri, contenttype: string; var node: TTreeNode);
+begin
+  parseHTMLSimple(html, uri, contenttype);
+  node := HTMLTree;
+end;
+
 constructor TTemplateReaderBreaker.create;
 begin
   onLog:=@selfLog;
@@ -1950,7 +1978,7 @@ var
 begin
   if (name = 'follow') or (name = 'follow-file') or ((name = '') and (value <> '[') and (value <> ']') and (length(currentContext.actions) > 0))  then begin
     if name = 'follow-file' then
-      if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('follow', '-')
+      if isStdin(value) then TCommandLineReaderBreaker(sender).overrideVar('follow', '-')
       else TCommandLineReaderBreaker(sender).overrideVar('follow', strLoadFromFileChecked(value));
 
     //writeln(stderr,name,'=',value);
@@ -1981,7 +2009,7 @@ begin
     specialized := '';
     case name of
       'extract-file':
-        if value = '-' then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
+        if isStdin(value) then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
         else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
       'template-file': begin
         TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'multipage');
@@ -2184,6 +2212,9 @@ begin
 
   baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
 
+  if allowInternetAccess and assigned(onPrepareInternet) then
+    onPrepareInternet(baseContext.userAgent, baseContext.proxy);
+
   cmdlineWrapper.Free;
 
   outputHeader := mycmdline.readString('output-header');
@@ -2229,6 +2260,7 @@ begin
     multipage.parser:=htmlparser;
   end;
   xpathparser := htmlparser.QueryEngine;
+  xpathparser.OnParseDoc:= @htmlparser.parseDoc;
 
   globalDuplicationList := TFollowToList.Create;
   try

@@ -290,6 +290,10 @@ echo foobar | tests/test.sh foobarmeth2 --method -  http://videlibri.sourceforge
 tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
 tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
 
+tests/test.sh regression_doconline --xquery '<a/> / doc("http://videlibri.sourceforge.net/xidelecho.php") // meth'
+tests/test.sh regression_doclocal --xquery '<a/> / doc("tests/a.xml") // title'
+tests/test.sh regression_doclocal --xquery 'doc("tests/a.xml") // title'
+
 #Regressions tests for bugs that have been fixed and should not appear again
 tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a></r>'
 tests/test.sh regression_text1b '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/text()}</a></r>'

@@ -1,0 +1,3 @@
+result='b'
+result[0]="$result"
+result[1]='c'
