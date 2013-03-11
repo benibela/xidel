@@ -145,6 +145,12 @@ tests/test.sh xmlraw6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format xml
 tests/test.sh htmlraw6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format html
 tests/test.sh bash6 '<x>123</x>'  -e 'a:=1, b:=2' --output-format bash
 
+tests/test.sh adhoc7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x
+tests/test.sh xml7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format xml-wrapped
+tests/test.sh json7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format json-wrapped
+tests/test.sh xmlraw7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format xml
+tests/test.sh htmlraw7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format html
+tests/test.sh bash7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format bash
 
 tests/test.sh adhoc-json -e '[1,2,3,{"a": 123,"b":"c"}]'
 tests/test.sh xml-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml

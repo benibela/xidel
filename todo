@@ -5,9 +5,6 @@ output-header/footer should evaluate {}
 
 store doctype
 
-read nbsp;
-
-
 test why download fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
 
 better failing handling: retry on 4xx/5xx? ignore and continue with next datasource?
