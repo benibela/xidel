@@ -46,7 +46,7 @@ procedure perform;
 
 implementation
 
-uses process;
+uses process, strutils;
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash);
@@ -579,10 +579,8 @@ begin
     raise Exception.Create('Download not permitted');
 
   realUrl := data.baseUri;
-  if guessType(realUrl) = rtRemoteURL then decodeURL(realUrl, temp, temp, realUrl);
+  if guessType(realUrl) = rtRemoteURL then realurl := decodeURL(realUrl).path;
 
-  realUrl := strSplitGet('?', realUrl);
-  realUrl := strSplitGet('#', realUrl);
   j := strRpos('/', realUrl);
   if j = 0 then begin
     realPath := '';
@@ -1225,7 +1223,7 @@ var next, res: TFollowToList;
   procedure subProcess(data: IData; skipActions: integer = 0);
   var
     i: Integer;
-    tempProto, tempHost, tempPath: string;
+    decoded: TDecodedUrl;
   begin
     if follow <> '' then printStatus('**** Processing: '+data.displayBaseUri+' ****')
     else for i := skipActions to high(actions) do
@@ -1237,9 +1235,9 @@ var next, res: TFollowToList;
     //printStatus(strFromPtr(self) + data.rawdata);
     //alreadyProcessed.Add(urls[0]+#1+post);
     htmlparser.variableChangeLog.add('url', data.baseUri);
-    decodeURL(data.baseUri, tempProto, tempHost, tempPath);
-    htmlparser.variableChangeLog.add('host', tempHost);
-    htmlparser.variableChangeLog.add('path', tempPath);
+    decoded := decodeURL(data.baseUri);
+    htmlparser.variableChangeLog.add('host', decoded.host + IfThen(decoded.port <> '80', ':' + decoded.port, ''));
+    htmlparser.variableChangeLog.add('path', decoded.path);
     htmlparser.variableChangeLog.add('raw', data.rawData);
 
     if yieldDataToParent then begin
