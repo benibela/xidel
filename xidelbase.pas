@@ -1236,7 +1236,7 @@ var next, res: TFollowToList;
     //alreadyProcessed.Add(urls[0]+#1+post);
     htmlparser.variableChangeLog.add('url', data.baseUri);
     decoded := decodeURL(data.baseUri);
-    htmlparser.variableChangeLog.add('host', decoded.host + IfThen(decoded.port <> '80', ':' + decoded.port, ''));
+    htmlparser.variableChangeLog.add('host', decoded.host + IfThen(decoded.port <> '' , ':' + decoded.port, ''));
     htmlparser.variableChangeLog.add('path', decoded.path);
     htmlparser.variableChangeLog.add('raw', data.rawData);
 
