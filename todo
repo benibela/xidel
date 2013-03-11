@@ -1,20 +1,11 @@
 
-Add a export variables to bash (possible?)
-
 proxy??
 
-output-format bash variables
-name=value; export name;
-array=(v1 v2 v3); export array; #optional declare -a array
-
-
-declare -A array
-array[property]=value
-#no nesting? not compatible
-
-source $(xidel -e '<td>abc</td><td>{$var}</td><td>foo</td><td>{$xyz}</td>' --output-format bash)
-
 output-header/footer should evaluate {} 
+
+store doctype
+
+read nbsp;
 
 
 fix path for doc inside of "xidel --extract-file something" to be relative to current directory or something file
@@ -30,18 +21,9 @@ optimization for context less queries
 
 --template --multipage parameter
 
-removed http: prefix (done with download??. No?) don't create http:// directory?
-
 add download option to multipage template
 
 ignore namespace option
-
-
-Fix doc: ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("/tmp/so.xml"))'
- ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("../../../tmp/so.xml"))'
-  ~/hg/programs/internet/xidel/xidel -e 'xquery version "1.0"; (<a>b</a> / doc("http://google.de"))'
-
-latter: need onRetrieveDoc event
 
 Xidel: compatibility options in CGI
 
@@ -55,7 +37,6 @@ Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
        text/x-javascript
        text/x-json
        
-change x-string on sequences:  x"{(1,2,3)}" = "1 2 3"
 --------
 
 add --no-repetition-check
@@ -86,6 +67,9 @@ PASCAL:
 VIDELIBRI:
   TODO: wrong user/pass check for Stb München
 
+  ULB Due
+  
+  STB BERLIN 
  
 -----------------------
 

@@ -592,6 +592,8 @@ begin
   while strBeginsWith(realPath, '/') do delete(realPath,1,1);
 
   downloadTo := htmlparser.replaceEnclosedExpressions(Self.downloadTarget);
+  if striBeginsWith(downloadTo, 'http://') then delete(downloadTo, 1, length('http://'));
+  if striBeginsWith(downloadTo, 'https://') then delete(downloadTo, 1, length('https://'));
   {$ifdef win32}
   downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
   {$endif}
