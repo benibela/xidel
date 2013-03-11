@@ -7,11 +7,6 @@ store doctype
 
 test why download fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
 
-better failing handling: retry on 4xx/5xx? ignore and continue with next datasource?
- 
-
-translate win internet access / from german to english
-
 optimization for context less queries
 
 --template --multipage parameter
@@ -19,8 +14,6 @@ optimization for context less queries
 add download option to multipage template
 
 ignore namespace option
-
-do not parse entities in cdata sections
 
 Xidel: compatibility options in CGI
 
