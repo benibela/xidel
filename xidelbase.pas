@@ -1263,12 +1263,68 @@ end;
 
 
 
+function guessExtractionKind(e: string): TExtractionKind;
+  function checkWords(first: string; second: array of string): boolean;
+  var
+    temp: PChar;
+    i: Integer;
+  begin
+    if length(e) < length(first) + 1 then exit(false);
+    if not strBeginsWith(e, first) then exit(false);
+    if not (e[length(first)+1] in [#1..#32]) then exit(false);
+    if length(second) = 0 then exit(true);
+    temp := @e[length(first)+1];
+    while temp^ in [#1..#32] do inc(temp); //skip additional whitespace
+    for i:= 0 to high(second) do
+      if strBeginsWith(temp, second[i]) then exit(true);
+    exit(false);
+  end;
+var
+  dots: Integer;
+  i: Integer;
+begin
+  { try to detect the type of an extract expression:
+    Template:  if it is an xml file, i.e. starts with a <
+    CSS:       If it contains many # or .    i.e. if there is a [#.] before any other non letter/space character
+    XQuery:    If it starts with a XQuery only command (i.e. xquery version, declare function, ...)
+    XPath:     otherwise
+  }
+
+
+  if (e = '') or (e = '.' {just context item}) then exit(ekXPath);
+  if e[1] in [#0..#32] then e := trim(e);
+  if (e[1] = '<') then exit(ekTemplate);
+
+  if e[1] = '#' then exit(ekCSS);
+
+  if checkWords('xquery', ['version']) or checkWords('typeswitch', []) or checkWords('import', ['module', 'schema']) or
+     checkWords('module', ['namespace']) or
+     checkWords('declare', ['function', 'variable', 'namespace', 'default', 'boundary-space', 'base-uri', 'option', 'construction', 'copy-namespace'])
+     or checkWords('let', []) {<- that will be changed to mean xpath 3 some time} then
+    exit(ekXQuery);
+
+  result := ekXPath;
+
+  dots := 0;
+  for i := 1 to length(e) do
+    case e[i] of
+      'a'..'z','A'..'Z',#1..#32: ;
+      '#': exit(ekCSS);
+      '.': if ((i = 1) or (e[i-1] in ['a'..'z','A'..'Z'])) and ((i = length(e)) or (e[i+1] in ['a'..'z','A'..'Z'])) then
+         dots+=1;
+      else exit(ekXPath);
+    end;
+  if dots > 0 then exit(ekCSS)
+  else exit(ekXPath);
+end;
+
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
   procedure subProcess(data: IData; skipActions: integer = 0);
   var
     i: Integer;
     decoded: TDecodedUrl;
+    followKind: TExtractionKind;
   begin
     if follow <> '' then printStatus('**** Processing: '+data.displayBaseUri+' ****')
     else for i := skipActions to high(actions) do
@@ -1299,7 +1355,9 @@ var next, res: TFollowToList;
 
       htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
 
-      if follow[1] = '<' then begin //assume my template
+      followKind := guessExtractionKind(follow);
+
+      if followKind = ekTemplate then begin //assume my template
         htmlparser.parseTemplate(follow); //todo reuse existing parser
         htmlparser.parseHTML(data.rawdata, data.baseUri, data.contenttype); //todo: optimize
         for i:=0 to htmlparser.variableChangeLog.count-1 do
@@ -1312,8 +1370,11 @@ var next, res: TFollowToList;
         xpathparser.RootElement := htmlparser.HTMLTree;
         xpathparser.ParentElement := xpathparser.RootElement;
         xpathparser.StaticContext. BaseUri := data.baseUri;
-        if strBeginsWith(follow, 'xquery') then xpathparser.parseXQuery1(follow)
-        else xpathparser.parseXPath2(follow);
+        case followKind of
+          ekXQuery: xpathparser.parseXQuery1(follow);
+          ekCSS: xpathparser.parseCSS3(follow);
+          else{ekXPath: }xpathparser.parseXPath2(follow);
+        end;
         res.merge(xpathparser.evaluate(), data, self);
       end;
       if followTo <> nil then begin
@@ -1534,60 +1595,6 @@ begin
   printExtractedVariables(parser, false);
 end;
 
-function guessExtractionKind(e: string): TExtractionKind;
-  function checkWords(first: string; second: array of string): boolean;
-  var
-    temp: PChar;
-    i: Integer;
-  begin
-    if length(e) < length(first) + 1 then exit(false);
-    if not strBeginsWith(e, first) then exit(false);
-    if not (e[length(first)+1] in [#1..#32]) then exit(false);
-    if length(second) = 0 then exit(true);
-    temp := @e[length(first)+1];
-    while temp^ in [#1..#32] do inc(temp); //skip additional whitespace
-    for i:= 0 to high(second) do
-      if strBeginsWith(temp, second[i]) then exit(true);
-    exit(false);
-  end;
-var
-  dots: Integer;
-  i: Integer;
-begin
-  { try to detect the type of an extract expression:
-    Template:  if it is an xml file, i.e. starts with a <
-    CSS:       If it contains many # or .    i.e. if there is a [#.] before any other non letter/space character
-    XQuery:    If it starts with a XQuery only command (i.e. xquery version, declare function, ...)
-    XPath:     otherwise
-  }
-
-
-  if (e = '') or (e = '.' {just context item}) then exit(ekXPath);
-  if e[1] in [#0..#32] then e := trim(e);
-  if (e[1] = '<') then exit(ekTemplate);
-
-  if e[1] = '#' then exit(ekCSS);
-
-  if checkWords('xquery', ['version']) or checkWords('typeswitch', []) or checkWords('import', ['module', 'schema']) or
-     checkWords('module', ['namespace']) or
-     checkWords('declare', ['function', 'variable', 'namespace', 'default', 'boundary-space', 'base-uri', 'option', 'construction', 'copy-namespace'])
-     or checkWords('let', []) {<- that will be changed to mean xpath 3 some time} then
-    exit(ekXQuery);
-
-  result := ekXPath;
-
-  dots := 0;
-  for i := 1 to length(e) do
-    case e[i] of
-      'a'..'z','A'..'Z',#1..#32: ;
-      '#': exit(ekCSS);
-      '.': if ((i = 1) or (e[i-1] in ['a'..'z','A'..'Z'])) and ((i = length(e)) or (e[i+1] in ['a'..'z','A'..'Z'])) then
-         dots+=1;
-      else exit(ekXPath);
-    end;
-  if dots > 0 then exit(ekCSS)
-  else exit(ekXPath);
-end;
 
 function TExtraction.process(data: IData): TFollowToList;
   function termContainsVariableDefinition(term: TXQTerm): boolean;
