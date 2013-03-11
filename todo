@@ -20,6 +20,8 @@ add download option to multipage template
 
 ignore namespace option
 
+do not parse entities in cdata sections
+
 Xidel: compatibility options in CGI
 
 Check for url in pxp:json
