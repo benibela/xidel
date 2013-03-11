@@ -1835,7 +1835,7 @@ var i: Integer;
 
 procedure THtmlTemplateParserBreaker.initParsingModel(html,uri,contenttype: string);
 begin
-  HTMLParser.repairMissingStartTags := strEndsWith(uri, 'html') or strEndsWith(uri, 'htm') or striContains(contenttype, 'html') or striContains(html, '<html>');
+  HTMLParser.repairMissingStartTags := striEndsWith(uri, 'html') or striEndsWith(uri, 'htm') or striContains(contenttype, 'html') or striContains(html, '<html>');
 end;
 
 procedure THtmlTemplateParserBreaker.parseHTML(html, uri, contenttype: string);
@@ -1844,8 +1844,25 @@ begin
   inherited parseHTML(html, uri, contenttype);
 end;
 
+function strFirstNonSpace(const s: string): char;
+begin
+  for i:=1 to length(s) do
+    if not (s[i] in WHITE_SPACE) then exit(s[i]);
+  exit(#0);
+end;
+
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
 begin
+  (*if (strFirstNonSpace(html) in ['{', '[']) and (
+    striEndsWith(uri, 'json') or striEndsWith(uri, 'jsonp')
+    or striContains(contenttype, 'application/json') or striContains(contenttype, 'application/x-javascript')
+    or striContains(contenttype, 'text/javascript') or striContains(contenttype, 'text/x-javascript')
+    or striContains(contenttype, 'text/x-json')) then begin
+    xpathparser.evaluate();  StaticContext. xpathparser.findNativeModule('http://jsoniq.org/functions').findBasicFunction('parse-json').func^(xqvalue(html));
+
+    exit;
+  end;               *)
+
   initParsingModel(html, uri, contenttype);
   inherited parseHTMLSimple(html, uri, contenttype);
 end;

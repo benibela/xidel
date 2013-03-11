@@ -17,15 +17,9 @@ ignore namespace option
 
 Xidel: compatibility options in CGI
 
-Check for url in pxp:json
 
 Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
-       check for .json extension, application/json content-type 
-       application/json
-       application/x-javascript
-       text/javascript
-       text/x-javascript
-       text/x-json
+(required context override in xquery engine)
        
 --------
 
