@@ -24,7 +24,7 @@ interface
 
 uses
   Classes,         {$ifdef win32} windows, {$endif}
-  extendedhtmlparser,  xquery, xquery_json, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
+  extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess, contnrs,
   rcmdline
   ;
@@ -46,7 +46,7 @@ procedure perform;
 
 implementation
 
-uses process, strutils;
+uses process, strutils, xquery_json;
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash);
