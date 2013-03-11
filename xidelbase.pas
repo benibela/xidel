@@ -416,6 +416,7 @@ TProcessingContext = class(TDataProcessing)
   userAgent: string;
   proxy: string;
   printReceivedHeaders: boolean;
+  errorHandling: string;
 
   quiet: boolean;
 
@@ -654,6 +655,46 @@ begin
 end;
 
 function THTTPRequest.retrieve(parent: TProcessingContext): IData;
+  function doRetrieve(retries: integer): string;
+    function matches(filter: string; value: string): boolean;
+    var
+      i: Integer;
+    begin
+      if length(filter) <> length(value) then exit(false);
+      for i := 1 to length(filter) do
+        if (filter[i] <> 'x') and (filter[i] <> value[i]) then
+          exit(false);
+      result := true;
+    end;
+
+  var
+    errors: TStringArray;
+    cur: TStringArray;
+    i: Integer;
+  begin
+    try
+      result := onRetrieve(method, url, data);
+    except
+      on e: EInternetException do begin
+        errors := strSplit(parent.errorHandling, ',');
+        for i:=0 to high(errors) do begin
+          cur := strSplit(errors[i], '=');
+          if matches(trim(cur[0]), inttostr(e.errorCode)) then
+            case trim(cur[1]) of
+              'abort': raise;
+              'ignore': exit('');
+              'retry': begin
+                if retries <= 0 then raise;
+                Sleep(trunc(parent.wait*1000));
+                exit(doRetrieve(retries-1));
+              end;
+            end;
+        end;
+        raise;
+      end;
+    end;
+  end;
+
 var
   i: Integer;
 begin
@@ -662,7 +703,7 @@ begin
   parent.printStatus('**** Retrieving:'+url+' ****');
   if data <> '' then parent.printStatus('Data: '+data);
   result := TDataObject.create('', url);
-  if assigned(onRetrieve) then (result as TDataObject).frawdata := onRetrieve(method, url, data);
+  if assigned(onRetrieve) then (result as TDataObject).frawdata := doRetrieve(10);
   if parent.printReceivedHeaders and assigned(internet) then begin
     parent.printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
     for i:=0 to internet.lastHTTPHeaders.Count-1 do
@@ -1040,6 +1081,7 @@ begin
     //reader.read('post', Post);
     //reader.read('method', method); moved to
     reader.read('print-received-headers', printReceivedHeaders);
+    reader.read('error-handling', errorHandling);
   end;
 
   if reader.read('output-encoding', tempstr) then setOutputEncoding(tempstr); //allows object returned by extract to change the output-encoding
@@ -1139,6 +1181,7 @@ begin
   userAgent := other.userAgent;
   proxy := other.proxy;
   printReceivedHeaders:=other.printReceivedHeaders;
+  errorHandling:=errorHandling;
 
   quiet := other.quiet;
 
@@ -2141,6 +2184,7 @@ begin
     mycmdLine.declareString('post', 'Post request to send (url encoded)');
     mycmdLine.declareString('method', 'Http method to use (e.g. GET, POST, PUT)', 'GET');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
+    mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
   end;
 
   mycmdLine.beginDeclarationCategory('Output options:');
