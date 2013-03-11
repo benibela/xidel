@@ -8,8 +8,6 @@ store doctype
 read nbsp;
 
 
-fix path for doc inside of "xidel --extract-file something" to be relative to current directory or something file
-
 test why download fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
 
 better failing handling: retry on 4xx/5xx? ignore and continue with next datasource?
@@ -58,11 +56,7 @@ PASCAL:
         how to handle differnt post data to different urls
         
   TODO: autochoose problematic when regex matches status
-  	
-  TEST: resolve-uri in multipage template
-    
-
-./xidel http://download.opensuse.org/repositories/home:/jsundermeyer/openSUSE_12.2/x86_64/  -e '<BODY><PRE><A/><A/><A/><A/><A>{(u:=resolve-uri(.), translate(concat("(tr)(td)",u,"(/td)(/tr)"), "()", "&lt;&gt;"))}</A></PRE></BODY>' --extract-exclude=u
+  	  
 
 VIDELIBRI:
   TODO: wrong user/pass check for Stb München
