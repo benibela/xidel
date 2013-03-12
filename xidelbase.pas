@@ -2183,14 +2183,14 @@ begin
   end else if name = 'download' then begin
     TCommandLineReaderBreaker(sender).overrideVar(name, value);
     currentContext.readNewAction(TDownload.Create, cmdlineWrapper)
-  end else if (name = '') then begin
-    if value = '[' then begin
+  end else if (name = '') or (name = 'data') then begin
+    if (name = '') and (value = '[') then begin
       pushCommandLineState;
       currentContext := TProcessingContext.Create;
       currentContext.readOptions(cmdlineWrapper);
       contextStack[high(contextStack)] := currentContext;
     end
-    else if value = ']' then begin
+    else if (name = '') and (value = ']') then begin
       if length(contextStack) <= 1 then raise Exception.Create('Closing ] without opening [');
       currentContext.readOptions(cmdlineWrapper);
 
