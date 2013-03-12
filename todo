@@ -4,14 +4,9 @@ store doctype
 
 test why download fails on large files on win (does it fail? failed twice on a slow internet connection, never with my own)
 
-optimization for context less queries
-
 --template --multipage parameter
 
 add download option to multipage template
-
-
-Xidel: compatibility options in CGI
 
 
 Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
@@ -19,7 +14,7 @@ Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
        
 JSONiq tests
        
---------
+--------  
 
 GUI:
      
@@ -72,4 +67,34 @@ attribute matching:
   
   reload without scripts
  
+ 
+ 
+ 
+ XML Schema
+ 
+ XQuery 3
+ 
+ Optimizer:
+   Some cases:
+     
+     Move constants out of loops:
+        $seq[. + func($constant)]   ~~>  let $tempconstant = func($constant) return $seq[. + $tempconstant]
+    
+        for $i in $seq return $i + func($constant)  ~~>  let $tempconstant := func($constant) for $i in seq return . + $tempconstant
+   
+        every, some, ... as above
+     
+        $seq / func($constant)
+   
+    Bottom-to-Top-Evaluation?:
+        evaluate constants only once, store result in term tree
+        
+    
+    Cache big function:
+        do not reparse css every time
+        do not reparse regex
+        
+    Value sorted lists for comparisons:
+        every $x in $seq satisfies $x = $seq2 ~~> let $sseq2 := sorted($seq2) return every $x in $seq satisfies $x = $sseq2
+           with  $sseq2 has O(log #sseq) comparisons
  

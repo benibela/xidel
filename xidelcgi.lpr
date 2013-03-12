@@ -95,8 +95,9 @@ procedure printPre;
 begin
   if mycmdline.readFlag('raw') then begin
     case mycmdLine.readString('output-format') of
-      'xml': w('Content-Type: text/html');
-      'json': w('Content-Type: application/json');
+      'xml', 'xml-wrapped': w('Content-Type: application/xml');
+      'html': w('Content-Type: text/html');
+      'json', 'json-wrapped': w('Content-Type: application/json');
       {'adhoc':} else w('Content-Type: text/plain');
     end;
     w('');
@@ -125,7 +126,7 @@ begin
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
   w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <br> <span class="options"><b>Output Options</b>: ');
-  w(  select('printed-node-format', 'Node format:', ['text', 'xml']) +  select('output-format', 'Output format:', ['adhoc', 'json', 'xml']));
+  w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
   w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
 
