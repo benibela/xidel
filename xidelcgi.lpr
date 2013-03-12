@@ -8,15 +8,15 @@ uses
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
-                            '<table id="t1">'#13#10+
+                            '<table id="t1"><tbody>'#13#10+
                             '<tr><td>Hello</td></tr>'#13#10+
-                            '</table>'#13#10+
-                            '<table id="t2">'#13#10+
+                            '</tbody></table>'#13#10+
+                            '<table id="t2"><tbody>'#13#10+
                             '<tr><td>123</td><td>other</td></tr>'#13#10+
                             '<tr><td>foo</td><td>columns</td></tr>'#13#10+
                             '<tr><td>bar</td><td>are</td></tr>'#13#10+
                             '<tr><td>xyz</td><td>ignored</td></tr>'#13#10+
-                            '</table>'#13#10+
+                            '</tbody></table>'#13#10+
                             '</html>';
 
 
@@ -28,9 +28,9 @@ const ExampleHTML: string = '<html><body>'#13#10+
 
     ExampleCSS: string = '#t2 tr td:first-child';
 
-    ExampleXPath: string = 'id("t2") / tr / td[1]';
+    ExampleXPath: string = 'id("t2") / tbody / tr / td[1]';
 
-    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($name as xs:string){'#13#10'  id($name) / tr / td[1]'#13#10'};'#13#10'local:test("t2")';
+    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($name as xs:string){'#13#10'  id($name) / tbody / tr / td[1]'#13#10'};'#13#10'local:test("t2")';
 
     ExampleTemplateResult: string =
       'col: 123'#13#10 +
@@ -127,7 +127,7 @@ begin
   w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <br> <span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml']) +  select('output-format', 'Output format:', ['adhoc', 'json', 'xml']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
-  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings ("$varname;") ') + checkbox('no-objects', 'Disable objects (object(("a", 1)).a)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
+  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
 
   w('</span></form>');
 
