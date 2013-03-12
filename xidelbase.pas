@@ -2214,6 +2214,7 @@ begin
   mycmdLine.declareString('follow-include', 'Comma separated list of variables used in an foloow template. (white list)');
   mycmdLine.declareFile('follow-file', 'File containing an follow expression (for longer expressions)');
   mycmdLine.declareInt('follow-level', 'Maximal recursion deep', 99999);
+  mycmdLine.declareFlag('allow-repetitions', 'Follow all links, even if that page was already visited.');
 
   mycmdLine.beginDeclarationCategory('Extraction options:');
 
@@ -2351,7 +2352,8 @@ begin
   xpathparser := htmlparser.QueryEngine;
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
 
-  globalDuplicationList := TFollowToList.Create;
+  if not mycmdline.readFlag('allow-repetitions') then
+    globalDuplicationList := TFollowToList.Create;
   try
     baseContext.process(nil).free;
     baseContext.Free;

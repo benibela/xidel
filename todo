@@ -1,6 +1,3 @@
-
-proxy??
-
 output-header/footer should evaluate {} 
 
 store doctype
@@ -19,6 +16,8 @@ Xidel: compatibility options in CGI
 
 Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
 (required context override in xquery engine)
+       
+JSONiq tests
        
 --------
 

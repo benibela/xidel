@@ -265,6 +265,8 @@ tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
 tests/test.sh system -e 'system("echo 123") * 8'
 tests/test.sh namespace1 '<a xmlns="foobar">def</a>' -e / --printed-node-format xml
 tests/test.sh namespace2 '<a xmlns="foobar">def</a>' -e / --printed-node-format xml --ignore-namespaces
+tests/test.sh repetitionoff tests/a.xml tests/a.xml -e //title
+tests/test.sh repetitionon tests/a.xml tests/a.xml -e //title --allow-repetitions
 
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
