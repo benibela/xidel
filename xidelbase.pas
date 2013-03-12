@@ -2262,7 +2262,7 @@ begin
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
-  mycmdLine.declareString('output-doctype', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
+  mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   //mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   //mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </xml> if you want to wrap everything in an xml node)', '');
 
@@ -2328,21 +2328,21 @@ begin
 
   cmdlineWrapper.Free;
 
-  outputHeader := mycmdline.readString('output-doctype');
+  outputHeader := mycmdline.readString('output-declaration');
   outputFooter := ''; //mycmdline.readString('output-footer');
   case mycmdLine.readString('output-format') of
     'adhoc': outputFormat:=ofAdhoc;
     'html': begin
       outputFormat:=ofRawHTML;
-      if not mycmdline.existsProperty('output-doctype') then outputHeader:='<!DOCTYPE html>'+LineEnding;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<!DOCTYPE html>'+LineEnding;
     end;
     'xml': begin
       outputFormat:=ofRawXML;
-      if not mycmdline.existsProperty('output-doctype') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
     end;
     'xml-wrapped': begin
       outputFormat:=ofXMLWrapped;
-      if not mycmdline.existsProperty('output-doctype') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
     end;
     'json', 'json-wrapped': begin
       outputFormat:=ofJsonWrapped;

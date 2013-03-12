@@ -78,6 +78,7 @@ tests/test.sh json1b tests/a.xml --output-format json-wrapped --extract "<a>{.}<
 tests/test.sh json1b tests/a.xml --output-format json --extract "<a>{.}</a>*"  #deprecated
 tests/test.sh xmlraw1b tests/a.xml --output-format xml --extract "<a>{.}</a>*" 
 tests/test.sh htmlraw1b tests/a.xml --output-format html --extract "<a>{.}</a>*" 
+tests/test.sh xmlraw1c tests/a.xml --output-format xml --extract "<a>{.}</a>*"  --output-declaration="<?xml>"
 
 tests/test.sh adhoc2 tests/a.xml tests/b.xml -e "<a>{.}</a>*"
 tests/test.sh xml2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format xml-wrapped
