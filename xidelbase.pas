@@ -82,6 +82,7 @@ end;
    procedure setTemplate(atemplate: TMultiPageTemplate);
    procedure perform(actions: TStringArray);
    procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
+
  end;
 
 
@@ -429,6 +430,7 @@ TProcessingContext = class(TDataProcessing)
 
   ignoreNamespace: boolean;
   compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityNoDotNotation, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+  noOptimizations: boolean;
 
   yieldDataToParent: boolean;
 
@@ -452,6 +454,8 @@ TProcessingContext = class(TDataProcessing)
   procedure insertFictiveDatasourceIfNeeded; //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
 
   function process(data: IData): TFollowToList; override;
+
+  function replaceEnclosedExpressions(data: IData; expr: string): string;
 
   destructor destroy; override;
 end;
@@ -580,6 +584,7 @@ end;
 
 { TDownload }
 
+
 function TDownload.process(data: IData): TFollowToList;
 var
   temp, realUrl: String;
@@ -605,7 +610,7 @@ begin
   end;
   while strBeginsWith(realPath, '/') do delete(realPath,1,1);
 
-  downloadTo := htmlparser.replaceEnclosedExpressions(Self.downloadTarget);
+  downloadTo := parent.replaceEnclosedExpressions(data, Self.downloadTarget);
   if striBeginsWith(downloadTo, 'http://') then delete(downloadTo, 1, length('http://'));
   if striBeginsWith(downloadTo, 'https://') then delete(downloadTo, 1, length('https://'));
   {$ifdef win32}
@@ -1125,6 +1130,7 @@ begin
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
   reader.read('no-extended-strings', compatibilityNoExtendedStrings);
   reader.read('ignore-namespaces', ignoreNamespace);
+  reader.read('no-optimizations', noOptimizations);
 
 
 //deprecated:   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
@@ -1212,6 +1218,7 @@ begin
   compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
   ignoreNamespace:=other.ignoreNamespace;
+  noOptimizations:=other.noOptimizations;
 end;
 
 procedure TProcessingContext.assignActions(other: TProcessingContext);
@@ -1386,15 +1393,17 @@ var next, res: TFollowToList;
              ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getName(i)) > -1)) then
             res.merge(htmlparser.variableChangeLog.get(i), data, self);
       end else begin
-        //assume xpath
-        htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
-        xpathparser.RootElement := htmlparser.HTMLTree;
-        xpathparser.ParentElement := xpathparser.RootElement;
+        //assume xpath like
         xpathparser.StaticContext. BaseUri := data.baseUri;
         case followKind of
           ekXQuery: xpathparser.parseXQuery1(follow);
           ekCSS: xpathparser.parseCSS3(follow);
           else{ekXPath: }xpathparser.parseXPath2(follow);
+        end;
+        if noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
+          htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
+          xpathparser.RootElement := htmlparser.HTMLTree;
+          xpathparser.ParentElement := xpathparser.RootElement;
         end;
         res.merge(xpathparser.evaluate(), data, self);
       end;
@@ -1456,6 +1465,43 @@ begin
   end;
 
   next.free;
+end;
+
+type
+  TXQueryEngineBreaker = class(TXQueryEngine)
+    function parserEnclosedExpressionsString(s: string): IXQuery;
+  end;
+
+  function TXQueryEngineBreaker.parserEnclosedExpressionsString(s: string): IXQuery;
+  begin
+    result := parseXStringNullTerminated(s);
+  end;
+
+function TProcessingContext.replaceEnclosedExpressions(data: IData; expr: string): string;
+var
+  noOpt: Boolean;
+  standard: Boolean;
+  i: Integer;
+  temp: IXQuery;
+begin
+  //see htmlparser.replaceEnclosedExpressions(expr)
+  standard := true;
+  for i:=1 to length(expr) do
+    if expr[i] in ['{', '}' ] then begin
+      standard := false;
+      break;
+    end;
+  if standard then exit(expr);
+
+  noOpt := (self = nil) {safety check} or (noOptimizations);
+  temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
+  if noOpt or (xqcdFocusDocument in temp.Term.getContextDependencies) then begin
+    htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
+    xpathparser.RootElement := htmlparser.HTMLTree;
+    xpathparser.ParentElement := xpathparser.RootElement;
+  end;
+
+  result := temp.evaluate().toString;
 end;
 
 destructor TProcessingContext.destroy;
@@ -1660,14 +1706,16 @@ begin
       pageProcessed(nil,htmlparser);
     end;
     ekXPath, ekCSS, ekXQuery: begin
-      htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
-      xpathparser.RootElement := htmlparser.HTMLTree;
-      xpathparser.ParentElement := xpathparser.RootElement;
       xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.baseUri);
       case extractKind of
         ekCSS: query := xpathparser.parseCSS3(extract); //todo: optimize
         ekXPath: query := xpathparser.parseXPath2(extract);
         ekXQuery: query := xpathparser.parseXQuery1(extract);
+      end;
+      if parent.noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
+        htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
+        xpathparser.RootElement := htmlparser.HTMLTree;
+        xpathparser.ParentElement := xpathparser.RootElement;
       end;
 
       if termContainsVariableDefinition(query.Term) then begin
@@ -2275,6 +2323,7 @@ begin
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
   mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');
   mycmdline.declareFlag('ignore-namespaces', 'Removes all namespaces from the input document');
+  mycmdline.declareFlag('no-optimizations', 'Disables optimizations');
 
   mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
