@@ -212,6 +212,7 @@ IData = interface //data interface, so we do not have to care about memory manag
   function baseUri: string;
   function displayBaseUri: string;
   function contenttype: string;
+  function recursionLevel: integer;
 end;
 
 { TData }
@@ -227,11 +228,13 @@ private
   frawdata: string;
   fbaseurl, fdisplaybaseurl: string;
   fcontenttype: string;
+  frecursionLevel: integer;
 public
   function rawData: string;
   function baseUri: string;
   function displayBaseUri: string;
   function contentType: string;
+  function recursionLevel: integer;
   constructor create(somedata: string; aurl: string; acontenttype: string = '');
   //property parsed:TTreeDocument read GetParsed;
 end;
@@ -247,6 +250,7 @@ TFollowTo = class
 
   function clone: TFollowTo; virtual; abstract;
   function retrieve(parent: TProcessingContext): IData; virtual; abstract;
+  function retrieve(parent: TProcessingContext; recursionLevel: integer): IData; virtual;
   procedure replaceVariables; virtual;
   function equalTo(ft: TFollowTo): boolean; virtual; abstract;
   procedure readOptions(reader: TOptionReaderWrapper); virtual;
@@ -411,6 +415,7 @@ TProcessingContext = class(TDataProcessing)
   follow: string;
   followExclude, followInclude: TStringArray;
   followTo: TProcessingContext;
+  followMaxLevel: integer;
 
   nextSibling: TProcessingContext;
 
@@ -473,6 +478,11 @@ end;
 function TDataObject.contentType: string;
 begin
   result := fcontenttype;
+end;
+
+function TDataObject.recursionLevel: integer;
+begin
+  result := frecursionLevel;
 end;
 
 
@@ -849,6 +859,12 @@ begin
   //todo: handle completely empty data ''
 end;
 
+function TFollowTo.retrieve(parent: TProcessingContext; recursionLevel: integer): IData;
+begin
+  result := retrieve(parent);
+  if result is TDataObject then (result as TDataObject).frecursionLevel:=recursionLevel;
+end;
+
 procedure TFollowTo.replaceVariables;
 begin
   //empty
@@ -1100,7 +1116,7 @@ begin
   reader.read('follow', follow);
   reader.read('follow-exclude', tempstr); followExclude := strSplit(tempstr, ',', false);
   reader.read('follow-include', tempstr); followInclude := strSplit(tempstr, ',', false);
-//todo  reader.read('follow-level', followMaxLevel);
+  reader.read('follow-level', followMaxLevel);
 
   reader.read('no-json', compatibilityNoJSON);
   reader.read('no-json-literals', compatibilityNoJSONliterals);
@@ -1383,8 +1399,9 @@ var next, res: TFollowToList;
         res.merge(xpathparser.evaluate(), data, self);
       end;
       if followTo <> nil then begin
-        for i := 0 to res.Count - 1 do
-          followto.process(TFollowTo(res[i]).retrieve(self)).free;
+        if data.recursionLevel + 1 <= followMaxLevel then
+          for i := 0 to res.Count - 1 do
+            followto.process(TFollowTo(res[i]).retrieve(self, data.recursionLevel+1)).free;
         res.Clear;
       end;
     end;
@@ -1392,8 +1409,8 @@ var next, res: TFollowToList;
 
 var
   i: Integer;
+  curRecursionLevel: Integer;
 begin
-
   //init
   xpathparser.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
   xpathparser.AllowJSON:=not compatibilityNoJSON;
@@ -1420,9 +1437,13 @@ begin
       if actions[i] is TProcessingContext then //evaluate subexpressions, even if there is no data source (they might have their own sources)
         next.merge(actions[i].process(nil), i + 1);
 
+  curRecursionLevel := 0;
+  if data <> nil then curRecursionLevel:=data.recursionLevel+1;
   while next.Count > 0 do begin
-    subProcess(next.First.retrieve(self), next.first.nextAction);
-    if wait > 0.001 then Sleep(trunc(wait * 1000));
+    if curRecursionLevel <= followMaxLevel then begin
+      subProcess(next.First.retrieve(self, curRecursionLevel), next.first.nextAction);
+      if wait > 0.001 then Sleep(trunc(wait * 1000));
+    end;
     next.Delete(0);
   end;
 

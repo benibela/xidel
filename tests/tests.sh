@@ -17,6 +17,13 @@ tests/test.sh direct_hidden_vars1 --hide-variable-names '<a>foobar</a>' -e '<a>{
 tests/test.sh direct_hidden_vars2 '<a>foobar</a>' --hide-variable-names -e '<a>{.}</a>' 
 tests/test.sh direct_hidden_vars3 '<a>foobar</a>' -e '<a>{.}</a>' --hide-variable-names
 
+#follow max level
+tests/test.sh maxlevel0 tests/a.xml --follow-level 0 -e //title -f //A --allow-repetitions
+tests/test.sh maxlevel1 tests/a.xml --follow-level 1 -e //title -f //A --allow-repetitions
+tests/test.sh maxlevel2  tests/a.xml --follow-level 2 -e //title -f //A --allow-repetitions
+tests/test.sh maxlevel3  tests/a.xml --follow-level 3 -e //title -f //A --allow-repetitions
+
+
 #"sibling tests"
 tests/test.sh sibling1a '<empty/>' -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
 tests/test.sh sibling1b "<a/>"  -e "a:=17"  tests/a.xml -e 'a:=909'

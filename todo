@@ -21,8 +21,6 @@ JSONiq tests
        
 --------
 
-add --no-repetition-check
-
 check follow-level
 
 GUI:
