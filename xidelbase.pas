@@ -65,6 +65,8 @@ type
 { THtmlTemplateParserBreaker }
 
 THtmlTemplateParserBreaker = class(THtmlTemplateParser)
+  ignorenamespaces: boolean;
+
   procedure initParsingModel(html,uri,contenttype: string);
   procedure parseHTML(html,uri,contenttype: string);
   procedure parseHTMLSimple(html,uri,contenttype: string);
@@ -420,6 +422,7 @@ TProcessingContext = class(TDataProcessing)
 
   quiet: boolean;
 
+  ignoreNamespace: boolean;
   compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityNoDotNotation, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
 
   yieldDataToParent: boolean;
@@ -1105,6 +1108,7 @@ begin
   reader.read('strict-type-checking', compatibilityStrictTypeChecking);
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
   reader.read('no-extended-strings', compatibilityNoExtendedStrings);
+  reader.read('ignore-namespaces', ignoreNamespace);
 
 
 //deprecated:   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
@@ -1191,6 +1195,7 @@ begin
   compatibilityNoDotNotation := other.compatibilityNoDotNotation;
   compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
+  ignoreNamespace:=other.ignoreNamespace;
 end;
 
 procedure TProcessingContext.assignActions(other: TProcessingContext);
@@ -1397,6 +1402,7 @@ begin
   htmlparser.variableChangeLog.allowPropertyDotNotation:=xpathparser.VariableChangelog.allowPropertyDotNotation;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
+  htmlparser.ignoreNamespaces := ignoreNamespace;
 
   //apply all actions to all data source
   next := TFollowToList.Create;
@@ -1852,6 +1858,8 @@ begin
 end;
 
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
+var temp: TTreeNode;
+    i: integer;
 begin
   (*if (strFirstNonSpace(html) in ['{', '[']) and (
     striEndsWith(uri, 'json') or striEndsWith(uri, 'jsonp')
@@ -1865,6 +1873,17 @@ begin
 
   initParsingModel(html, uri, contenttype);
   inherited parseHTMLSimple(html, uri, contenttype);
+  if ignoreNamespaces then begin
+    temp := FHtmlTree;
+    while temp <> nil do begin
+      temp.namespace:=nil;
+      if temp.attributes <> nil then
+        for i:=temp.attributes.count-1 downto 0 do
+          if temp.attributes.Items[i].isNamespaceNode then
+            temp.attributes.Delete(i);
+      temp := temp.next;
+    end;
+  end;
 end;
 
 procedure THtmlTemplateParserBreaker.closeVariableLog;
@@ -2233,6 +2252,7 @@ begin
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
   mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');
+  mycmdline.declareFlag('ignore-namespaces', 'Removes all namespaces from the input document');
 
   mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
