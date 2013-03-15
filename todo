@@ -13,7 +13,9 @@ Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
 (required context override in xquery engine)
        
 JSONiq tests
-       
+
+suggest similar named functions, list accepted types for type error in error message
+
 --------  
 
 GUI:
@@ -71,8 +73,8 @@ attribute matching:
  
  
  XML Schema
- 
- XQuery 3
+  
+ XPath / XQuery 3
  
  Optimizer:
    Some cases:
