@@ -49,13 +49,13 @@ implementation
 uses process, strutils, xquery_json;
 //{$R xidelbase.res}
 
-type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash);
+type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
 var //output options
     outputFormat: TOutputFormat;
     outputEncoding: TEncoding = eUTF8;  //default to utf-8
     outputHeader, outputFooter: string;
     firstExtraction: boolean = true;
-    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '');
+    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
 
     internet: TInternetAccess;
@@ -382,7 +382,7 @@ TExtraction = class(TDataProcessing)
  procedure setVariables(v: string);
 
  procedure printExtractedValue(value: IXQValue; invariable: boolean);
- procedure printBashVariable(const name: string; const value: IXQValue);
+ procedure printCmdlineVariable(const name: string; const value: IXQValue);
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string; showDefaultVariable: boolean);
  procedure printExtractedVariables(parser: THtmlTemplateParser; showDefaultVariableOverride: boolean);
 
@@ -1542,6 +1542,12 @@ begin
          +  '''');
 end;
 
+function windowsCmdEscape(s: string): string;
+begin
+  result := StringsReplace(s, [#10, #13, '%%', '^',  '&',  '<',  '>',  '|',  '"',  ',',  ';',  '(',  ')', '"' ],
+                              ['',  '',  '%',  '^^', '^&', '^<', '^>', '^|', '^"', '^,', '^;', '^(', '^)', '^"'],
+                              [rfReplaceAll]);
+end;
 
 procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
   function escape(s: string): string;
@@ -1551,6 +1557,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       ofRawHTML: exit(htmlStrEscape(s));
       ofRawXML, ofXMLWrapped: exit(xmlStrEscape(s));
       ofBash: exit(bashStrEscape(s));
+      ofWindowsCmd: exit(windowsCmdEscape(s));
       else raise Exception.Create('Invalid output format');
     end;
   end;
@@ -1561,9 +1568,9 @@ var
   x: IXQValue;
 begin
   case outputFormat of
-    ofAdhoc, ofRawHTML, ofRawXML, ofBash: begin
-      if (outputFormat = ofBash) and not invariable then begin
-        printBashVariable(defaultName, value);
+    ofAdhoc, ofRawHTML, ofRawXML, ofBash, ofWindowsCmd: begin
+      if (outputFormat in [ofBash, ofWindowsCmd]) and not invariable then begin
+        printCmdlineVariable(defaultName, value);
         exit;
       end;
       if value is TXQValueSequence then begin
@@ -1605,37 +1612,46 @@ begin
   end;
 end;
 
-var usedBashVariables: array of record
+var usedCmdlineVariables: array of record
   name: string;
   count: longint;
+  value: IXQValue;
 end;
 
-procedure TExtraction.printBashVariable(const name: string; const value: IXQValue);
+procedure TExtraction.printCmdlineVariable(const name: string; const value: IXQValue);
 var
   i: Integer;
   v: IXQValue;
 begin
   if value is TXQValueSequence then begin
     for v in value do
-      printBashVariable(name, v);
+      printCmdlineVariable(name, v);
     exit;
   end;
 
-  for i := 0 to high(usedBashVariables) do
-    if usedBashVariables[i].name = name then begin
-      if usedBashVariables[i].count = 1 then
-        wln(name+'[0]="$'+name+'"');
-      printBashVariable(name+'['+IntToStr(usedBashVariables[i].count)+']', value);
-      usedBashVariables[i].count+=1;
+  for i := 0 to high(usedCmdlineVariables) do
+    if usedCmdlineVariables[i].name = name then begin
+      if usedCmdlineVariables[i].count = 1 then
+        case outputFormat of
+          ofBash: wln(name+'[0]="$'+name+'"');
+          ofWindowsCmd: printCmdlineVariable(name+'[0]', usedCmdlineVariables[i].value);
+        end;
+      printCmdlineVariable(name+'['+IntToStr(usedCmdlineVariables[i].count)+']', value);
+      usedCmdlineVariables[i].count+=1;
       exit;
     end;
 
-  w(name+'=');
+  case outputFormat of
+    ofBash: w(name+'=');
+    ofWindowsCmd: w('SET '+name+'=');
+  end;
   printExtractedValue(value, true);
   wln;
-  SetLength(usedBashVariables, length(usedBashVariables)+1);
-  usedBashVariables[high(usedBashVariables)].name:=name;
-  usedBashVariables[high(usedBashVariables)].count:=1;
+  SetLength(usedCmdlineVariables, length(usedCmdlineVariables)+1);
+  usedCmdlineVariables[high(usedCmdlineVariables)].name:=name;
+  usedCmdlineVariables[high(usedCmdlineVariables)].count:=1;
+  if outputFormat = ofWindowsCmd then;
+    usedCmdlineVariables[high(usedCmdlineVariables)].value:=value;
 end;
 
 procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser; showDefaultVariableOverride: boolean);
@@ -1886,10 +1902,9 @@ begin
         wln('</object>');
       end;
     end;
-    ofBash: begin
+    ofBash, ofWindowsCmd:
       for i:=0 to vars.count-1 do
-        printBashVariable(vars.Names[i], vars.Values[i]);
-    end;
+        printCmdlineVariable(vars.Names[i], vars.Values[i]);
   end;
 end;
 
@@ -2397,9 +2412,8 @@ begin
       outputFormat:=ofJsonWrapped;
       if (mycmdLine.readString('output-format') = 'json') then writeln(stderr, 'Warning: Output-format json is deprecated, use json-wrapped instead');
     end;
-    'bash': begin
-      outputFormat:=ofBash;
-    end;
+    'bash': outputFormat:=ofBash;
+    'cmd':  outputFormat:=ofWindowsCmd;
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
 
@@ -2450,10 +2464,16 @@ begin
   globalDuplicationList.Free;
   mycmdLine.free;
 
-  if outputFormat = ofJsonWrapped then wln(']')
-  else if outputFormat = ofXMLWrapped then begin
-    if not firstExtraction then wln('</e>');
-    wln('</seq>');
+  case outputFormat of
+    ofJsonWrapped: wln(']');
+    ofXMLWrapped: begin
+      if not firstExtraction then wln('</e>');
+      wln('</seq>');
+    end;
+    ofWindowsCmd:
+      for i := 0 to high(usedCmdlineVariables) do
+        if usedCmdlineVariables[i].count > 1 then
+          wln('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
   end;
 
   if outputfooter <> '' then

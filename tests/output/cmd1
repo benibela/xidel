@@ -1,0 +1,4 @@
+SET result=b
+SET result[0]=b
+SET result[1]=c
+SET #result=2
