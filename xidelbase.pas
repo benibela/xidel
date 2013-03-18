@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs,
+  internetaccess, contnrs, dregexpr,
   rcmdline
   ;
 
@@ -462,6 +462,7 @@ TProcessingContext = class(TDataProcessing)
 
   function process(data: IData): TFollowToList; override;
 
+  class function replaceEnclosedExpressions(expr: string): string;
   function replaceEnclosedExpressions(data: IData; expr: string): string;
 
   destructor destroy; override;
@@ -746,9 +747,9 @@ end;
 
 procedure THTTPRequest.replaceVariables;
 begin
-  url := htmlparser.replaceEnclosedExpressions(url);
-  method := htmlparser.replaceEnclosedExpressions(method);
-  data := htmlparser.replaceEnclosedExpressions(data);
+  url := TProcessingContext.replaceEnclosedExpressions(url);
+  method := TProcessingContext.replaceEnclosedExpressions(method);
+  data := TProcessingContext.replaceEnclosedExpressions(data);
 end;
 
 function THTTPRequest.equalTo(ft: TFollowTo): boolean;
@@ -800,7 +801,7 @@ end;
 
 procedure TFileRequest.replaceVariables;
 begin
-  url := htmlparser.replaceEnclosedExpressions(url);
+  url := TProcessingContext.replaceEnclosedExpressions(url);
 end;
 
 function TFileRequest.equalTo(ft: TFollowTo): boolean;
@@ -1500,6 +1501,23 @@ begin
   next.free;
 end;
 
+function translateDeprecatedStrings(expr: string): string;
+var
+  regex: TRegExpr;
+begin
+  if mycmdline.readFlag('deprecated-string-options') then begin
+    regex := TRegExpr.Create('([$][a-zA-Z0-9-]);');
+    while regex.Exec(expr) do
+      expr := regex.Replace(expr, '{$1}', true);
+  end;
+  result := expr;
+end;
+
+class function TProcessingContext.replaceEnclosedExpressions(expr: string): string;
+begin
+  result := htmlparser.replaceEnclosedExpressions(translateDeprecatedStrings(expr));
+end;
+
 type
   TXQueryEngineBreaker = class(TXQueryEngine)
     function parserEnclosedExpressionsString(s: string): IXQuery;
@@ -1517,6 +1535,8 @@ var
   i: Integer;
   temp: IXQuery;
 begin
+  expr := translateDeprecatedStrings(expr);
+
   //see htmlparser.replaceEnclosedExpressions(expr)
   standard := true;
   for i:=1 to length(expr) do
@@ -2386,6 +2406,7 @@ begin
   mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');
   mycmdline.declareFlag('ignore-namespaces', 'Removes all namespaces from the input document');
   mycmdline.declareFlag('no-optimizations', 'Disables optimizations');
+  mycmdline.declareFlag('deprecated-string-options', 'Replaces the old $foo; variables with the new {$foo} in arguments');
 
   mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
