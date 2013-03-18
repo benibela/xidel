@@ -62,14 +62,25 @@ var //output options
 
 type
 
+TInputFormat = (ifAuto, ifXML, ifHTML);
+
+IData = interface //data interface, so we do not have to care about memory managment
+function rawData: string;
+function baseUri: string;
+function displayBaseUri: string;
+function contenttype: string;
+function recursionLevel: integer;
+function inputFormat: TInputFormat;
+end;
+
 { THtmlTemplateParserBreaker }
 
 THtmlTemplateParserBreaker = class(THtmlTemplateParser)
   ignorenamespaces: boolean;
 
-  procedure initParsingModel(html,uri,contenttype: string);
-  procedure parseHTML(html,uri,contenttype: string);
-  procedure parseHTMLSimple(html,uri,contenttype: string);
+  procedure initParsingModel(const data: IData);
+  procedure parseHTML(const data: IData);
+  procedure parseHTMLSimple(const data: IData);
   procedure closeVariableLog;
 
   procedure parseDoc(sender: TXQueryEngine; html,uri,contenttype: string; var node: TTreeNode);
@@ -208,14 +219,6 @@ type
 
 type
 
-IData = interface //data interface, so we do not have to care about memory managment
-  function rawData: string;
-  function baseUri: string;
-  function displayBaseUri: string;
-  function contenttype: string;
-  function recursionLevel: integer;
-end;
-
 { TData }
 
 { TDataObject }
@@ -230,12 +233,14 @@ private
   fbaseurl, fdisplaybaseurl: string;
   fcontenttype: string;
   frecursionLevel: integer;
+  finputformat: TInputFormat;
 public
   function rawData: string;
   function baseUri: string;
   function displayBaseUri: string;
   function contentType: string;
   function recursionLevel: integer;
+  function inputFormat: TInputFormat;
   constructor create(somedata: string; aurl: string; acontenttype: string = '');
   //property parsed:TTreeDocument read GetParsed;
 end;
@@ -247,6 +252,7 @@ TProcessingContext = class;
 
 TFollowTo = class
   nextAction: integer; //the next action after the action yielding the data, so an action does not process its own follows
+  inputFormat: TInputFormat;
   class function createFromRetrievalAddress(data: string): TFollowTo;
 
   function clone: TFollowTo; virtual; abstract;
@@ -255,6 +261,7 @@ TFollowTo = class
   procedure replaceVariables; virtual;
   function equalTo(ft: TFollowTo): boolean; virtual; abstract;
   procedure readOptions(reader: TOptionReaderWrapper); virtual;
+  procedure assign(other: TFollowTo); virtual;
 end;
 
 { THTTPRequest }
@@ -489,6 +496,11 @@ begin
   result := frecursionLevel;
 end;
 
+function TDataObject.inputFormat: TInputFormat;
+begin
+  result := finputFormat;
+end;
+
 
 { TFollowToProcessedData }
 
@@ -500,6 +512,7 @@ end;
 function TFollowToProcessedData.clone: TFollowTo;
 begin
   result :=  TFollowToProcessedData.Create(data);
+  result.inputFormat := inputFormat;
 end;
 
 function TFollowToProcessedData.retrieve(parent: TProcessingContext): IData;
@@ -670,6 +683,7 @@ begin
   result := THTTPRequest.create(url);
   THTTPRequest(result).method:=method;
   THTTPRequest(result).data:=data;
+  result.assign(self);
 end;
 
 function THTTPRequest.retrieve(parent: TProcessingContext): IData;
@@ -750,6 +764,7 @@ end;
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
 begin
+  inherited;
   method:='GET';
   if reader.read('post', data) then
     method:='POST';
@@ -772,6 +787,7 @@ end;
 function TFileRequest.clone: TFollowTo;
 begin
   result := TFileRequest.create(url);
+  result.assign(self);
 end;
 
 function TFileRequest.retrieve(parent: TProcessingContext): IData;
@@ -779,7 +795,7 @@ begin
   if not allowFileAccess then raise Exception.Create('File access not permitted');
   parent.printStatus('**** Retrieving:'+url+' ****');
   result := TDataObject.create(strLoadFromFileUTF8(url), url);
-
+  (result as TDataObject).fbaseurl:=makeAbsoluteFilePath((result as TDataObject).fbaseurl);
 end;
 
 procedure TFileRequest.replaceVariables;
@@ -802,6 +818,7 @@ end;
 function TDirectDataRequest.clone: TFollowTo;
 begin
   result := TDirectDataRequest.create(data);
+  result.assign(self);
 end;
 
 function TDirectDataRequest.retrieve(parent: TProcessingContext): IData;
@@ -834,6 +851,7 @@ end;
 function TStdinDataRequest.clone: TFollowTo;
 begin
   result := TStdinDataRequest.create;
+  result.assign(self);
 end;
 
 function TStdinDataRequest.retrieve(parent: TProcessingContext): IData;
@@ -867,7 +885,10 @@ end;
 function TFollowTo.retrieve(parent: TProcessingContext; recursionLevel: integer): IData;
 begin
   result := retrieve(parent);
-  if result is TDataObject then (result as TDataObject).frecursionLevel:=recursionLevel;
+  if result is TDataObject then begin
+    (result as TDataObject).frecursionLevel:=recursionLevel;
+    (result as TDataObject).finputformat:=inputFormat;
+  end;
 end;
 
 procedure TFollowTo.replaceVariables;
@@ -876,8 +897,20 @@ begin
 end;
 
 procedure TFollowTo.readOptions(reader: TOptionReaderWrapper);
+var ifs: string;
 begin
-  //empty
+  if reader.read('input-format', ifs) then
+    case ifs of
+      'auto': inputFormat:=ifAuto;
+      'xml': inputFormat:=ifXML;
+      'html': inputFormat:=ifHTML;
+      else raise Exception.Create('Invalid input-format: '+ifs);
+    end;
+end;
+
+procedure TFollowTo.assign(other: TFollowTo);
+begin
+  inputFormat:=other.inputFormat;
 end;
 
 { TFollowToWrapper }
@@ -1387,7 +1420,7 @@ var next, res: TFollowToList;
 
       if followKind = ekTemplate then begin //assume my template
         htmlparser.parseTemplate(follow); //todo reuse existing parser
-        htmlparser.parseHTML(data.rawdata, data.baseUri, data.contenttype); //todo: optimize
+        htmlparser.parseHTML(data); //todo: optimize
         for i:=0 to htmlparser.variableChangeLog.count-1 do
           if ((length(followInclude) = 0) and (arrayIndexOf(followExclude, htmlparser.variableChangeLog.getName(i)) = -1)) or
              ((length(followInclude) > 0) and (arrayIndexOf(followInclude, htmlparser.variableChangeLog.getName(i)) > -1)) then
@@ -1401,7 +1434,7 @@ var next, res: TFollowToList;
           else{ekXPath: }xpathparser.parseXPath2(follow);
         end;
         if noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
-          htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
+          htmlparser.parseHTMLSimple(data);
           xpathparser.RootElement := htmlparser.HTMLTree;
           xpathparser.ParentElement := xpathparser.RootElement;
         end;
@@ -1496,7 +1529,7 @@ begin
   noOpt := (self = nil) {safety check} or (noOptimizations);
   temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
   if noOpt or (xqcdFocusDocument in temp.Term.getContextDependencies) then begin
-    htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
+    htmlparser.parseHTMLSimple(data);
     xpathparser.RootElement := htmlparser.HTMLTree;
     xpathparser.ParentElement := xpathparser.RootElement;
   end;
@@ -1718,7 +1751,7 @@ begin
     ekTemplate: begin
       htmlparser.UnnamedVariableName:=defaultName;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
-      htmlparser.parseHTML(data.rawdata, makeAbsoluteFilePath(data.baseUri), data.contenttype); //todo: full url is abs?
+      htmlparser.parseHTML(data); //todo: full url is abs?
       pageProcessed(nil,htmlparser);
     end;
     ekXPath, ekCSS, ekXQuery: begin
@@ -1729,7 +1762,7 @@ begin
         ekXQuery: query := xpathparser.parseXQuery1(extract);
       end;
       if parent.noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
-        htmlparser.parseHTMLSimple(data.rawdata, data.baseUri, data.contenttype);
+        htmlparser.parseHTMLSimple(data);
         xpathparser.RootElement := htmlparser.HTMLTree;
         xpathparser.ParentElement := xpathparser.RootElement;
       end;
@@ -1923,15 +1956,23 @@ var i: Integer;
 
 { THtmlTemplateParserBreaker }
 
-procedure THtmlTemplateParserBreaker.initParsingModel(html,uri,contenttype: string);
+procedure THtmlTemplateParserBreaker.initParsingModel(const data: IData);
+var
+  f: TInputFormat;
 begin
-  HTMLParser.repairMissingStartTags := striEndsWith(uri, 'html') or striEndsWith(uri, 'htm') or striContains(contenttype, 'html') or striContains(html, '<html>');
+  f := data.inputFormat;
+  if data.inputFormat = ifAuto then
+    if striEndsWith(data.baseUri, 'html') or striEndsWith(data.baseUri, 'htm') or striContains(data.contenttype, 'html') or striContains(data.rawData, '<html>') then
+      f := ifHTML
+     else
+      f := ifXML;
+  HTMLParser.repairMissingStartTags := f = ifHTML;
 end;
 
-procedure THtmlTemplateParserBreaker.parseHTML(html, uri, contenttype: string);
+procedure THtmlTemplateParserBreaker.parseHTML(const data: IData);
 begin
-  initParsingModel(html, uri, contenttype);
-  inherited parseHTML(html, uri, contenttype);
+  initParsingModel(data);
+  inherited parseHTML(data.rawData, data.baseUri, data.contenttype);
 end;
 
 function strFirstNonSpace(const s: string): char;
@@ -1941,7 +1982,7 @@ begin
   exit(#0);
 end;
 
-procedure THtmlTemplateParserBreaker.parseHTMLSimple(html, uri, contenttype: string);
+procedure THtmlTemplateParserBreaker.parseHTMLSimple(const data: IData);
 var temp: TTreeNode;
     i: integer;
 begin
@@ -1955,8 +1996,8 @@ begin
     exit;
   end;               *)
 
-  initParsingModel(html, uri, contenttype);
-  inherited parseHTMLSimple(html, uri, contenttype);
+  initParsingModel(data);
+  inherited parseHTMLSimple(data.rawData, data.baseUri, data.contenttype);
   if ignoreNamespaces then begin
     temp := FHtmlTree;
     while temp <> nil do begin
@@ -1978,8 +2019,13 @@ begin
 end;
 
 procedure THtmlTemplateParserBreaker.parseDoc(sender: TXQueryEngine; html, uri, contenttype: string; var node: TTreeNode);
+var
+  tempData: TDataObject;
+  temptemp: IData;
 begin
-  parseHTMLSimple(html, uri, contenttype);
+  tempData := TDataObject.create(html, uri, contenttype);
+  temptemp := tempData;
+  parseHTMLSimple(temptemp);
   node := HTMLTree;
 end;
 
@@ -2323,9 +2369,10 @@ begin
   mycmdLine.declareFlag('print-type-annotations','Prints all variable values with type annotations (e.g. string: abc, instead of abc)');
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
-  mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), json or xml', 'adhoc');
+  mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
+  mycmdLine.declareString('input-format', 'Input format: auto, html, xml', 'auto');
   //mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   //mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </xml> if you want to wrap everything in an xml node)', '');
 
