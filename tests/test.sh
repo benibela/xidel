@@ -1,9 +1,11 @@
 #!/bin/bash
 mydir=`dirname "$0"`
+if [ -z "$XIDEL" ]; then XIDEL=$mydir/../xidel; fi
+
 
 if [ -f $mydir/output/$1 ]; then
 
-  if ($mydir/../xidel "${@:2}" 2> /dev/null  | diff - $mydir/output/$1); 
+  if ($XIDEL "${@:2}" 2> /dev/null  | diff --strip-trailing-cr - $mydir/output/$1); 
   then echo OK: $1;
   else echo FAILED: $1
   fi

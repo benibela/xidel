@@ -275,7 +275,7 @@ tests/test.sh namespace1 '<a xmlns="foobar">def</a>' -e / --printed-node-format 
 tests/test.sh namespace2 '<a xmlns="foobar">def</a>' -e / --printed-node-format xml --ignore-namespaces
 tests/test.sh repetitionoff tests/a.xml tests/a.xml -e //title
 tests/test.sh repetitionon tests/a.xml tests/a.xml -e //title --allow-repetitions
-tests/test.sh inputformatXml --input-format auto '<a>x</a>'  -e 'outer-xml(/)'
+tests/test.sh inputformatAuto --input-format auto '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatXml --input-format xml '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatHtml --input-format html '<a>x</a>'  -e 'outer-xml(/)'
 
