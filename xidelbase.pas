@@ -370,6 +370,7 @@ end;
 TExtractionKind = (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
 TExtraction = class(TDataProcessing)
  extract: string;
+ extractQueryCache: IXQuery;
  extractExclude, extractInclude: TStringArray;
  extractKind: TExtractionKind;
 
@@ -421,6 +422,7 @@ TProcessingContext = class(TDataProcessing)
   actions: array of TDataProcessing;
 
   follow: string;
+  followQueryCache: IXQuery;
   followExclude, followInclude: TStringArray;
   followTo: TProcessingContext;
   followMaxLevel: integer;
@@ -1429,17 +1431,18 @@ var next, res: TFollowToList;
       end else begin
         //assume xpath like
         xpathparser.StaticContext. BaseUri := data.baseUri;
-        case followKind of
-          ekXQuery: xpathparser.parseXQuery1(follow);
-          ekCSS: xpathparser.parseCSS3(follow);
-          else{ekXPath: }xpathparser.parseXPath2(follow);
-        end;
-        if noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
+        if followQueryCache = nil then
+          case followKind of
+            ekXQuery: followQueryCache := xpathparser.parseXQuery1(follow, xpathparser.StaticContext);
+            ekCSS: followQueryCache := xpathparser.parseCSS3(follow);
+            else{ekXPath: }followQueryCache := xpathparser.parseXPath2(follow, xpathparser.StaticContext);
+          end;
+        if noOptimizations or (xqcdFocusDocument in followQueryCache.Term.getContextDependencies) then begin
           htmlparser.parseHTMLSimple(data);
           xpathparser.RootElement := htmlparser.HTMLTree;
           xpathparser.ParentElement := xpathparser.RootElement;
         end;
-        res.merge(xpathparser.evaluate(), data, self);
+        res.merge(followQueryCache.evaluate(), data, self);
       end;
       if followTo <> nil then begin
         if data.recursionLevel + 1 <= followMaxLevel then
@@ -1751,8 +1754,15 @@ function TExtraction.process(data: IData): TFollowToList;
     exit(false);
   end;
 
+  function safeEvaluate: IXQValue;
+  begin
+    if (extractQueryCache.Term = nil) then exit(xqvalue);
+    if ((extractQueryCache.Term is TXQTermModule) and (extractQueryCache.Term.children[high(extractQueryCache.Term.children)] = nil)) then
+      extractQueryCache.Term.children[high(extractQueryCache.Term.children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
+    result := extractQueryCache.evaluate();
+  end;
+
 var
-  query: IXQuery;
   value: IXQValue;
 begin
   //set flags when first processed
@@ -1776,20 +1786,21 @@ begin
     end;
     ekXPath, ekCSS, ekXQuery: begin
       xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.baseUri);
-      case extractKind of
-        ekCSS: query := xpathparser.parseCSS3(extract); //todo: optimize
-        ekXPath: query := xpathparser.parseXPath2(extract);
-        ekXQuery: query := xpathparser.parseXQuery1(extract);
-      end;
+      if extractQueryCache = nil then
+        case extractKind of
+          ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
+          ekXPath: extractQueryCache := xpathparser.parseXPath2(extract, xpathparser.StaticContext);
+          ekXQuery: extractQueryCache := xpathparser.parseXQuery1(extract, xpathparser.StaticContext);
+        end;
       if parent.noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
         htmlparser.parseHTMLSimple(data);
         xpathparser.RootElement := htmlparser.HTMLTree;
         xpathparser.ParentElement := xpathparser.RootElement;
       end;
 
-      if termContainsVariableDefinition(query.Term) then begin
+      if termContainsVariableDefinition(extractQueryCache.Term) then begin
         THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
-        xpathparser.evaluate();
+        safeEvaluate;
         printExtractedVariables(htmlparser, true);
       end else begin
         if firstExtraction then begin
@@ -1797,7 +1808,7 @@ begin
           if outputFormat = ofXMLWrapped then wln('<e>');
         end else wln(outputArraySeparator[outputFormat]);
 
-        value := xpathparser.evaluate();
+        value := safeEvaluate;
         printExtractedValue(value, false);
         htmlparser.oldVariableChangeLog.add(defaultName, value);
       end;

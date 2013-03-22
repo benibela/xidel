@@ -62,7 +62,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--input-format html '&lt;a>x&lt;/a>'  -e 'outer-xml(/)'"/>
+        <CommandLineParams Value="-e 'declare variable $a:=123; declare function local:xyz(){456}; 8' -e '3+local:xyz()'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
