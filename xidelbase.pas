@@ -42,6 +42,7 @@ var cgimode: boolean = false;
     onRetrieve: function (const method, url, postdata: string): string;
     onPreOutput: procedure ();
 
+
 procedure perform;
 
 implementation
@@ -2060,6 +2061,7 @@ begin
   node := HTMLTree;
 end;
 
+
 constructor TTemplateReaderBreaker.create;
 begin
   onLog:=@selfLog;
@@ -2335,9 +2337,27 @@ begin
   {$I printUsage.inc}
 end;
 
-procedure perform;
+var baseContext: TProcessingContext;
+
+
+procedure importModule(pseudoSelf: tobject; sender: TXQueryEngine; const namespace: string; const at: array of string);
 var
-  baseContext: TProcessingContext;
+  ft: TFollowTo;
+  d: IData;
+begin
+  if xpathparser.findModule(namespace) <> nil then exit;
+  for i := 0 to high(at) do begin
+    ft := TFollowTo.createFromRetrievalAddress(at[i]);
+    d := ft.retrieve(baseContext);
+    ft.free;
+    if d <> nil then begin
+      xpathparser.registerModule(xpathparser.parseXQuery1(d.rawData));
+      exit
+    end;
+  end;
+end;
+
+procedure perform;
 begin
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
@@ -2514,6 +2534,7 @@ begin
   end;
   xpathparser := htmlparser.QueryEngine;
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
+  xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
 
   if not mycmdline.readFlag('allow-repetitions') then
     globalDuplicationList := TFollowToList.Create;
