@@ -278,6 +278,9 @@ tests/test.sh repetitionon tests/a.xml tests/a.xml -e //title --allow-repetition
 tests/test.sh inputformatAuto --input-format auto '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatXml --input-format xml '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatHtml --input-format html '<a>x</a>'  -e 'outer-xml(/)'
+tests/test.sh optadhoc '<a>x</a>'  -e /
+tests/test.sh optxml --xml '<a>x</a>'  -e /
+tests/test.sh opthtml --html '<a>x</a>'  -e /
 tests/test.sh moduleVars -e 'declare variable $a:=123' -e '$a'
 tests/test.sh moduleFunc1 -e 'declare variable $a:=123; declare function local:xyz(){456}; 8' -e 'local:xyz()+$a'
 tests/test.sh moduleFunc2 -e 'declare variable $a:=123; declare function local:xyz(){456}' -e 'declare function local:abc(){$a*1000}; local:xyz() + local:abc()'

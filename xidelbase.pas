@@ -2290,6 +2290,9 @@ begin
   end else if name = 'download' then begin
     TCommandLineReaderBreaker(sender).overrideVar(name, value);
     currentContext.readNewAction(TDownload.Create, cmdlineWrapper)
+  end else if (name = 'html') or (name = 'xml') then begin
+    TCommandLineReaderBreaker(sender).overrideVar('input-format', name);
+    TCommandLineReaderBreaker(sender).overrideVar('output-format', name);
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
@@ -2437,6 +2440,8 @@ begin
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict', 'auto');
+  mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
+  mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
   //mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   //mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </xml> if you want to wrap everything in an xml node)', '');
 
