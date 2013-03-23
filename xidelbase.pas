@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs, dregexpr,
+  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom,
   rcmdline
   ;
 
@@ -63,7 +63,7 @@ var //output options
 
 type
 
-TInputFormat = (ifAuto, ifXML, ifHTML);
+TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict);
 
 IData = interface //data interface, so we do not have to care about memory managment
 function rawData: string;
@@ -908,6 +908,7 @@ begin
       'auto': inputFormat:=ifAuto;
       'xml': inputFormat:=ifXML;
       'html': inputFormat:=ifHTML;
+      'xml-strict': inputFormat:=ifXMLStrict;
       else raise Exception.Create('Invalid input-format: '+ifs);
     end;
 end;
@@ -1981,7 +1982,7 @@ end;
 var i: Integer;
     temp: TStringArray;
     j: Integer;
-
+    alternativeXMLParser: TTreeParser = nil;
 
 { TMultiPageTemplateBreaker }
 
@@ -1991,6 +1992,7 @@ var i: Integer;
 procedure THtmlTemplateParserBreaker.initParsingModel(const data: IData);
 var
   f: TInputFormat;
+  tempparser: TTreeParser;
 begin
   f := data.inputFormat;
   if data.inputFormat = ifAuto then
@@ -1999,6 +2001,17 @@ begin
      else
       f := ifXML;
   HTMLParser.repairMissingStartTags := f = ifHTML;
+  if (f = ifXMLStrict) <> (HTMLParser is TTreeParserDOM) then begin
+    if alternativeXMLParser = nil then begin
+      alternativeXMLParser := TTreeParserDOM.Create;
+      alternativeXMLParser.readComments:=true;
+      alternativeXMLParser.readProcessingInstructions:=true;
+      alternativeXMLParser.parsingModel:=pmStrict;
+    end;
+    tempparser := HTMLParser;
+    FHTML := alternativeXMLParser;
+    alternativeXMLParser := tempparser;
+  end;
 end;
 
 procedure THtmlTemplateParserBreaker.parseHTML(const data: IData);
@@ -2423,7 +2436,7 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
-  mycmdLine.declareString('input-format', 'Input format: auto, html, xml', 'auto');
+  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict', 'auto');
   //mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   //mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </xml> if you want to wrap everything in an xml node)', '');
 
@@ -2563,6 +2576,7 @@ begin
   else htmlparser.free;
   globalDuplicationList.Free;
   mycmdLine.free;
+  alternativeXMLParser.Free;
 
   case outputFormat of
     ofJsonWrapped: wln(']');
