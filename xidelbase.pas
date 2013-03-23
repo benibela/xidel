@@ -47,7 +47,7 @@ procedure perform;
 
 implementation
 
-uses process, strutils, xquery_json;
+uses process, strutils, xquery_json, xquery_utf8;
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);

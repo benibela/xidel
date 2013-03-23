@@ -284,6 +284,7 @@ tests/test.sh moduleFunc2 -e 'declare variable $a:=123; declare function local:x
 tests/test.sh moduleFuncImport -e 'import module namespace foobar = "pseudo://test-module" at "tests/module.xq"' -e '$foobar:abc'
 tests/test.sh moduleFuncImport2 -e 'import module namespace rename = "pseudo://test-module" at "tests/module.xq"' -e 'rename:test()'
 
+tests/test.sh utf8  -e 'substring("äbcd",1,3)'
 
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
