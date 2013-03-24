@@ -4,7 +4,7 @@ program xidelsoap;
 
 uses
   xidelbase, simplehtmltreeparser,
-  rcmdlinecgi, sysutils, strutils
+  rcmdlinecgi, utf8tools, sysutils, strutils
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
@@ -110,13 +110,13 @@ begin
   w('');
 
   w('<html><head>');
-  w('<title>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector Example</title>');
+  w('<title>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Example</title>');
   w('<link rel="stylesheet" type="text/css" href="../cgi.css" />');
   w('<link rel="stylesheet" type="text/css" href="cgi.css" />');
   w('<script src="../cgi.js" type="text/javascript"></script>');
   w('<script src="cgi.js" type="text/javascript"></script>');
   w('</head><body onload="init()">');
-  w('<h1>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector Example</h1>');
+  w('<h1>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Example</h1>');
   w('(You can find the documentation below)<br><br>');
   w('<form method="POST" action="./xidelcgi">');
   w('<div id="html">HTML-Content:<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
@@ -184,17 +184,18 @@ begin
 
 
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
-  w('<!-- Piwik -->' +  '<script type="text/javascript">'+
-                  'var pkBaseURL = (("https:" == document.location.protocol) ? "https://sourceforge.net/apps/piwik/videlibri/" : "http://sourceforge.net/apps/piwik/videlibri/");'+
-                  'document.write(unescape("%3Cscript src=''" + pkBaseURL + "piwik.js'' type=''text/javascript''%3E%3C/script%3E"));'+
-                  '</script><script type="text/javascript">'+
-                  'try {'+
-                  'var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 3);'+
-                  'piwikTracker.trackPageView();'+
-                  'piwikTracker.enableLinkTracking();'+
-                  '} catch( err ) {}'+
-                  '</script><noscript><p><img src="http://sourceforge.net/apps/piwik/videlibri/piwik.php?idsite=3" style="border:0" alt=""/></p></noscript>'+
-                  '<!-- End Piwik Tag -->');
+  w('<!-- Piwik -->');
+  w('<script type="text/javascript">');
+  w('var pkBaseURL = (("https:" == document.location.protocol) ? "https://videlibri.sourceforge.net/piwik/" : "http://videlibri.sourceforge.net/piwik/");');
+  w('document.write(unescape("%3Cscript src=''" + pkBaseURL + "piwik.js'' type=''text/javascript''%3E%3C/script%3E"));');
+  w('</script><script type="text/javascript">');
+  w('try {');
+  w('var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 3);');
+  w('piwikTracker.trackPageView();');
+  w('piwikTracker.enableLinkTracking();');
+  w('} catch( err ) {}');
+  w('</script><noscript><p><img src="http://videlibri.sourceforge.net/piwik/piwik.php?idsite=3" style="border:0" alt="" /></p></noscript>');
+  w('<!-- End Piwik Tracking Code -->');
 
   {sl := tstringlist.create;
   cgi.AddResponseLn('reqvar:');

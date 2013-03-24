@@ -32,10 +32,16 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="1">
+    <RequiredPackages Count="3">
       <Item1>
-        <PackageName Value="internettools"/>
+        <PackageName Value="utf8tools"/>
       </Item1>
+      <Item2>
+        <PackageName Value="LCLBase"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="internettools"/>
+      </Item3>
     </RequiredPackages>
     <Units Count="1">
       <Unit0>
