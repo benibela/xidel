@@ -1609,6 +1609,16 @@ begin
 end;
 
 procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
+  function cmdescape(s: string): string;
+  begin
+    case outputFormat of
+      ofAdhoc, ofRawHTML, ofRawXML: exit(s);
+      ofBash: exit(bashStrEscape(s));
+      ofWindowsCmd: exit(windowsCmdEscape(s));
+      else raise Exception.Create('Invalid output format');
+    end;
+  end;
+
   function escape(s: string): string;
   begin
     case outputFormat of
@@ -1646,8 +1656,8 @@ begin
         if printTypeAnnotations then w(escape(value.typeName+': '));
         case printedNodeFormat of
           tnsText: w(escape(value.toString));
-          tnsXML: w(value.toNode.outerXML());
-          tnsHTML: w(value.toNode.outerHTML());
+          tnsXML: w(cmdescape(value.toNode.outerXML()));
+          tnsHTML: w(cmdescape(value.toNode.outerHTML()));
           else raise EInvalidArgument.Create('Unknown node print format');
         end;
       end
