@@ -32,7 +32,7 @@ web)
 linux64)
         lazCompileLinux64 xidel
         if [ $action -lt 2 ]; then exit; fi
-        tar -vczf xidel-$VERSION.linux64.tar.gz xidel readme.txt install.sh
+        tar -vczf xidel-$VERSION.linux64.tar.gz xidel readme.txt changelog install.sh
         fileUpload xidel-$VERSION.linux64.tar.gz "/Xidel/Xidel\ $VERSION/"
         checkinstall --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
         fileUpload xidel_$VERSION-1_amd64.deb "/Xidel/Xidel\ $VERSION/"
@@ -41,7 +41,7 @@ linux64)
 linux32)
         lazCompileLinux32 xidel
         if [ $action -lt 2 ]; then exit; fi
-        tar -vczf xidel-$VERSION.linux32.tar.gz xidel readme.txt install.sh
+        tar -vczf xidel-$VERSION.linux32.tar.gz xidel readme.txt changelog install.sh
         fileUpload xidel-$VERSION.linux32.tar.gz "/Xidel/Xidel\ $VERSION/"
         checkinstall --pkgarch=i386 --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
         fileUpload xidel_$VERSION-1_i386.deb "/Xidel/Xidel\ $VERSION/"
@@ -50,7 +50,7 @@ linux32)
 win32)
         lazCompileWin32 xidel 
         if [ $action -lt 2 ]; then exit; fi
-        zip -v xidel-$VERSION.win32.zip xidel.exe readme.txt
+        zip -v xidel-$VERSION.win32.zip xidel.exe changelog readme.txt
         fileUpload xidel-$VERSION.win32.zip "/Xidel/Xidel\ $VERSION/"
         ;;
 
@@ -58,6 +58,13 @@ cgi)    lazCompileLinux64 xidelcgi
         webUpload xidelcgi  /../cgi-bin
         ;;
 
+release)
+        ./manage.sh src
+        ./manage.sh linux64
+        ./manage.sh linux32
+        ./manage.sh win32
+        ;;
+        
 hg)     pushhg;;
 
 src)
@@ -72,7 +79,7 @@ src)
 	;;	
 		
 *)
-        echo "Unknown command (use web)"
+        echo "Unknown command (use web hg cgi win32 linux32 linux64 src)"
         ;;
 
 esac

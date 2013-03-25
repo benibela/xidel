@@ -17,7 +17,6 @@ Some important changes:
 * Added support for JSONiq: e.g. object syntax {"a": 123}("a"), arrays [10,20,30](1), the JSONiq jn:* functions,
   additional pxp:json() and pxp:serialize-json functions to parse/serialize JSON
 
-
 * Added outer-html, inner-html functions to the XPath engine which will serialize the element
   in a string
 
