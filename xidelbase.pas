@@ -769,6 +769,7 @@ procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
 begin
   inherited;
+  if method <> '' then exit; //already initialized, must abort to keep stdin working (todo: allow postfix data/method options?)
   method:='GET';
   if reader.read('post', data) then
     method:='POST';
@@ -2501,6 +2502,11 @@ begin
     baseContext := currentContext;
   end;
 
+  if (baseContext = currentContext) then
+    for i := 0 to high(baseContext.dataSources) do
+      if baseContext.dataSources[i] is TFollowToWrapper then
+        baseContext.dataSources[i].readOptions(cmdlineWrapper);
+
 
   baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
 
@@ -2560,6 +2566,10 @@ begin
     baseContext.process(nil).free;
     baseContext.Free;
   except
+    on e: EXMLReadError do begin
+      displayError(e);
+     // if not cgimode then raise;
+    end;
     on e: EHTMLParseException do begin
       displayError(e, true);
      // if not cgimode then raise;

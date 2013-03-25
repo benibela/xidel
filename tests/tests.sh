@@ -278,6 +278,12 @@ tests/test.sh repetitionon tests/a.xml tests/a.xml -e //title --allow-repetition
 tests/test.sh inputformatAuto --input-format auto '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatXml --input-format xml '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatHtml --input-format html '<a>x</a>'  -e 'outer-xml(/)'
+tests/test.sh inputformatAuto '<a>x</a>' --input-format auto  -e 'outer-xml(/)'
+tests/test.sh inputformatXml  '<a>x</a>' --input-format xml -e 'outer-xml(/)'
+tests/test.sh inputformatHtml  '<a>x</a>' --input-format html  -e 'outer-xml(/)'
+tests/test.sh inputformatAuto '<a>x</a>'  -e 'outer-xml(/)' --input-format auto
+tests/test.sh inputformatXml '<a>x</a>'  -e 'outer-xml(/)' --input-format xml
+tests/test.sh inputformatHtml  '<a>x</a>'  -e 'outer-xml(/)' --input-format html
 tests/test.sh optadhoc '<a>x</a>'  -e /
 tests/test.sh optxml --xml '<a>x</a>'  -e /
 tests/test.sh opthtml --html '<a>x</a>'  -e /

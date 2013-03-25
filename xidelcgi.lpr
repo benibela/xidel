@@ -119,14 +119,15 @@ begin
   w('<h1>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Example</h1>');
   w('(You can find the documentation below)<br><br>');
   w('<form method="POST" action="./xidelcgi">');
-  w('<div id="html">HTML-Content:<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
+  w('<div id="html">'+select('input-format', 'HTML/XML-Input file: ', ['auto', 'html', 'xml', 'xml-strict'])
+    + '<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
   w('<div id="template">'+kind('template', 'Template')+kind('xpath', 'XPath 2.0')+kind('xquery', 'XQuery 1.0')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
   w('<br><textarea name="extract" rows=18 cols=80 >');
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
   w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <br> <span class="options"><b>Output Options</b>: ');
-  w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped']));
+  w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped', 'bash', 'cmd']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
   w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
 
@@ -216,6 +217,8 @@ begin
   xidelbase.cgimode := true;
   xidelbase.allowInternetAccess := false;
   xidelbase.mycmdline := TCommandLineReaderCGI.create;
+
+
 
   mycmdline.beginDeclarationCategory('CGI Only options');
   mycmdline.declareFlag('raw', 'Only prints the output of the expression');
