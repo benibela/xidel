@@ -35,24 +35,51 @@ function sendForm(form, callback){
 }
 var lastCallTime;
 var changed = false;
-function updateNow(calltime) { 
+var lastQueryEditMode = "xpath";
+function updateNow(calltime, codemirror) { 
   if (lastCallTime > calltime) return;  //alert(calltime);
-  sendForm(document.getElementsByTagName("form")[0], function(answer){
-    document.getElementById("result").value = answer;
+//  if (codemirror && codemirror.save) { alert("save test"); codemirror.save();} //did not work. Another update overriding this?
+  sendForm(document.getElementsByTagName("form")[0], function(answer, request){
+    if (window.outputMirror) window.outputMirror.setValue(answer);
+    else  document.getElementById("result").value = answer;
     document.getElementById("permalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?"+lastFormEncoding;
     document.getElementById("rawpermalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?raw=true"+lastFormEncoding;
+    lastQueryEditMode = request.getResponseHeader("Xidel-Detected-Extraction-Kind");
+    setRealEditMode();
   });
 }
-function update(){
+function update(codemirror){
   if (document.getElementsByName("no-auto-update")[0].checked) return;
   (function (boundTime){
     lastCallTime = boundTime;
-    setTimeout(function () {updateNow(boundTime); }, 500); 
+    setTimeout(function () {updateNow(boundTime, codemirror); }, 500); 
   }) (new Date().getTime());
 }
-function changeexample(example){
+var editMode = "auto";
+var realEditMode = "auto";
+function changeexample(examplename, example){
+  examplename = examplename.toLowerCase();
+  if (examplename.indexOf("template") >= 0) editMode = "template";
+  else if (examplename.indexOf("xpath") >= 0) editMode = "xpath";
+  else if (examplename.indexOf("xquery") >= 0) editMode = "xquery";
+  else if (examplename.indexOf("css") >= 0) editMode = "css";
+  else editMode="auto";
+  setRealEditMode();
+
   if (changed) return;
   document.getElementsByName("extract")[0].value = example;
+  if (window.extractCodeMirror) 
+    window.extractCodeMirror.setValue(example);
+  changed = false;
+}
+function setRealEditMode(){
+  if (editMode == "auto") realEditMode = lastQueryEditMode;
+  else realEditMode = editMode;
+  function addjsoniq(){return (document.getElementsByName("no-json")[0].checked ? "" : "+jsoniq")}
+  if (window.extractCodeMirror) 
+    if (realEditMode == "template") window.extractCodeMirror.setOption("mode", "xquery" + addjsoniq())
+    else if (realEditMode == "css") window.extractCodeMirror.setOption("mode", "css");
+    else window.extractCodeMirror.setOption("mode", realEditMode + addjsoniq());
 }
 function init(){
   var form = document.getElementsByTagName("form")[0];
@@ -69,4 +96,62 @@ function init(){
         update();
       }}})(i);
 };
+function transformTextArea(x, autoupdate){
+  var myCodeMirror = CodeMirror.fromTextArea(x, {
+    lineNumbers: true,
+  });
 
+  myCodeMirror.xxxThisIsACodeMirror = true;
+  myCodeMirror.setSize($(x).width(), $(x).height());
+
+ $('.CodeMirror').resizable({
+    resize: function() {
+      editor.setSize($(this).width(), $(this).height());
+    }
+  });
+  return myCodeMirror;
+}
+function activateCodeMirrors(){
+  if (window.extractCodeMirror) return;
+  window.extractCodeMirror =  transformTextArea(document.getElementsByName("extract")[0]);
+  window.extractCodeMirror.on("change", function(){ changed=true; window.extractCodeMirror.save(); update(window.extractCodeMirror);});
+  document.getElementsByName("no-json")[0].onclick = setRealEditMode;
+  setRealEditMode();
+
+  window.inputMirror =  transformTextArea(document.getElementsByName("data")[0], true);
+  window.inputMirror.on("change", function(){window.inputMirror.save(); update(window.inputMirror);});
+  function inputChanged(){
+    var inputformat = document.getElementsByName("input-format")[0].value;
+    if (inputformat == "auto") {
+      if (inputMirror.getLine(0).indexOf("<html>") >= 0 || inputMirror.getLine(1).indexOf("<html>") >= 0)
+        inputformat = "html";
+       else
+        inputformat = "xml";
+    }
+    if (inputformat == "html")
+      window.inputMirror.setOption("mode", "htmlmixed");
+    else
+      window.inputMirror.setOption("mode", "xml");
+  }
+
+  inputChanged();
+  window.inputMirror.on("change", inputChanged);
+  document.getElementsByName("input-format")[0].addEventListener("change", inputChanged);
+
+
+
+  window.outputMirror =  transformTextArea(document.getElementById("result"));
+  function outputChanged(){
+     var outputformat = document.getElementsByName("output-format")[0].value;
+     if (outputformat == "html") window.outputMirror.setOption("mode", "htmlmixed");
+     else if (outputformat == "xml" || outputformat == "xml-wrapped") window.outputMirror.setOption("mode", "xml");
+     else if (outputformat == "json-wrapped") window.outputMirror.setOption("mode", "javascript");
+     else if (document.getElementsByName("printed-node-format")[0].value == "xml") window.outputMirror.setOption("mode", "xml");
+     else if (document.getElementsByName("printed-node-format")[0].value == "html") window.outputMirror.setOption("mode", "htmlmixed");
+     else window.outputMirror.setOption("mode", "none");
+ }
+  document.getElementsByName("output-format")[0].addEventListener("change", outputChanged);
+  document.getElementsByName("printed-node-format")[0].addEventListener("change", outputChanged);
+  outputChanged();
+  
+}

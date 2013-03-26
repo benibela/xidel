@@ -38,9 +38,12 @@ var cgimode: boolean = false;
     majorVersion: integer = 0;
     minorVersion: integer = 7;
 
+type TExtractionKind = (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
+
+var
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
     onRetrieve: function (const method, url, postdata: string): string;
-    onPreOutput: procedure ();
+    onPreOutput: procedure (extractionKind: TExtractionKind);
 
 
 procedure perform;
@@ -368,7 +371,6 @@ TDownload = class(TDataProcessing)
 end;
 
 { TExtraction }
-TExtractionKind = (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
 TExtraction = class(TDataProcessing)
  extract: string;
  extractQueryCache: IXQuery;
@@ -2550,7 +2552,7 @@ begin
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
 
-  if assigned(onPreOutput) then onPreOutput();
+  if assigned(onPreOutput) then onPreOutput(guessExtractionKind(mycmdline.readString('extract')));
 
   if outputHeader <> '' then w(outputHeader);
   case outputFormat of

@@ -17,7 +17,7 @@ const ExampleHTML: string = '<html><body>'#13#10+
                             '<tr><td>bar</td><td>are</td></tr>'#13#10+
                             '<tr><td>xyz</td><td>ignored</td></tr>'#13#10+
                             '</tbody></table>'#13#10+
-                            '</html>';
+                            '</body></html>';
 
 
     ExampleTemplate:string = '<table id="t2">'#13#10+
@@ -55,7 +55,7 @@ begin
   writeln(s);
 end;
 
-procedure printPre;
+procedure printPre(extractionKind: TExtractionKind);
   function example(t: string): string;
   begin
     if (t = mycmdline.readString('extract-kind')) and (mycmdline.readString('extract') <> '') then
@@ -72,7 +72,7 @@ procedure printPre;
   begin
     result := '<input type="radio" name="extract-kind" value="'+t+'"';
     if mycmdline.readString('extract-kind') = t then result += ' checked';
-    result += ' onclick="changeexample('''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''); update();"';
+    result += ' onclick="changeexample('''+t+''', '''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''); update();"';
     result += '/> '+ n;
   end;
   function checkbox(t, n: string): string;
@@ -100,6 +100,15 @@ begin
       'json', 'json-wrapped': w('Content-Type: application/json');
       {'adhoc':} else w('Content-Type: text/plain');
     end;
+    write('Xidel-Detected-Extraction-Kind: ');
+    case extractionKind of
+      ekAuto: w('auto');
+      ekXPath: w('xpath');
+      ekTemplate: w('template');
+      ekCSS: w('css');
+      ekXQuery: w('xquery');
+      else w('??');
+    end;
     w('');
     wasRaw := true;
     exit;
@@ -110,16 +119,18 @@ begin
   w('');
 
   w('<html><head>');
-  w('<title>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Example</title>');
+  w('<title>Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Online Tester</title>');
+  w('<link rel="stylesheet" href="../codemirror/codemirror.css">');
+  w('<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css">');
   w('<link rel="stylesheet" type="text/css" href="../cgi.css" />');
   w('<link rel="stylesheet" type="text/css" href="cgi.css" />');
-  w('<script src="../cgi.js" type="text/javascript"></script>');
-  w('<script src="cgi.js" type="text/javascript"></script>');
+  w('<script src="../cgi.js"></script>');
+  w('<script src="cgi.js"></script>');
   w('</head><body onload="init()">');
-  w('<h1>HTML Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Example</h1>');
+  w('<h1>Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Online Tester</h1>');
   w('(You can find the documentation below)<br><br>');
   w('<form method="POST" action="./xidelcgi">');
-  w('<div id="html">'+select('input-format', 'HTML/XML-Input file: ', ['auto', 'html', 'xml', 'xml-strict'])
+  w('<div id="html">'+select('input-format', 'HTML/XML-Input file', ['auto', 'html', 'xml', 'xml-strict'])
     + '<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
   w('<div id="template">'+kind('template', 'Template')+kind('xpath', 'XPath 2.0')+kind('xquery', 'XQuery 1.0')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
   w('<br><textarea name="extract" rows=18 cols=80 >');
@@ -133,6 +144,14 @@ begin
 
   w('</span></form>');
 
+  w('<script src="../codemirror/codemirror.js"></script>');
+  w('<script src="../codemirror/javascript/javascript.js"></script>');
+  w('<script src="../codemirror/css/css.js"></script>');
+  w('<script src="../codemirror/xml/xml.js"></script>');
+  w('<script src="../codemirror/xquery/xquery.js"></script>');
+  w('<script src="../codemirror/htmlmixed/htmlmixed.js"></script>');
+  w('<script src="http://code.jquery.com/jquery-1.9.1.js"></script>');
+  w('<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>');
 
   w('<hr>');
   w('Result of the above expression applied to the above html file:<br>');
@@ -146,6 +165,7 @@ begin
 
   permalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
   rawpermalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+
 
   flush(stdout);
 
@@ -210,6 +230,7 @@ begin
     cgi.AddResponseLn(sl[i]+'<br>');
   sl.free;}
 
+  w('<script>activateCodeMirrors();</script>');
   w('</body></html>');
 end;
 

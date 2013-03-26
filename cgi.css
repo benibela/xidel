@@ -2,3 +2,9 @@
 #template { float: left;  }
 br {clear: both; }
 .options { font-size: 75% }
+
+.CodeMirror {
+  border: 2px solid #CCCCCC;
+  overflow: hidden; 
+}
+
