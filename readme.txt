@@ -123,48 +123,56 @@ However, in the default mode, there are the following important extensions:
 
   Syntax:
   
-    Variable assignment:                                               $var := value       
+    Variable assignment:                                         $var := value
    
-      adds $var to a set of global variables, which can be created and accessed everywhere
+      adds $var to a set of global variables, which can be created and accessed 
+      everywhere
 
-    JSONiq literals                                                    true, false, null
+    JSONiq literals                                           true, false, null
     
       true and false are evaluated as true(), false(), null becomes jn:null()
     
     JSONiq arrays:                                                     [a,b,c]
 
-       Arrays store a list of values and can be nested with each other and within sequences.
+       Arrays store a list of values and can be nested with each other and 
+       within sequences.
        jn:members converts an array to a sequence.
 
-    JSONiq objects:                                                    {"name": value, ...}
+    JSONiq objects:                                      {"name": value, ...}
     
-       Object stores a set of values as associative map. The values can be accessed similar 
-       to a function call, e.g.: {"name": value, ...}("name").
-       Xidel also has {"name": value, ..}.name as an additional syntax to access properties.
-       jn:keys returns a sequence of all property names, libjn:values a sequence of values.
+       Object stores a set of values as associative map. The values can be 
+       accessed similar to a function call, e.g.: {"name": value, ...}("name").
+       Xidel also has {"name": value, ..}.name as an additional syntax to 
+       access properties.
+       jn:keys returns a sequence of all property names, libjn:values a sequence
+       of values.
        Used with global variables, you can copy an object with obj2 := obj 
-       (objects are immutable, but properties can be changed with obj2.foo := 123, which will
-       create a new object with the changed property).
+       (objects are immutable, but properties can be changed with 
+       obj2.foo := 12, which will create a new object with the changed property)
       
-    Extended strings:                                                  x"..{..}.."
+    Extended strings:                                                x"..{..}.."
   
-      If a string is prefixed by an "x", all expressions inside {}-parentheses are evaluated,
-      like in the value of a direct attribute constructor.
-      (Warning: This was changed in Xidel 0.7. Xidel <= 0.6 used "foo$var;bar" without prefix for this)
+      If a string is prefixed by an "x", all expressions inside {}-parentheses 
+      are evaluated, like in the value of a direct attribute constructor.
+      (Warning: This was changed in Xidel 0.7. Xidel <= 0.6 used 
+                "foo$var;bar" without prefix for this)
       
        
   Semantic:
      
-     All string comparisons are case insensitive, and "clever", e.g.:  '9xy' = '9XY' < '10XY' < 'xy'
-     This is more useful for html (think of @class = 'foobar'), but can be disabled by passing collation 
-     urls to the string functions. 
+     All string comparisons are case insensitive, and "clever", e.g.: 
+              '9xy' = '9XY' < '10XY' < 'xy'
+     This is more useful for html (think of @class = 'foobar'), but can be 
+     disabled by passing collation urls to the string functions. 
      
-     Everything is weakly typed, e.g 'false' = false() is true, and 1 + "2" is 3. 
+     Everything is weakly typed, e.g 'false' = false() is true, and 1+"2" is 3. 
 
-     Unknown namespace prefixes are resolved with the namespace bindings of the input data. 
-     Therefore //a always finds all links, independent of any xmlns=".." attributes.
-     (however, if you explicitly declare a namespace like 'declare default element namespace "..."' in XQuery, 
-     it will only find -elements in that namespace)
+     Unknown namespace prefixes are resolved with the namespace bindings of the 
+     input data. 
+     Therefore //a always finds all links, independent of any xmlns-attributes.
+     (however, if you explicitly declare a namespace like 
+     'declare default element namespace "..."' in XQuery, it will only find 
+     elements in that namespace)
 
      XML Schemas, error codes and static type checking are not supported.
 
