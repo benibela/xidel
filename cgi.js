@@ -111,11 +111,25 @@ function transformTextArea(x, autoupdate){
   });
   return myCodeMirror;
 }
+var codeMirrorsWereActivated = false;
+    toggleInitialized = false;
 function activateCodeMirrors(){
   if (window.extractCodeMirror) return;
+  var toggle = document.getElementsByName("no-highlighting")[0];
+  if (!toggleInitialized) {
+    toggle.addEventListener("change", function(){
+      if (toggle.checked) deactivateCodeMirrors();
+      else activateCodeMirrors();
+    });  
+    //toggle.parentNode.style.display = "inline";
+    toggleInitialized = true;
+  }
+  if (toggle.checked) return;
+  
   window.extractCodeMirror =  transformTextArea(document.getElementsByName("extract")[0]);
   window.extractCodeMirror.on("change", function(){ changed=true; window.extractCodeMirror.save(); update(window.extractCodeMirror);});
-  document.getElementsByName("no-json")[0].onclick = setRealEditMode;
+  if (!codeMirrorsWereActivated)
+    document.getElementsByName("no-json")[0].addEventListener("change", setRealEditMode);
   setRealEditMode();
 
   window.inputMirror =  transformTextArea(document.getElementsByName("data")[0], true);
@@ -136,7 +150,8 @@ function activateCodeMirrors(){
 
   inputChanged();
   window.inputMirror.on("change", inputChanged);
-  document.getElementsByName("input-format")[0].addEventListener("change", inputChanged);
+  if (!codeMirrorsWereActivated)
+    document.getElementsByName("input-format")[0].addEventListener("change", inputChanged);
 
 
 
@@ -149,9 +164,22 @@ function activateCodeMirrors(){
      else if (document.getElementsByName("printed-node-format")[0].value == "xml") window.outputMirror.setOption("mode", "xml");
      else if (document.getElementsByName("printed-node-format")[0].value == "html") window.outputMirror.setOption("mode", "htmlmixed");
      else window.outputMirror.setOption("mode", "none");
- }
-  document.getElementsByName("output-format")[0].addEventListener("change", outputChanged);
-  document.getElementsByName("printed-node-format")[0].addEventListener("change", outputChanged);
+  }
+  if (!codeMirrorsWereActivated) { 
+    document.getElementsByName("output-format")[0].addEventListener("change", outputChanged);
+    document.getElementsByName("printed-node-format")[0].addEventListener("change", outputChanged);
+  }
   outputChanged();
   
+  codeMirrorsWereActivated = true; 
+}
+
+function deactivateCodeMirrors(){
+  if (!window.extractCodeMirror) return;
+  window.extractCodeMirror.toTextArea();
+  window.inputMirror.toTextArea();
+  window.outputMirror.toTextArea();
+  window.extractCodeMirror = null;
+  window.inputMirror = null;
+  window.outputMirror = null;
 }

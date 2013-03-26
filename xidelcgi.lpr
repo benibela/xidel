@@ -137,7 +137,8 @@ begin
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
-  w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <br> <span class="options"><b>Output Options</b>: ');
+  w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <span >' {id="codemirrorspan"} + checkbox('no-highlighting', 'disable syntax highlighting') +'</span>');
+  w('<br><span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped', 'bash', 'cmd']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
   w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
@@ -244,6 +245,7 @@ begin
   mycmdline.beginDeclarationCategory('CGI Only options');
   mycmdline.declareFlag('raw', 'Only prints the output of the expression');
   mycmdline.declareFlag('no-auto-update', 'No automatical javascript based autoupdate');
+  mycmdline.declareFlag('no-highlighting', 'No syntax highlighting');
 
   xidelbase.onPreOutput := @printPre;
 
