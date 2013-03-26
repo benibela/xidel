@@ -22,7 +22,7 @@ Some important changes:
 
 * The syntax extension of variable inclusion in strings like "$foo;" was replaced by prefixed strings x"{$foo}", the regex extraction function pxp:filter was renamed to pxp:extract, to avoid confusion with the XQuery 3 fn:filter function
 
-* Added support for different http request methods (e.g. PUT), basic authentication, allow arbitraty ports
+* Added support for different http request methods (e.g. PUT), basic authentication, allow arbitrary ports
 
 * Added a system function to run arbitrary commands, a $raw variable containing the raw data of the current page
 
