@@ -39,31 +39,53 @@ CodeMirror.defineMode(name, function() {
     
     // kwObj is what is return from this function at the end
     var kwObj = {
-      'if': A, 'switch': A, 'while': A, 'for': A,
-      'else': B, 'then': B, 'try': B, 'finally': B, 'catch': B,
-      'element': C, 'attribute': C, 'let': C, 'implements': C, 'import': C, 'module': C, 'namespace': C, 
-      'return': C, 'super': C, 'this': C, 'throws': C, 'where': C, 'private': C,      
+      'if': A, /*'switch': A, */ /*'while': A,*/ 'for': A,
+      'else': B, 'then': B, //'try': B, 'finally': B, 'catch': B,
+      'element': C, 'attribute': C, //'let': C, /*'implements': C,*/ 'import': C, 'module': C, 'namespace': C, 
+      'return': C, /*'super': C, 'this': C, 'throws': C,*/ //'where': C, //'private': C,      
       ',': punctuation,
-      'null': atom, 'fn:false()': atom, 'fn:true()': atom
+      /*'null': atom, */ 'fn:false()': atom, 'fn:true()': atom
     };
+    
+    if (fullQuery) {
+      var addC = ["let", "import", "module", "namespace", "where"];
+      for (var i=0;i<addC.length;i++) kwObj[addC[i]] = C;
+    }
+    
+    if (fullJSONiq) {
+      kwObj["null"] = atom;
+      kwObj["false"] = atom;
+      kwObj["true"] = atom;
+      kwObj["null()"] = atom;
+    }
+      
     
     // a list of 'basic' keywords. For each add a property to kwObj with the value of 
     // {type: basic[i], style: "keyword"} e.g. 'after' --> {type: "after", style: "keyword"}
-    var basic = ['after','ancestor','ancestor-or-self','and','as','ascending','assert','attribute','before',
-    'by','case','cast','child','comment','declare','default','define','descendant','descendant-or-self',
-    'descending','document','document-node','element','else','eq','every','except','external','following',
-    'following-sibling','follows','for','function','if','import','in','instance','intersect','item',
-    'let','module','namespace','node','node','of','only','or','order','parent','precedes','preceding',
-    'preceding-sibling','processing-instruction','ref','return','returns','satisfies','schema','schema-element',
-    'self','some','sortby','stable','text','then','to','treat','typeswitch','union','variable','version','where',
-    'xquery', 'empty-sequence'];
+    var basic = [/*'after',*/'ancestor','ancestor-or-self','and','ascending',/*'assert',*/'attribute',/*'before',*/
+    'cast','child','comment','descendant','descendant-or-self',
+    'descending','document','document-node','element','else','eq','every','except','following',
+    'following-sibling',/*'follows',*/'for','if','in','instance','intersect','item',
+    'node','node','of',/*'only',*/'or','parent','precedes','preceding',
+    'preceding-sibling','processing-instruction',/*'ref',*/'return','satisfies','schema-element',
+    'self','some',/*'sortby',*/'text','then','to','treat','union','empty-sequence'];
     for(var i=0, l=basic.length; i < l; i++) { kwObj[basic[i]] = kw(basic[i]);};
+    
+    if (fullQuery) {
+      basic = ['as','by', 'case','declare', 'default','define', 'external','function', 'import', 'let', 'module','namespace', 'order', 'returns', 'schema', 'stable', 'typeswitch', 'variable', 'version', 'where', 'xquery'];
+      for(var i=0, l=basic.length; i < l; i++) { kwObj[basic[i]] = kw(basic[i]);};
+    }
+
+    if (fullQuery) {
+      basic = ['array', 'object', 'json-item', 'structured-item'];
+      for(var i=0, l=basic.length; i < l; i++) { kwObj[basic[i]] = kw(basic[i]);};
+    }
     
     // a list of types. For each add a property to kwObj with the value of 
     // {type: "atom", style: "atom"}
     var types = ['xs:string', 'xs:float', 'xs:decimal', 'xs:double', 'xs:integer', 'xs:boolean', 'xs:date', 'xs:dateTime', 
     'xs:time', 'xs:duration', 'xs:dayTimeDuration', 'xs:time', 'xs:yearMonthDuration', 'numeric', 'xs:hexBinary', 
-    'xs:base64Binary', 'xs:anyURI', 'xs:QName', 'xs:byte','xs:boolean','xs:anyURI','xf:yearMonthDuration'];
+    'xs:base64Binary', 'xs:anyURI', 'xs:QName', 'xs:byte','xs:boolean','xs:anyURI','xs:yearMonthDuration'];
     for(var i=0, l=types.length; i < l; i++) { kwObj[types[i]] = atom;};
     
     // each operator will add a property to kwObj with value of {type: "operator", style: "keyword"}
@@ -405,13 +427,13 @@ CodeMirror.defineMode(name, function() {
   function isInXmlConstructor(state) { return isIn(state, "xmlconstructor"); }
   function isInString(state) { return isIn(state, "string"); }
 
-  function isEQNameAhead(stream) { 
+  function isEQNameAhead(stream) { //is this "namespace":xx ?? not supported by xidel
     // assume we've already eaten a quote (")
-    if(stream.current() === '"')
+  /*  if(stream.current() === '"')
       return stream.match(/^[^\"]+\"\:/, false);
     else if(stream.current() === '\'')
       return stream.match(/^[^\"]+\'\:/, false);
-    else
+    else*/
       return false;
   }
   
@@ -448,8 +470,6 @@ CodeMirror.defineMode(name, function() {
 
 });
 }
-
-defineXQueryLikeMode(name, fullQuery, fullJSONiq){
 
 defineXQueryLikeMode("xpath", false, false);
 defineXQueryLikeMode("xquery", true, false);
