@@ -201,7 +201,7 @@ begin
   //w(cgi.QueryString);
 
   w('<h2>What is this about?</h2>');
-  w('Here you can test html templates, CSS 3 selectors and standard XPath 2 / XQuery expressions.<br>');
+  w('Here you can test html templates, CSS 3 selectors, standard XPath 2 / XQuery and JSONiq expressions.<br>');
   w('It is an example for my Pascal Internet Tools library written for VideLibri and implementing these queries.<br>');
   //w('The template example shows the two most basic template commands (read/loop) and copies the first column of a table.'+' .<br>');
 
@@ -212,7 +212,7 @@ begin
   w(link('http://www.benibela.de/sources_en.html#internettools', 'Internet Tools library', ', the library page'));
   w(link('http://www.benibela.de/documentation/internettools/internettoolsxqts.html', 'XQuery Testsuite Results', ', (and <a href="http://www.benibela.de/documentation/internettools/internettoolsxqts_path.html">XPath only results</a>)'));
   w(link('http://videlibri.sourceforge.net/xidel.html', 'Xidel command line tool', ', a litte tool using this library for web page downloading / scraping'));
-  w(link('http://videlibri.hg.sourceforge.net/hgweb/videlibri/videlibri/', 'Source repository'));
+  w(link('https://sourceforge.net/p/videlibri/code/ci/tip/tree/', 'Source repository'));
 
 
   w('<script>lastQueryEditMode="'+extractKindToString(firstExtractionKind)+'"; activateCodeMirrors(); </script>');
