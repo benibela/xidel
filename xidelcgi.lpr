@@ -145,14 +145,15 @@ begin
 
   w('</span></form>');
 
-  w('<script src="../codemirror/codemirror.js"></script>');
+ { w('<script src="../codemirror/codemirror.js"></script>');
+  w('<script src="../codemirror/xquery/xquery.js"></script>');
   w('<script src="../codemirror/javascript/javascript.js"></script>');
   w('<script src="../codemirror/css/css.js"></script>');
   w('<script src="../codemirror/xml/xml.js"></script>');
-  w('<script src="../codemirror/xquery/xquery.js"></script>');
-  w('<script src="../codemirror/htmlmixed/htmlmixed.js"></script>');
-  w('<script src="http://code.jquery.com/jquery-1.9.1.js"></script>');
-  w('<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>');
+  w('<script src="../codemirror/htmlmixed/htmlmixed.js"></script>');}
+  w('<script src="../codemirror/codemirror-compressed-js-html-xml-css.js"></script>');
+  w('<script src="../codemirror/jquery-1.9.1.js"></script>');
+  w('<script src="../codemirror/jquery-ui-1.10.2.custom.min.js"></script>');
 
   w('<hr>');
   w('Result of the above expression applied to the above html file:<br>');
