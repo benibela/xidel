@@ -6,7 +6,7 @@ br {clear: both; }
 .CodeMirror {
   border: 2px solid #CCCCCC;
   overflow: hidden;
-  font-size: 125%
+  font-size: 110%
 }
 #codemirrorspan {
   display: none
