@@ -32,6 +32,7 @@ uses
 var cgimode: boolean = false;
     allowInternetAccess: boolean = true;
     allowFileAccess: boolean = true;
+    xqueryDefaultCollation: string = '';
     mycmdline: TCommandLineReader;
     defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
 
@@ -2571,6 +2572,7 @@ begin
   xpathparser := htmlparser.QueryEngine;
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
   xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
+  if xqueryDefaultCollation <> '' then xpathparser.StaticContext.collation := TXQueryEngine.getCollation(xqueryDefaultCollation, '');
 
   if not mycmdline.readFlag('allow-repetitions') then
     globalDuplicationList := TFollowToList.Create;

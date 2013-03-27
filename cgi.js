@@ -75,11 +75,26 @@ function changeexample(examplename, example){
 function setRealEditMode(){
   if (editMode == "auto") realEditMode = lastQueryEditMode;
   else realEditMode = editMode;
+  
   function addjsoniq(){return (document.getElementsByName("no-json")[0].checked ? "" : "+jsoniq")}
-  if (window.extractCodeMirror) 
+  if (window.extractCodeMirror) {
+    if (realEditMode == "auto" || realEditMode == "") {
+      realEditMode = "xquery";
+      var temp = window.extractCodeMirror.getLine(0);
+      var i = 0; while (temp == "" && i < window.extractCodeMirror.lineCount()) { i+=1; temp = window.extractCodeMirror.getLine(i); }
+      for (i = 0; i < temp.length; i++) {
+        if (temp.charAt(i) != " " && temp.charAt(i) != "\t") {
+          if (temp.charAt(i) == "<") realEditMode = "template"; 
+          else if (temp.charAt(i) == "#" || temp.charAt(i) == ".") realEditMode = "css"; 
+          else realEditMode = "xquery";
+          break;
+        }
+      }
+    }
     if (realEditMode == "template") window.extractCodeMirror.setOption("mode", "xquery" + addjsoniq())
     else if (realEditMode == "css") window.extractCodeMirror.setOption("mode", "css");
     else window.extractCodeMirror.setOption("mode", realEditMode + addjsoniq());
+  }
 }
 function init(){
   var form = document.getElementsByTagName("form")[0];

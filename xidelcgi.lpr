@@ -55,6 +55,20 @@ begin
   writeln(s);
 end;
 
+function extractKindToString(kind: TExtractionKind): string;
+begin
+  case kind of
+    ekAuto: exit('auto');
+    ekXPath: exit('xpath');
+    ekTemplate: exit('template');
+    ekCSS: exit('css');
+    ekXQuery: exit('xquery');
+    else exit('auto');
+  end;
+end;
+
+var firstExtractionKind: TExtractionKind;
+
 procedure printPre(extractionKind: TExtractionKind);
   function example(t: string): string;
   begin
@@ -93,6 +107,9 @@ procedure printPre(extractionKind: TExtractionKind);
   end;
 
 begin
+  if (mycmdline.readFlag('case-sensitive')) then
+    xqueryDefaultCollation:='http://www.w3.org/2005/xpath-functions/collation/codepoint';
+
   if mycmdline.readFlag('raw') then begin
     case mycmdLine.readString('output-format') of
       'xml', 'xml-wrapped': w('Content-Type: application/xml');
@@ -100,20 +117,13 @@ begin
       'json', 'json-wrapped': w('Content-Type: application/json');
       {'adhoc':} else w('Content-Type: text/plain');
     end;
-    write('Xidel-Detected-Extraction-Kind: ');
-    case extractionKind of
-      ekAuto: w('auto');
-      ekXPath: w('xpath');
-      ekTemplate: w('template');
-      ekCSS: w('css');
-      ekXQuery: w('xquery');
-      else w('??');
-    end;
+    w('Xidel-Detected-Extraction-Kind: '+extractKindToString(extractionKind));
     w('');
     wasRaw := true;
     exit;
   end;
 
+  firstExtractionKind:=extractionKind;
 
   w('Content-Type: text/html');
   w('');
@@ -141,17 +151,17 @@ begin
   w('<br><span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped', 'bash', 'cmd']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
-  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces'));
+  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces') + checkbox('case-sensitive', 'case sensitive'));
 
   w('</span></form>');
 
  { w('<script src="../codemirror/codemirror.js"></script>');
-  w('<script src="../codemirror/xquery/xquery.js"></script>');
   w('<script src="../codemirror/javascript/javascript.js"></script>');
   w('<script src="../codemirror/css/css.js"></script>');
   w('<script src="../codemirror/xml/xml.js"></script>');
   w('<script src="../codemirror/htmlmixed/htmlmixed.js"></script>');}
   w('<script src="../codemirror/codemirror-compressed-js-html-xml-css.js"></script>');
+  w('<script src="../codemirror/xquery/xquery.js"></script>');
   w('<script src="../codemirror/jquery-1.9.1.js"></script>');
   w('<script src="../codemirror/jquery-ui-1.10.2.custom.min.js"></script>');
 
@@ -205,6 +215,7 @@ begin
   w(link('http://videlibri.hg.sourceforge.net/hgweb/videlibri/videlibri/', 'Source repository'));
 
 
+  w('<script>lastQueryEditMode="'+extractKindToString(firstExtractionKind)+'"; activateCodeMirrors(); </script>');
 
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
   w('<!-- Piwik -->');
@@ -232,7 +243,6 @@ begin
     cgi.AddResponseLn(sl[i]+'<br>');
   sl.free;}
 
-  w('<script>activateCodeMirrors();</script>');
   w('</body></html>');
 end;
 
@@ -247,6 +257,7 @@ begin
   mycmdline.declareFlag('raw', 'Only prints the output of the expression');
   mycmdline.declareFlag('no-auto-update', 'No automatical javascript based autoupdate');
   mycmdline.declareFlag('no-highlighting', 'No syntax highlighting');
+  mycmdline.declareFlag('case-sensitive', 'Case sensitive');
 
   xidelbase.onPreOutput := @printPre;
 
