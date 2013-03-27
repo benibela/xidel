@@ -253,6 +253,7 @@ begin
 
 
 
+
   mycmdline.beginDeclarationCategory('CGI Only options');
   mycmdline.declareFlag('raw', 'Only prints the output of the expression');
   mycmdline.declareFlag('no-auto-update', 'No automatical javascript based autoupdate');

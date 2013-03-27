@@ -2082,6 +2082,7 @@ var
   tempData: TDataObject;
   temptemp: IData;
 begin
+  if cgimode or (not allowFileAccess) then raise EXQEvaluationException.create('pxp:cgi', 'Using doc is not allowed in cgi mode');
   tempData := TDataObject.create(html, uri, contenttype);
   temptemp := tempData;
   parseHTMLSimple(temptemp);
@@ -2146,8 +2147,8 @@ begin
         sayln(']');
       end else sayln('');
       sayln('}}');
-      if cgimode then
-        sayln(']');
+      //if cgimode then
+      //  sayln(']');
     end;
     ofXMLWrapped, ofRawXML, ofRawHTML: begin
       sayln('<error>');
@@ -2159,8 +2160,8 @@ begin
         sayln(']]></partial-matches>');
       end;
       sayln('</error>');
-      if cgimode then
-        sayln('</seq>');
+      //if cgimode then
+      //  sayln('</seq>');
     end;
     ofAdhoc: begin
       sayln( 'Error:');
@@ -2387,8 +2388,12 @@ begin
   end;
 end;
 
+procedure blockFileAccessFunctions; forward;
+
 procedure perform;
 begin
+  if cgimode or (not allowFileAccess) then blockFileAccessFunctions;
+
   //normalized formats (for use in unittests)
   DecimalSeparator:='.';
   ThousandSeparator:=#0;
@@ -2630,6 +2635,7 @@ var
   proc: TProcess;
   temps: string;
 begin
+  if cgimode or not allowFileAccess then exit(xqvalue('Are you trying to hack an OSS project? Shame on you!'));
   requiredArgCount(args, 1);
   proc := TProcess.Create(nil);
   proc.CommandLine := args[0].toString;
@@ -2642,6 +2648,32 @@ begin
   finally
     proc.free;
   end;
+end;
+
+function xqFunctionJSONSafe(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
+var jn: TXQNativeModule;
+begin
+  jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
+  result := jn.findBasicFunction('parse-json').func(args);
+end;
+
+function xqFunctionBlocked(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
+begin
+  raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
+end;
+
+procedure blockFileAccessFunctions;
+var fn, pxp, jn: TXQNativeModule;
+begin
+  fn := TXQueryEngine.findNativeModule(XMLNamespaceURL_XPathFunctions);
+  fn.findComplexFunction('doc').func:=@xqFunctionBlocked;
+  fn.findComplexFunction('doc-available').func:=@xqFunctionBlocked;
+
+  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
+  pxp.findComplexFunction('json').func:=@xqFunctionJSONSafe;
+
+  jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
+  jn.findComplexFunction('json-doc').func:=@xqFunctionBlocked;
 end;
 
 var pxp: TXQNativeModule;
