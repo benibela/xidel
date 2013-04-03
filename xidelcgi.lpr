@@ -67,7 +67,7 @@ begin
   end;
 end;
 
-var firstExtractionKind: TExtractionKind;
+var firstExtractionKind: string;
 
 procedure printPre(extractionKind: TExtractionKind);
   function example(t: string): string;
@@ -123,7 +123,10 @@ begin
     exit;
   end;
 
-  firstExtractionKind:=extractionKind;
+
+  if mycmdline.readString('extract-kind') <> 'auto' then firstExtractionKind := mycmdline.readString('extract-kind')
+  else if mycmdline.readString('extract') <> '' then firstExtractionKind := extractKindToString(extractionKind)
+  else firstExtractionKind:='';
 
   w('Content-Type: text/html');
   w('');
@@ -215,7 +218,7 @@ begin
   w(link('https://sourceforge.net/p/videlibri/code/ci/tip/tree/', 'Source repository'));
 
 
-  w('<script>lastQueryEditMode="'+extractKindToString(firstExtractionKind)+'"; activateCodeMirrors(); </script>');
+  w('<script>lastQueryEditMode="'+firstExtractionKind+'"; activateCodeMirrors(); </script>');
 
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
   w('<!-- Piwik -->');
