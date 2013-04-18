@@ -2642,8 +2642,10 @@ begin
   try
     proc.Options := proc.Options + [poUsePipes, poWaitOnExit];
     proc.Execute;
-    setlength(temps, proc.Output.NumBytesAvailable);
-    proc.Output.Read(temps[1], length(temps));
+    if proc.Output.NumBytesAvailable > 0 then begin
+      setlength(temps, proc.Output.NumBytesAvailable);
+      proc.Output.Read(temps[1], length(temps));
+    end else temps := '';
     result := xqvalue(temps);
   finally
     proc.free;
