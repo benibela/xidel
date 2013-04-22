@@ -108,7 +108,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="/home/benito/hg/components/pascal/import/synapse/;/home/benito/hg/components/pascal/import/regexpr/Source/;/home/benito/hg/components/pascal/internet/;/home/benito/hg/components/pascal/import/regexpr/source/"/>
+      <OtherUnitFiles Value="../../../components/pascal/import/synapse;../../../components/pascal/internet;../../../components/pascal/import/regexpr/source"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
