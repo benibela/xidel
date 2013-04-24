@@ -71,7 +71,7 @@ d) xidel http://site1  -f "//a (:select links:)" -e "select content 1"      -e "
 e) xidel http://site1  -e "select content 1"     -e "select content 2"      -f "//a (:select links:)"
 
    This  is some kind of special case. Since -f is the last option, it will repeat the previous operation, i.e.
-   it will extract content 1 and 2 from site1 and ALL sites that can be reached by an selected link on site1 
+   it will extract content 1 and 2 from site1 and ALL sites that can be reached by a selected link on site1 
    or any other of the processed sites. 
    Only if there were another -e after -f, it would extract that from the first set of followed links and stop.
  
@@ -188,7 +188,7 @@ However, in the default mode, there are the following important extensions:
                   (this function used to be called "filter")
     css("sel")    This returns the nodes below the context node matched by the specified css 3 selector.
                   You can use this to combine css and XPath, like in 'css("a.aclass")/@href'.
-    eval("xpath") This will evaluate the string "xpath" as an XPath expression
+    eval("xpath") This will evaluate the string "xpath" as a XPath expression
     system("..")  Runs a certain program and returns its stdout result as string
     deep-text()   This is the concatenated plain text of the every tag inside the current text. 
                   You can also pass a separator like deep-text(' ') to separate text of different nodes.
@@ -324,7 +324,7 @@ template:
  t:optional="true"        Html nodes can be marked as optional, and they will be ignored, if no possible
                           match can be found
  
- t:condition="??"         An XPath expression that c be The context node (.) refers to a potential match.
+ t:condition="??"         A XPath expression that c be The context node (.) refers to a potential match.
  
  *                        Like +, but it can also match none
  

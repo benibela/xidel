@@ -1,3 +1,9 @@
+    xidel can be invoked with no parameters, which does nothing, yet sets exit code to 0.
+    Similarly, invoking xidel with just 1 argument or forgetting to prefix the extraction expression with -e also does nothing and reports 0; e.g.:
+        xidel -
+        xidel - //title
+    Speaking of the latter: may I suggest making the -e before the extraction expression optional, as you do with the --data option?
+
 
 
 

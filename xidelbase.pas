@@ -2405,7 +2405,7 @@ begin
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
   mycmdline.allowOverrides:=true;
 
-  mycmdLine.declareString('data', 'Data/URL to process (--data= prefix can be omitted)');
+  mycmdLine.declareString('data', 'Data/URL/File/Stdin(-) to process (--data= prefix can be omitted)');
   mycmdLine.declareString('download', 'Downloads/saves the data to a given filename (- prints to stdout, . uses the filename of the url)');
 
   mycmdLine.beginDeclarationCategory('Extraction options:');
@@ -2426,9 +2426,9 @@ begin
 
   mycmdLine.declareString('follow', joined(['Expression extracting links from the page which will be followed.', 'If the expression extracts a sequence, all elements are followed.', 'If the value is an "a" node, its @href attribute is followed, if it is a "i/frame" node its @src attribute is followed, otherwise its text().', 'If it is an object, its url properties and its other properties can override command line arguments','Otherwise, the string value is treated as url.']));
   mycmdline.addAbbreviation('f');
-  mycmdLine.declareString('follow-exclude', 'Comma separated list of variables ignored in an follow template. (black list)');
-  mycmdLine.declareString('follow-include', 'Comma separated list of variables used in an foloow template. (white list)');
-  mycmdLine.declareFile('follow-file', 'File containing an follow expression (for longer expressions)');
+  mycmdLine.declareString('follow-exclude', 'Comma separated list of variables ignored in a follow template. (black list)');
+  mycmdLine.declareString('follow-include', 'Comma separated list of variables used in a follow template. (white list)');
+  mycmdLine.declareFile('follow-file', 'File containing a follow expression (for longer expressions)');
   mycmdLine.declareInt('follow-level', 'Maximal recursion deep', 99999);
   mycmdLine.declareFlag('allow-repetitions', 'Follow all links, even if that page was already visited.');
 
