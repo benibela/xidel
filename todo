@@ -1,3 +1,21 @@
+
+
+
+follow embed/@src, meta refresh url
+
+grouped compatibility options on cgi: full xquery, full jsoniq, full my own
+
+Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
+(required context override in xquery engine)
+       
+JSONiq tests
+
+suggest similar named functions, list accepted types for type error in error message
+
+ask on tty for password, if none is given (distinguish foo:@ and foo@ ?) 
+
+
+
 output-header/footer should evaluate {} 
 
 store doctype
@@ -8,13 +26,13 @@ test why download fails on large files on win (does it fail? failed twice on a s
 
 add download option to multipage template
 
+JSONiq feedback:
 
-Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
-(required context override in xquery engine)
-       
-JSONiq tests
+let $foo := {"bar": 123} return $foo.bar
 
-suggest similar named functions, list accepted types for type error in error message
+Porting features from JSONiq-standalone to JSONiq-extension. Like this dot notation?
+
+
 
 --------  
 
