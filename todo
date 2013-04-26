@@ -9,7 +9,11 @@
 
 follow embed/@src, meta refresh url
 
+handle base href when following
+
 grouped compatibility options on cgi: full xquery, full jsoniq, full my own
+
+Do not print multiple object properites with same name when printing JSON
 
 Xidel: auto json loading, e.g. xidel filename.json -e '(.).root(2)("property")'
 (required context override in xquery engine)
