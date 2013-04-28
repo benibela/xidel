@@ -39,6 +39,14 @@ end;
 {$R *.res}
 
 begin
+  if Paramcount = 0 then begin
+    writeln(stderr, 'Xidel XQuery/XPath/CSS/JSONiq engine and webscraper');
+    writeln(stderr, 'Use --help for a list of available command line parameters.');
+    writeln(stderr, 'Or --usage for the usage information of the readme.');
+    ExitCode:=1;
+    exit;
+  end;
+
   xidelbase.cgimode := false;
   xidelbase.allowInternetAccess := true;
   xidelbase.mycmdline := TCommandLineReader.create;

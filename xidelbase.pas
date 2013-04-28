@@ -2520,10 +2520,18 @@ begin
     baseContext := currentContext;
   end;
 
-  if (baseContext = currentContext) then
+
+  if (baseContext = currentContext) then begin
     for i := 0 to high(baseContext.dataSources) do
       if baseContext.dataSources[i] is TFollowToWrapper then
         baseContext.dataSources[i].readOptions(cmdlineWrapper);
+
+    if (length(baseContext.actions) = 0) and (baseContext.follow = '') then begin
+      writeln(stderr, 'No actions given.');
+      writeln(stderr, 'Expected at least one --extract, -e, --extract-file, --xquery, --xpath, --css, or --template-file option.');
+      ExitCode:=1;
+    end;
+  end;
 
 
   baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
