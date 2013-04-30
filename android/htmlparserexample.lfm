@@ -1,0 +1,83 @@
+object Form1: TForm1
+  Left = 360
+  Height = 328
+  Top = 305
+  Width = 236
+  Caption = 'Form1'
+  ClientHeight = 328
+  ClientWidth = 236
+  LCLVersion = '1.1'
+  object Label1: TLabel
+    Left = 0
+    Height = 15
+    Top = 0
+    Width = 236
+    Align = alTop
+    Caption = 'Site:'
+    Color = clWhite
+    ParentColor = False
+    Transparent = False
+  end
+  object Edit1: TEdit
+    Left = 0
+    Height = 25
+    Top = 15
+    Width = 236
+    Align = alTop
+    TabOrder = 0
+    Text = 'http://www.google.de'
+  end
+  object Label2: TLabel
+    Left = 0
+    Height = 15
+    Top = 40
+    Width = 236
+    Align = alTop
+    Caption = 'Query:'
+    Color = clWhite
+    ParentColor = False
+    Transparent = False
+  end
+  object Edit2: TEdit
+    Left = 0
+    Height = 25
+    Top = 55
+    Width = 236
+    Align = alTop
+    TabOrder = 1
+    Text = '//title'
+  end
+  object Memo1: TMemo
+    Left = 0
+    Height = 223
+    Top = 105
+    Width = 236
+    Align = alClient
+    Lines.Strings = (
+      'this is where the result will be shown'
+    )
+    TabOrder = 2
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 25
+    Top = 80
+    Width = 236
+    Align = alTop
+    BevelOuter = bvNone
+    Caption = 'Panel1'
+    ClientHeight = 25
+    ClientWidth = 236
+    TabOrder = 3
+    object Button1: TButton
+      Left = 0
+      Height = 25
+      Top = 0
+      Width = 236
+      Align = alClient
+      Caption = 'Process'
+      OnClick = Button1Click
+      TabOrder = 0
+    end
+  end
+end
