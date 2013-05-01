@@ -1,79 +1,91 @@
 object Form1: TForm1
   Left = 360
-  Height = 328
-  Top = 305
-  Width = 236
+  Height = 320
+  Top = 308
+  Width = 249
   Caption = 'Form1'
-  ClientHeight = 328
-  ClientWidth = 236
+  ClientHeight = 320
+  ClientWidth = 249
+  Color = clWhite
   LCLVersion = '1.1'
   object Label1: TLabel
-    Left = 0
+    Left = 5
     Height = 15
-    Top = 0
-    Width = 236
+    Top = 5
+    Width = 239
     Align = alTop
+    BorderSpacing.Around = 5
     Caption = 'Site:'
     Color = clWhite
+    Font.Color = clBlue
     ParentColor = False
+    ParentFont = False
     Transparent = False
   end
   object Edit1: TEdit
     Left = 0
     Height = 25
-    Top = 15
-    Width = 236
+    Top = 25
+    Width = 249
     Align = alTop
     TabOrder = 0
     Text = 'http://www.google.de'
   end
   object Label2: TLabel
-    Left = 0
+    Left = 5
     Height = 15
-    Top = 40
-    Width = 236
+    Top = 55
+    Width = 239
     Align = alTop
+    BorderSpacing.Around = 5
     Caption = 'Query:'
     Color = clWhite
+    Font.Color = clBlue
     ParentColor = False
+    ParentFont = False
     Transparent = False
   end
   object Edit2: TEdit
     Left = 0
     Height = 25
-    Top = 55
-    Width = 236
+    Top = 75
+    Width = 249
     Align = alTop
     TabOrder = 1
     Text = '//title'
   end
   object Memo1: TMemo
+    AnchorSideTop.Control = Panel1
+    AnchorSideTop.Side = asrBottom
     Left = 0
-    Height = 223
-    Top = 105
-    Width = 236
-    Align = alClient
+    Height = 176
+    Top = 142
+    Width = 249
+    Align = alCustom
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Around = 4
     Lines.Strings = (
-      'this is where the result will be shown'
+      'result output box'
     )
+    ReadOnly = True
     TabOrder = 2
   end
   object Panel1: TPanel
     Left = 0
-    Height = 25
-    Top = 80
-    Width = 236
+    Height = 38
+    Top = 100
+    Width = 249
     Align = alTop
     BevelOuter = bvNone
     Caption = 'Panel1'
-    ClientHeight = 25
-    ClientWidth = 236
+    ClientHeight = 38
+    ClientWidth = 249
     TabOrder = 3
     object Button1: TButton
       Left = 0
-      Height = 25
+      Height = 38
       Top = 0
-      Width = 236
+      Width = 249
       Align = alClient
       Caption = 'Process'
       OnClick = Button1Click
