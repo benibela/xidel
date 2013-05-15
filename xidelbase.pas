@@ -42,6 +42,7 @@ var cgimode: boolean = false;
 type TExtractionKind = (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
 
 var
+    onPostParseCmdLine: procedure ();
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
     onRetrieve: function (const method, url, postdata: string): string;
     onPreOutput: procedure (extractionKind: TExtractionKind);
@@ -442,7 +443,7 @@ TProcessingContext = class(TDataProcessing)
   quiet: boolean;
 
   ignoreNamespace: boolean;
-  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityNoDotNotation, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityNoDotNotation, compatibilityOnlyJSONObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
   noOptimizations: boolean;
 
   yieldDataToParent: boolean;
@@ -1168,6 +1169,7 @@ begin
   reader.read('no-json', compatibilityNoJSON);
   reader.read('no-json-literals', compatibilityNoJSONliterals);
   reader.read('no-dot-notation', compatibilityNoDotNotation);
+  reader.read('only-json-objects', compatibilityOnlyJSONObjects);
   reader.read('strict-type-checking', compatibilityStrictTypeChecking);
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
   reader.read('no-extended-strings', compatibilityNoExtendedStrings);
@@ -1257,6 +1259,7 @@ begin
   compatibilityNoJSON := other.compatibilityNoJSON;
   compatibilityNoJSONliterals := other.compatibilityNoJSONliterals;
   compatibilityNoDotNotation := other.compatibilityNoDotNotation;
+  compatibilityOnlyJSONObjects := other.compatibilityOnlyJSONObjects;
   compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
   ignoreNamespace:=other.ignoreNamespace;
@@ -1468,6 +1471,7 @@ begin
   xpathparser.AllowJSON:=not compatibilityNoJSON;
   xpathparser.AllowJSONLiterals:=not compatibilityNoJSONliterals;
   xpathparser.VariableChangelog.allowPropertyDotNotation:=not compatibilityNoDotNotation;
+  xpathparser.StaticContext.objectsRestrictedToJSONTypes:=compatibilityOnlyJSONObjects;
   htmlparser.variableChangeLog.allowPropertyDotNotation:=xpathparser.VariableChangelog.allowPropertyDotNotation;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
@@ -2469,6 +2473,7 @@ begin
   mycmdline.declareFlag('no-json', 'Disables the JSONiq syntax extensions (like [1,2,3] and {"a": 1, "b": 2})');
   mycmdline.declareFlag('no-json-literals', 'Disables the json true/false/null literals');
   mycmdline.declareFlag('no-dot-notation', 'Disables the dot notation for property access, like in $object.property ');
+  mycmdline.declareFlag('only-json-objects', 'Do not allow non-JSON types in object properties (like  () or (1,2) instead of null and [1,2]) ');
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
   mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');
@@ -2485,7 +2490,10 @@ begin
   contextStack[0] := baseContext;
 
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
+
   mycmdLine.parse();
+
+  if Assigned(onPostParseCmdLine) then onPostParseCmdLine();
 
   if mycmdline.readFlag('version') then
     printVersion;

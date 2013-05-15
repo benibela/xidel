@@ -4,7 +4,7 @@ program xidelsoap;
 
 uses
   xidelbase, simplehtmltreeparser,
-  rcmdlinecgi, utf8tools, sysutils, strutils
+  rcmdlinecgi, utf8tools, sysutils, strutils, bbutils
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
@@ -67,6 +67,15 @@ begin
   end;
 end;
 
+type
+
+{ TCommandLineReaderBreaker }
+
+ TCommandLineReaderBreaker = class(TCommandLineReaderCGI)
+  procedure setString(const n,v: string);
+  procedure setFlag(const n: string; v: boolean);
+end;
+
 var firstExtractionKind: string;
 
 procedure printPre(extractionKind: TExtractionKind);
@@ -100,7 +109,8 @@ procedure printPre(extractionKind: TExtractionKind);
     cur: String;
     i: Integer;
   begin
-    result := n + ': <select name="'+t+'"/>';
+    if n <> '' then n += ': ';
+    result := n + '<select name="'+t+'"/>';
     cur := mycmdline.readString(t);
     for i := 0 to high(list) do result += '<option value="'+list[i]+'"'+ifthen(list[i] = cur, ' selected') +'>'+list[i]+'</option>';
     result += '</select> ';
@@ -128,6 +138,7 @@ begin
   else if mycmdline.readString('extract') <> '' then firstExtractionKind := extractKindToString(extractionKind)
   else firstExtractionKind:='';
 
+
   w('Content-Type: text/html');
   w('');
 
@@ -154,9 +165,14 @@ begin
   w('<br><span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped', 'bash', 'cmd']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
-  w('<br><b>Compatibility</b>: '+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ') + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)') + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces') + checkbox('case-sensitive', 'case sensitive'));
+  w('<br><b>Compatibility</b>: '+select('compatibility', '', ['Standard XQuery', 'Standard XQuery+JSONiq', 'Enable all extensions', 'Custom'])
+    + '<span id="compatibilityOptions">'+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ')
+    + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)')
+    + checkbox('no-dot-notation', 'Disable dot notation (e.g. {"a": 1}.a)') + checkbox('only-json-objects', 'Only JSON types in objects (e.g. {"a": null} != {"a": ()})')
+    + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces')
+    + checkbox('case-sensitive', 'case sensitive'));
 
-  w('</span></form>');
+  w('</span></span></form>');
 
  { w('<script src="../codemirror/codemirror.js"></script>');
   w('<script src="../codemirror/javascript/javascript.js"></script>');
@@ -186,6 +202,17 @@ begin
 
 
 end;
+
+var compatibiltiyOptionsOn: array[1..3] of string =
+    ('no-extended-strings;no-json;no-json-literals;no-dot-notation;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive',
+     'no-extended-strings;no-dot-notation;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive',
+     ''
+    );
+    compatibiltiyOptionsOff: array[1..3] of string =
+    ('',
+     'no-json;no-json-literals',
+     'no-extended-strings;no-json;no-json-literals;no-dot-notation;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive'
+    );
 
 procedure printPost;
 function link(ref, title: string; desc: string = ''): string;
@@ -218,7 +245,10 @@ begin
   w(link('https://sourceforge.net/p/videlibri/code/ci/tip/tree/', 'Source repository'));
 
 
-  w('<script>lastQueryEditMode="'+firstExtractionKind+'"; activateCodeMirrors(); </script>');
+  w('<script>lastQueryEditMode="'+firstExtractionKind+'"; ');
+  w('compatibilityOn = ["'+compatibiltiyOptionsOn[1]+'", "'+compatibiltiyOptionsOn[2]+'", "'+compatibiltiyOptionsOn[3]+'"];');
+  w('compatibilityOff = ["'+compatibiltiyOptionsOff[1]+'", "'+compatibiltiyOptionsOff[2]+'", "'+compatibiltiyOptionsOff[3]+'"];');
+  w('activateCodeMirrors(); </script>');
 
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
   w('<!-- Piwik -->');
@@ -249,6 +279,48 @@ begin
   w('</body></html>');
 end;
 
+{ TCommandLineReaderBreaker }
+
+
+
+procedure onPostParseCmdLine;
+var
+  onn: String;
+  off: String;
+  temp: TStringArray;
+  i: Integer;
+begin
+  case lowercase(mycmdline.readString('compatibility')) of
+    'standard xquery': begin
+      onn := compatibiltiyOptionsOn[1];
+      off := compatibiltiyOptionsOff[1];
+    end;
+    'standard xquery+jsoniq': begin
+      onn := compatibiltiyOptionsOn[2];
+      off := compatibiltiyOptionsOff[2];
+    end;
+    'enable all extensions': begin
+      onn := compatibiltiyOptionsOn[3];
+      off := compatibiltiyOptionsOff[3];
+    end;
+    //else //'Custom'
+  end;
+  temp := strSplit(onn, ';', false);
+  for i := 0 to high(temp) do TCommandLineReaderBreaker(mycmdline).setFlag(temp[i],true);
+  temp := strSplit(off, ';', false);
+  for i := 0 to high(temp) do TCommandLineReaderBreaker(mycmdline).setFlag(temp[i],false);
+end;
+
+procedure TCommandLineReaderBreaker.setString(const n, v: string);
+begin
+  findProperty(n)^.strvalue:=v;
+end;
+
+procedure TCommandLineReaderBreaker.setFlag(const n: string; v: boolean);
+begin
+  findProperty(n)^.flagvalue:=v;
+end;
+
 begin
   xidelbase.cgimode := true;
   xidelbase.allowInternetAccess := false;
@@ -262,7 +334,9 @@ begin
   mycmdline.declareFlag('no-auto-update', 'No automatical javascript based autoupdate');
   mycmdline.declareFlag('no-highlighting', 'No syntax highlighting');
   mycmdline.declareFlag('case-sensitive', 'Case sensitive');
+  mycmdline.declareString('compatibility', 'XQuery compatibility options', 'Enable all extensions');
 
+  xidelbase.onPostParseCmdLine := @onPostParseCmdLine;
   xidelbase.onPreOutput := @printPre;
 
   xidelbase.perform;

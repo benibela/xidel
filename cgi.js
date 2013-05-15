@@ -110,6 +110,18 @@ function init(){
         if (_i == 1) changed = true;
         update();
       }}})(i);
+      
+  var compatSelect = document.getElementsByName("compatibility")[0];
+  compatSelect.onchange = function(){
+    if (compatSelect.selectedIndex < 3) {
+      var temp = compatibilityOn[compatSelect.selectedIndex].split(";");
+      for (var i=0;i<temp.length;i++) $("input[name="+temp[i]+"]").prop('checked', true);
+      var temp = compatibilityOff[compatSelect.selectedIndex].split(";");
+      for (var i=0;i<temp.length;i++) $("input[name="+temp[i]+"]").prop('checked', false);
+      $("#compatibilityOptions").hide();
+    } else $("#compatibilityOptions").show();
+    update();
+  }
 };
 function transformTextArea(x, autoupdate){
   var myCodeMirror = CodeMirror.fromTextArea(x, {
@@ -128,7 +140,11 @@ function transformTextArea(x, autoupdate){
 }
 var codeMirrorsWereActivated = false;
     toggleInitialized = false;
+    
 function activateCodeMirrors(){
+  var compatSelect = document.getElementsByName("compatibility")[0];
+  if (compatSelect.selectedIndex < 3) document.getElementById("compatibilityOptions").style.visibility="hidden";   
+
   if (window.extractCodeMirror) return;
   var toggle = document.getElementsByName("no-highlighting")[0];
   if (!toggleInitialized) {
