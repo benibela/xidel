@@ -23,7 +23,7 @@ tests/test.sh maxlevel1 tests/a.xml --follow-level 1 -e //title -f //A --allow-r
 tests/test.sh maxlevel2  tests/a.xml --follow-level 2 -e //title -f //A --allow-repetitions
 tests/test.sh maxlevel3  tests/a.xml --follow-level 3 -e //title -f //A --allow-repetitions
 
-
+c
 #"sibling tests"
 tests/test.sh sibling1a '<empty/>' -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
 tests/test.sh sibling1b "<a/>"  -e "a:=17"  tests/a.xml -e 'a:=909'
@@ -65,6 +65,17 @@ tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/
 tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{filter(., "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
 tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{filter($raw, "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
 
+
+tests/test.sh multipageVariable  --extract-kind=multipage --extract '<action><variable name="test">1+2+3</variable></action>' --xpath '$test' ##?? change to print all variables
+tests/test.sh multipageChoose   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="2=2"><variable name="result">"b"</variable></when><when test="3=2"><variable name="result">"c"</variable></when></choose></action>' --xpath '$result'
+tests/test.sh multipageChoose3   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="3=2"><variable name="result">"b"</variable></when><when test="3=3"><variable name="result">"c"</variable></when></choose></action>' --xpath '$result'
+tests/test.sh multipageChoose4   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="3=2"><variable name="result">"b"</variable></when><when test="4=3"><variable name="result">"c"</variable></when></choose></action>' --xpath '$result' #has an error in correct output
+tests/test.sh multipageChooseO1   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="3=2"><variable name="result">"b"</variable></when><when test="4=3"><variable name="result">"c"</variable></when><otherwise><variable name="result">"x"</variable></otherwise></choose></action>' --xpath '$result'
+tests/test.sh multipageChooseO2   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="3=2"><variable name="result">"b"</variable></when><when test="3=3"><variable name="result">"c"</variable></when><otherwise><variable name="result">"x"</variable></otherwise></choose></action>' --xpath '$result'
+tests/test.sh multipageChooseO3   --extract-kind=multipage --extract '<action><choose><otherwise><variable name="result">"x"</variable></otherwise></choose></action>' --xpath '$result'
+
+
+ correct output
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
 tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml-wrapped
