@@ -143,7 +143,7 @@ var codeMirrorsWereActivated = false;
     
 function activateCodeMirrors(){
   var compatSelect = document.getElementsByName("compatibility")[0];
-  if (compatSelect.selectedIndex < 3) document.getElementById("compatibilityOptions").style.visibility="hidden";   
+  if (compatSelect.selectedIndex < 3) $("#compatibilityOptions").hide();
 
   if (window.extractCodeMirror) return;
   var toggle = document.getElementsByName("no-highlighting")[0];
