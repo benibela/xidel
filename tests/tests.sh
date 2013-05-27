@@ -73,7 +73,8 @@ tests/test.sh multipageChoose4   --extract-kind=multipage --extract '<action><ch
 tests/test.sh multipageChooseO1   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="3=2"><variable name="result">"b"</variable></when><when test="4=3"><variable name="result">"c"</variable></when><otherwise><variable name="result">"x"</variable></otherwise></choose></action>' --xpath '$result'
 tests/test.sh multipageChooseO2   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="3=2"><variable name="result">"b"</variable></when><when test="3=3"><variable name="result">"c"</variable></when><otherwise><variable name="result">"x"</variable></otherwise></choose></action>' --xpath '$result'
 tests/test.sh multipageChooseO3   --extract-kind=multipage --extract '<action><choose><otherwise><variable name="result">"x"</variable></otherwise></choose></action>' --xpath '$result'
-
+tests/test.sh multipageIf0   --extract-kind=multipage --extract '<action><if test="false()"><variable name="result">"x"</variable></if></action>' --xpath 'get("result")'
+tests/test.sh multipageIf1   --extract-kind=multipage --extract '<action><if test="true()"><variable name="result">"x"</variable></if></action>' --xpath 'get("result")'
 
  correct output
 #output formats
