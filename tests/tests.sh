@@ -76,7 +76,9 @@ tests/test.sh multipageChooseO3   --extract-kind=multipage --extract '<action><c
 tests/test.sh multipageIf0   --extract-kind=multipage --extract '<action><if test="false()"><variable name="result">"x"</variable></if></action>' --xpath 'get("result")'
 tests/test.sh multipageIf1   --extract-kind=multipage --extract '<action><if test="true()"><variable name="result">"x"</variable></if></action>' --xpath 'get("result")'
 
- correct output
+tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s>result:=123</s></action>' --xpath 'get("result")'
+
+
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
 tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml-wrapped
