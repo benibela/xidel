@@ -77,6 +77,8 @@ tests/test.sh multipageIf0   --extract-kind=multipage --extract '<action><if tes
 tests/test.sh multipageIf1   --extract-kind=multipage --extract '<action><if test="true()"><variable name="result">"x"</variable></if></action>' --xpath 'get("result")'
 
 tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s>result:=123</s></action>' --xpath 'get("result")'
+tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s test="true()">result:=123</s></action>' --xpath 'get("result")'
+tests/test.sh multipageShortF  --extract-kind=multipage --extract '<action><s test="false()">result:=123</s></action>' --xpath 'get("result")'
 
 
 #output formats
