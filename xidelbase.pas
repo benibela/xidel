@@ -1153,8 +1153,7 @@ begin
 
   if reader.read('output-encoding', tempstr) then setOutputEncoding(tempstr); //allows object returned by extract to change the output-encoding
 
-
-
+  reader.read('quiet', quiet);
 
   {if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
   else begin
