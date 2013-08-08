@@ -1,5 +1,17 @@
 Some important changes:
 
+--------Xidel 0.7.2--------
+
+* improved JSONiq extension support
+  * updated to the new 1.0.1 standard. Most important: () operator to list object keys / unbox arrays, {| .. |} syntax for object merging, relaxed behaviour on sequences
+  * changed my dot notation to behave like the dot operator in JSONiq standalone
+  * fix object with keys containing a dot (.)
+  * fix parsing of null in json input
+* new elements in multipage template: <if>, <choose>, <when>, <otherwise> similar to XSLT, <s> to evaluate short XQuery expressions like in singlepage templates  
+* allow template:optional flag on all template elements
+* improved html form/url handling: input elements can be passed to pxp:form to create their url encoded post data, uri-decode/uri-encode/uri-combine functions to modify urls
+* other minor improvements and bug fixes
+
 --------Xidel 0.7--------
 
 * Improved handling of extract/follow command line chains:

@@ -168,7 +168,8 @@ begin
   w('<br><b>Compatibility</b>: '+select('compatibility', '', ['Standard XQuery', 'Standard XQuery+JSONiq', 'Enable all extensions', 'Custom'])
     + '<span id="compatibilityOptions">'+ checkbox('no-extended-strings', 'Disable extended strings (e.g. x"{$varname}") ')
     + checkbox('no-json', 'Disable JSONiq (e.g. {"a": 1}("a"))') + checkbox('no-json-literals', 'Disable JSONiq literals (true,false,null)')
-    + checkbox('no-dot-notation', 'Disable dot notation (e.g. {"a": 1}.a)') + checkbox('only-json-objects', 'Only JSON types in objects (e.g. {"a": null} != {"a": ()})')
+    + checkbox('only-json-objects', 'Only JSON types in objects (e.g. {"a": null} != {"a": ()})')
+    + select('dot-notation', '&nbsp;&nbsp;&nbsp; Allow dot notation (e.g. {"a": 1}.a): ', ['off', 'unambiguous', 'on'])
     + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces')
     + checkbox('case-sensitive', 'case sensitive'));
 
@@ -204,14 +205,19 @@ begin
 end;
 
 var compatibiltiyOptionsOn: array[1..3] of string =
-    ('no-extended-strings;no-json;no-json-literals;no-dot-notation;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive',
-     'no-extended-strings;no-dot-notation;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive',
+    ('no-extended-strings;no-json;no-json-literals;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive',
+     'no-extended-strings;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive',
      ''
     );
     compatibiltiyOptionsOff: array[1..3] of string =
     ('',
      'no-json;no-json-literals',
-     'no-extended-strings;no-json;no-json-literals;no-dot-notation;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive'
+     'no-extended-strings;no-json;no-json-literals;only-json-objects;strict-type-checking;strict-namespaces;case-sensitive'
+    );
+    compatibiltiyOptionsChange: array[1..3] of string =
+    ('dot-notation=off',
+     'dot-notation=off',
+     'dot-notation=unambiguous'
     );
 
 procedure printPost;
@@ -248,6 +254,7 @@ begin
   w('<script>lastQueryEditMode="'+firstExtractionKind+'"; ');
   w('compatibilityOn = ["'+compatibiltiyOptionsOn[1]+'", "'+compatibiltiyOptionsOn[2]+'", "'+compatibiltiyOptionsOn[3]+'"];');
   w('compatibilityOff = ["'+compatibiltiyOptionsOff[1]+'", "'+compatibiltiyOptionsOff[2]+'", "'+compatibiltiyOptionsOff[3]+'"];');
+  w('compatibilityChange = ["'+compatibiltiyOptionsChange[1]+'", "'+compatibiltiyOptionsChange[2]+'", "'+compatibiltiyOptionsChange[3]+'"];');
   w('activateCodeMirrors(); </script>');
 
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
@@ -287,28 +294,28 @@ procedure onPostParseCmdLine;
 var
   onn: String;
   off: String;
+  change: string;
   temp: TStringArray;
   i: Integer;
 begin
+  i := 1;
   case lowercase(mycmdline.readString('compatibility')) of
-    'standard xquery': begin
-      onn := compatibiltiyOptionsOn[1];
-      off := compatibiltiyOptionsOff[1];
-    end;
-    'standard xquery+jsoniq': begin
-      onn := compatibiltiyOptionsOn[2];
-      off := compatibiltiyOptionsOff[2];
-    end;
-    'enable all extensions': begin
-      onn := compatibiltiyOptionsOn[3];
-      off := compatibiltiyOptionsOff[3];
-    end;
-    //else //'Custom'
+    'standard xquery': i := 1;
+    'standard xquery+jsoniq': i := 2;
+    'enable all extensions': i := 3;
+    else exit; //'Custom'
   end;
+
+  onn := compatibiltiyOptionsOn[i];
+  off := compatibiltiyOptionsOff[i];
+  change := compatibiltiyOptionsChange[i];
+
   temp := strSplit(onn, ';', false);
   for i := 0 to high(temp) do TCommandLineReaderBreaker(mycmdline).setFlag(temp[i],true);
   temp := strSplit(off, ';', false);
   for i := 0 to high(temp) do TCommandLineReaderBreaker(mycmdline).setFlag(temp[i],false);
+  temp := strSplit(change, ';', false);
+  for i := 0 to high(temp) do TCommandLineReaderBreaker(mycmdline).setString(strSplit(temp[i], '=')[0],strSplit(temp[i], '=')[1]);
 end;
 
 procedure TCommandLineReaderBreaker.setString(const n, v: string);

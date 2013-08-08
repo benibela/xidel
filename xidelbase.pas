@@ -443,7 +443,8 @@ TProcessingContext = class(TDataProcessing)
   quiet: boolean;
 
   ignoreNamespace: boolean;
-  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityNoDotNotation, compatibilityOnlyJSONObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+  compatibilityDotNotation: TXQPropertyDotNotation;
   noOptimizations: boolean;
 
   yieldDataToParent: boolean;
@@ -1139,6 +1140,7 @@ end;
 procedure TProcessingContext.readOptions(reader: TOptionReaderWrapper);
 var
   tempstr: string;
+  tempbool: boolean;
 begin
 
   if allowInternetAccess then begin
@@ -1167,7 +1169,15 @@ begin
 
   reader.read('no-json', compatibilityNoJSON);
   reader.read('no-json-literals', compatibilityNoJSONliterals);
-  reader.read('no-dot-notation', compatibilityNoDotNotation);
+  reader.read('dot-notation', tempstr);
+  case tempstr of
+    'on': compatibilityDotNotation := xqpdnAllowFullDotNotation;
+    'off': compatibilityDotNotation := xqpdnDisallowDotNotation;
+    'unambiguous': compatibilityDotNotation := xqpdnAllowUnambiguousDotNotation;
+  end;
+  if reader.read('no-dot-notation', tempbool) then
+    if tempbool = true then
+      compatibilityDotNotation := xqpdnDisallowDotNotation;
   reader.read('only-json-objects', compatibilityOnlyJSONObjects);
   reader.read('strict-type-checking', compatibilityStrictTypeChecking);
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
@@ -1257,7 +1267,7 @@ begin
   compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
   compatibilityNoJSON := other.compatibilityNoJSON;
   compatibilityNoJSONliterals := other.compatibilityNoJSONliterals;
-  compatibilityNoDotNotation := other.compatibilityNoDotNotation;
+  compatibilityDotNotation := other.compatibilityDotNotation;
   compatibilityOnlyJSONObjects := other.compatibilityOnlyJSONObjects;
   compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
@@ -1469,9 +1479,8 @@ begin
   xpathparser.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
   xpathparser.AllowJSON:=not compatibilityNoJSON;
   xpathparser.AllowJSONLiterals:=not compatibilityNoJSONliterals;
-  xpathparser.VariableChangelog.allowPropertyDotNotation:=not compatibilityNoDotNotation;
+  xpathparser.AllowPropertyDotNotation:=compatibilityDotNotation;
   xpathparser.StaticContext.objectsRestrictedToJSONTypes:=compatibilityOnlyJSONObjects;
-  htmlparser.variableChangeLog.allowPropertyDotNotation:=xpathparser.VariableChangelog.allowPropertyDotNotation;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
   htmlparser.ignoreNamespaces := ignoreNamespace;
@@ -2471,7 +2480,8 @@ begin
 
   mycmdline.declareFlag('no-json', 'Disables the JSONiq syntax extensions (like [1,2,3] and {"a": 1, "b": 2})');
   mycmdline.declareFlag('no-json-literals', 'Disables the json true/false/null literals');
-  mycmdline.declareFlag('no-dot-notation', 'Disables the dot notation for property access, like in $object.property ');
+  mycmdline.declareString('dot-notation', 'Specifies if the dot operator $object.property can be used. Possible values: off, on, unambiguous (default, does not allow $obj.prop, but ($obj).prop ) ', 'unambiguous');
+  mycmdline.declareFlag('no-dot-notation', 'Disables the dot notation for property access, like in $object.property (deprecated)');
   mycmdline.declareFlag('only-json-objects', 'Do not allow non-JSON types in object properties (like  () or (1,2) instead of null and [1,2]) ');
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');

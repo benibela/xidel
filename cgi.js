@@ -118,6 +118,8 @@ function init(){
       for (var i=0;i<temp.length;i++) $("input[name="+temp[i]+"]").prop('checked', true);
       var temp = compatibilityOff[compatSelect.selectedIndex].split(";");
       for (var i=0;i<temp.length;i++) $("input[name="+temp[i]+"]").prop('checked', false);
+      var temp = compatibilityChange[compatSelect.selectedIndex].split(";");
+      for (var i=0;i<temp.length;i++) $("select[name="+temp[i].split("=")[0]+"]").val(temp[i].split("=")[1]);
       $("#compatibilityOptions").hide();
     } else $("#compatibilityOptions").show();
     update();
