@@ -23,7 +23,7 @@ tests/test.sh maxlevel1 tests/a.xml --follow-level 1 -e //title -f //A --allow-r
 tests/test.sh maxlevel2  tests/a.xml --follow-level 2 -e //title -f //A --allow-repetitions
 tests/test.sh maxlevel3  tests/a.xml --follow-level 3 -e //title -f //A --allow-repetitions
 
-c
+
 #"sibling tests"
 tests/test.sh sibling1a '<empty/>' -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
 tests/test.sh sibling1b "<a/>"  -e "a:=17"  tests/a.xml -e 'a:=909'
@@ -363,8 +363,11 @@ tests/test.sh regression_entity3b '<a>x</a>' -e '<a>{res := "&amp;amp;"}</a>'
 tests/test.sh regression_entity3c '<a>x</a>' -e '<a>{res := "&amp;amp;amp;"}</a>'
 tests/test.sh regression_entity3d '<a>x</a>' -e '<a>{res := "&amp;amp;amp;amp;"}</a>'
 
-tests/test.sh regression_object1 -e '($x := object(("b","c")), ($x).b)' 
-tests/test.sh regression_object2 -e '($x := object(("b","c")), ($x).a)' #allow accessing undefined properties
+tests/test.sh regression_object1 -e '$x := object(("b","c"))' -e '($x).b' 
+tests/test.sh regression_object1 -e '$x := {"b": "c"}' -e '($x).b'
+tests/test.sh regression_object2 -e '$x := object(("b","c"))' -e '($x).a' #allow accessing undefined properties
+tests/test.sh regression_object2 -e '$x := {"b": "c"}' -e '($x).a' 
+tests/test.sh regression_object2 --dot-notation=on -e '$x := {"b": "c"}' -e '$x.a' 
 
 tests/test.sh regression_multipage1  -e "<action><page url=\"tests/a.xml\"><template><title>{concat(., \"'\", '\"')}</title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage2 -e "<action><page url=\"tests/a.xml\"><template><title><t:read var=\"res\" source=\" concat(., &quot;'&quot;, '&quot;')\"/></title></template></page></action>" --extract-kind=multipage
