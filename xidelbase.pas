@@ -39,7 +39,7 @@ var cgimode: boolean = false;
     majorVersion: integer = 0;
     minorVersion: integer = 7;
 
-type TExtractionKind = (ekAuto, ekXPath, ekTemplate, ekCSS, ekXQuery, ekMultipage);
+type TExtractionKind = (ekAuto, ekXPath2, ekXPath3, ekTemplate, ekCSS, ekXQuery1, ekXQuery3, ekMultipage);
 
 var
     onPostParseCmdLine: procedure ();
@@ -570,7 +570,7 @@ var
   temp: TXQValue;
 begin
   result := obj.hasProperty(name, @temp);
-  if result then value := temp.toDecimal;
+  if result then value := temp.toFloat;
 end;
 
 { TOptionReaderFromCommandLine }
@@ -1075,8 +1075,12 @@ procedure TExtraction.setExtractKind(v: string);
 begin
   if extract = '' then exit;
   if striEqual(v, 'auto') then extractKind := ekAuto
-  else if striEqual(v, 'xpath') then extractKind:=ekXPath
-  else if striEqual(v, 'xquery') then extractKind:=ekXQuery
+  else if striEqual(v, 'xpath') then extractKind:=ekXPath3
+  else if striEqual(v, 'xquery') then extractKind:=ekXQuery3
+  else if striEqual(v, 'xpath2') then extractKind:=ekXPath2
+  else if striEqual(v, 'xquery1') then extractKind:=ekXQuery1
+  else if striEqual(v, 'xpath3') then extractKind:=ekXPath3
+  else if striEqual(v, 'xquery3') then extractKind:=ekXQuery3
   else if striEqual(v, 'css') then extractKind:=ekCSS
   else if striEqual(v, 'template') then extractKind:=ekTemplate
   else if striEqual(v, 'multipage') then extractKind:=ekMultipage
@@ -1373,7 +1377,7 @@ begin
   }
 
 
-  if (e = '') or (e = '.' {just context item}) then exit(ekXPath);
+  if (e = '') or (e = '.' {just context item}) then exit(ekXPath3);
   if e[1] in [#0..#32] then e := trim(e);
   if (e[1] = '<') then exit(ekTemplate);
 
@@ -1383,9 +1387,9 @@ begin
      checkWords('module', ['namespace']) or
      checkWords('declare', ['function', 'variable', 'namespace', 'default', 'boundary-space', 'base-uri', 'option', 'construction', 'copy-namespace'])
      or checkWords('let', []) {<- that will be changed to mean xpath 3 some time} then
-    exit(ekXQuery);
+    exit(ekXQuery3);
 
-  result := ekXPath;
+  result := ekXPath3;
 
   dots := 0;
   for i := 1 to length(e) do
@@ -1394,10 +1398,10 @@ begin
       '#': exit(ekCSS);
       '.': if ((i = 1) or (e[i-1] in ['a'..'z','A'..'Z'])) and ((i = length(e)) or (e[i+1] in ['a'..'z','A'..'Z'])) then
          dots+=1;
-      else exit(ekXPath);
+      else exit(ekXPath3);
     end;
   if dots > 0 then exit(ekCSS)
-  else exit(ekXPath);
+  else exit(ekXPath3);
 end;
 
 function TProcessingContext.process(data: IData): TFollowToList;
@@ -1451,9 +1455,11 @@ var next, res: TFollowToList;
         xpathparser.StaticContext. BaseUri := data.baseUri;
         if followQueryCache = nil then
           case followKind of
-            ekXQuery: followQueryCache := xpathparser.parseXQuery1(follow, xpathparser.StaticContext);
+            ekXQuery1: followQueryCache := xpathparser.parseXQuery1(follow, xpathparser.StaticContext);
+            ekXQuery3: followQueryCache := xpathparser.parseXQuery3(follow, xpathparser.StaticContext);
             ekCSS: followQueryCache := xpathparser.parseCSS3(follow);
-            else{ekXPath: }followQueryCache := xpathparser.parseXPath2(follow, xpathparser.StaticContext);
+            ekXPath2: followQueryCache := xpathparser.parseXPath2(follow, xpathparser.StaticContext);
+            else{ekXPath3: }followQueryCache := xpathparser.parseXPath3(follow, xpathparser.StaticContext);
           end;
         if noOptimizations or (xqcdFocusDocument in followQueryCache.Term.getContextDependencies) then begin
           htmlparser.parseHTMLSimple(data);
@@ -1812,13 +1818,15 @@ begin
       htmlparser.parseHTML(data); //todo: full url is abs?
       pageProcessed(nil,htmlparser);
     end;
-    ekXPath, ekCSS, ekXQuery: begin
+    ekXPath2, ekXPath3, ekCSS, ekXQuery1, ekXQuery3: begin
       xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.baseUri);
       if extractQueryCache = nil then
         case extractKind of
           ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
-          ekXPath: extractQueryCache := xpathparser.parseXPath2(extract, xpathparser.StaticContext);
-          ekXQuery: extractQueryCache := xpathparser.parseXQuery1(extract, xpathparser.StaticContext);
+          ekXPath2: extractQueryCache := xpathparser.parseXPath2(extract, xpathparser.StaticContext);
+          ekXQuery1: extractQueryCache := xpathparser.parseXQuery1(extract, xpathparser.StaticContext);
+          ekXPath3: extractQueryCache := xpathparser.parseXPath3(extract, xpathparser.StaticContext);
+          ekXQuery3: extractQueryCache := xpathparser.parseXQuery3(extract, xpathparser.StaticContext);
         end;
       if parent.noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
         htmlparser.parseHTMLSimple(data);
@@ -2294,7 +2302,7 @@ begin
     TCommandLineReaderBreaker(sender).removeVar('follow');
     TCommandLineReaderBreaker(sender).removeVar('extract');
     TCommandLineReaderBreaker(sender).removeVar('download');
-  end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') or (name = 'css') or (name = 'xpath') or (name = 'xquery') then begin
+  end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') or (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3')  then begin
     specialized := '';
     case name of
       'extract-file':
@@ -2304,7 +2312,7 @@ begin
         TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'multipage');
         TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
       end;
-      'xpath', 'xquery', 'css': specialized:=name;
+      'xpath', 'xquery', 'css', 'xpath2', 'xquery1', 'xpath3', 'xquery3': specialized:=name;
     end;
     if specialized <> '' then begin
       TCommandLineReaderBreaker(sender).overrideVar('extract', value);
@@ -2427,10 +2435,14 @@ begin
   mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow)', '_follow');
   mycmdLine.declareString('extract-include', 'If not empty, comma separated list of variables to use in an extract template (white list)');
   mycmdLine.declareFile('extract-file', 'File containing an extract expression (for longer expressions)');
-  mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath, xquery, css, template or multipage', 'auto');
+  mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath{|2|3}, xquery{|1|3}, css, template or multipage', 'auto');
   mycmdLine.declareString('css', 'Abbreviation for --extract-kind=css --extract=...');
-  mycmdLine.declareString('xpath', 'Abbreviation for --extract-kind=xpath --extract=...');
-  mycmdLine.declareString('xquery', 'Abbreviation for --extract-kind=xquery --extract=...');
+  mycmdLine.declareString('xpath', 'Abbreviation for --extract-kind=xpath3 --extract=...');
+  mycmdLine.declareString('xquery', 'Abbreviation for --extract-kind=xquery3 --extract=...');
+  mycmdLine.declareString('xpath2', 'Abbreviation for --extract-kind=xpath2 --extract=...');
+  mycmdLine.declareString('xquery1', 'Abbreviation for --extract-kind=xquery1 --extract=...');
+  mycmdLine.declareString('xpath3', 'Abbreviation for --extract-kind=xpath3 --extract=...');
+  mycmdLine.declareString('xquery3', 'Abbreviation for --extract-kind=xquery3 --extract=...');
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
   mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions are allowed with comma separated values)');
 
