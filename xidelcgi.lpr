@@ -59,10 +59,12 @@ function extractKindToString(kind: TExtractionKind): string;
 begin
   case kind of
     ekAuto: exit('auto');
-    ekXPath: exit('xpath');
+    ekXPath2: exit('xpath2');
+    ekXPath3: exit('xpath3');
     ekTemplate: exit('template');
     ekCSS: exit('css');
-    ekXQuery: exit('xquery');
+    ekXQuery1: exit('xquery1');
+    ekXQuery3: exit('xquery3');
     else exit('auto');
   end;
 end;
@@ -84,8 +86,8 @@ procedure printPre(extractionKind: TExtractionKind);
     if (t = mycmdline.readString('extract-kind')) and (mycmdline.readString('extract') <> '') then
       exit(mycmdline.readString('extract'));
     case t of
-    'xpath': exit(ExampleXPath);
-    'xquery': exit(ExampleXQuery);
+    'xpath', 'xpath2', 'xpath3': exit(ExampleXPath);
+    'xquery', 'xquery1', 'xquery3': exit(ExampleXQuery);
     'css': exit(ExampleCSS);
     {'template', 'auto':} else exit(ExampleTemplate);
     end;
@@ -94,7 +96,9 @@ procedure printPre(extractionKind: TExtractionKind);
   function kind(t, n: string): string;
   begin
     result := '<input type="radio" name="extract-kind" value="'+t+'"';
-    if mycmdline.readString('extract-kind') = t then result += ' checked';
+    if (mycmdline.readString('extract-kind') = t) or
+       ((mycmdline.readString('extract-kind') = 'xpath') and (t = 'xpath2')) or
+       ((mycmdline.readString('extract-kind') = 'xquery') and (t = 'xquery1'))  then result += ' checked';
     result += ' onclick="changeexample('''+t+''', '''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''); update();"';
     result += '/> '+ n;
   end;
@@ -108,11 +112,18 @@ procedure printPre(extractionKind: TExtractionKind);
   var
     cur: String;
     i: Integer;
+    s: Integer;
   begin
     if n <> '' then n += ': ';
     result := n + '<select name="'+t+'"/>';
     cur := mycmdline.readString(t);
-    for i := 0 to high(list) do result += '<option value="'+list[i]+'"'+ifthen(list[i] = cur, ' selected') +'>'+list[i]+'</option>';
+
+    s := -1;
+    for i := 0 to high(list) do if list[i] = cur then begin s := i; break; end;
+    if s = -1 then
+      for i := 0 to high(list) do if lowercase(list[i]) = lowercase(cur) then begin s := i; break; end; //useless
+
+    for i := 0 to high(list) do result += '<option value="'+list[i]+'"'+ifthen(i = s, ' selected') +'>'+list[i]+'</option>' + '<!-- ' + cur + ' -->';
     result += '</select> ';
   end;
 
@@ -156,7 +167,7 @@ begin
   w('<form method="POST" action="./xidelcgi">');
   w('<div id="html">'+select('input-format', 'HTML/XML-Input file', ['auto', 'html', 'xml', 'xml-strict'])
     + '<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
-  w('<div id="template">'+kind('template', 'Template')+kind('xpath', 'XPath 2.0')+kind('xquery', 'XQuery 1.0')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
+  w('<div id="template">'+kind('template', 'Template')+kind('xpath2', 'XPath 2.0')+kind('xquery1', 'XQuery 1.0')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
   w('<br><textarea name="extract" rows=18 cols=80 >');
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
@@ -172,8 +183,10 @@ begin
     + select('dot-notation', '&nbsp;&nbsp;&nbsp; Allow dot notation (e.g. {"a": 1}.a): ', ['off', 'unambiguous', 'on'])
     + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces')
     + checkbox('case-sensitive', 'case sensitive'));
+  w('</span>');
+  w('<br>Incomplete languages/Work in progress: '+kind('xpath3', 'XPath 3')+kind('xquery3', 'XQuery 3'));
 
-  w('</span></span></form>');
+  w('</span></form>');
 
  { w('<script src="../codemirror/codemirror.js"></script>');
   w('<script src="../codemirror/javascript/javascript.js"></script>');
