@@ -73,7 +73,7 @@ function changeexample(examplename, example){
   changed = false;
 }
 function setRealEditMode(){
-  if (editMode == "auto") realEditMode = lastQueryEditMode;
+  if (editMode == "auto") realEditMode = /[a-zA-Z]*/.exec(lastQueryEditMode)[0];
   else realEditMode = editMode;
   
   function addjsoniq(){return (document.getElementsByName("no-json")[0].checked ? "" : "+jsoniq")}
