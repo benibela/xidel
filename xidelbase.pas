@@ -1482,10 +1482,10 @@ var
   curRecursionLevel: Integer;
 begin
   //init
-  xpathparser.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
-  xpathparser.AllowJSON:=not compatibilityNoJSON;
-  xpathparser.AllowJSONLiterals:=not compatibilityNoJSONliterals;
-  xpathparser.AllowPropertyDotNotation:=compatibilityDotNotation;
+  xpathparser.ParsingOptions.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
+  xpathparser.ParsingOptions.AllowJSON:=not compatibilityNoJSON;
+  xpathparser.ParsingOptions.AllowJSONLiterals:=not compatibilityNoJSONliterals;
+  xpathparser.ParsingOptions.AllowPropertyDotNotation:=compatibilityDotNotation;
   xpathparser.StaticContext.objectsRestrictedToJSONTypes:=compatibilityOnlyJSONObjects;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
