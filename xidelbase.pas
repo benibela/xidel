@@ -443,7 +443,7 @@ TProcessingContext = class(TDataProcessing)
   quiet: boolean;
 
   ignoreNamespace: boolean;
-  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
+  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityNoExtendedJson, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
   compatibilityDotNotation: TXQPropertyDotNotation;
   noOptimizations: boolean;
 
@@ -1183,6 +1183,7 @@ begin
     if tempbool = true then
       compatibilityDotNotation := xqpdnDisallowDotNotation;
   reader.read('only-json-objects', compatibilityOnlyJSONObjects);
+  reader.read('no-extended-json', compatibilityNoExtendedJson);
   reader.read('strict-type-checking', compatibilityStrictTypeChecking);
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
   reader.read('no-extended-strings', compatibilityNoExtendedStrings);
@@ -1273,6 +1274,7 @@ begin
   compatibilityNoJSONliterals := other.compatibilityNoJSONliterals;
   compatibilityDotNotation := other.compatibilityDotNotation;
   compatibilityOnlyJSONObjects := other.compatibilityOnlyJSONObjects;
+  compatibilityNoExtendedJson := other.compatibilityNoExtendedJson;
   compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
   ignoreNamespace:=other.ignoreNamespace;
@@ -1487,6 +1489,7 @@ begin
   xpathparser.ParsingOptions.AllowJSONLiterals:=not compatibilityNoJSONliterals;
   xpathparser.ParsingOptions.AllowPropertyDotNotation:=compatibilityDotNotation;
   xpathparser.StaticContext.objectsRestrictedToJSONTypes:=compatibilityOnlyJSONObjects;
+  xpathparser.StaticContext.jsonPXPExtensions:=not compatibilityNoExtendedJson;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
   htmlparser.ignoreNamespaces := ignoreNamespace;
@@ -2495,6 +2498,7 @@ begin
   mycmdline.declareString('dot-notation', 'Specifies if the dot operator $object.property can be used. Possible values: off, on, unambiguous (default, does not allow $obj.prop, but ($obj).prop ) ', 'unambiguous');
   mycmdline.declareFlag('no-dot-notation', 'Disables the dot notation for property access, like in $object.property (deprecated)');
   mycmdline.declareFlag('only-json-objects', 'Do not allow non-JSON types in object properties (like  () or (1,2) instead of null and [1,2]) ');
+  mycmdline.declareFlag('no-extended-json', 'Disables non-jsoniq json extensions');
   mycmdline.declareFlag('strict-type-checking', 'Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)');
   mycmdline.declareFlag('strict-namespaces', 'Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.');
   mycmdline.declareFlag('no-extended-strings', 'Does not allow x-prefixed strings like x"foo{1+2+3}bar"');
