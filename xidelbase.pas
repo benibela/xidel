@@ -476,6 +476,7 @@ TProcessingContext = class(TDataProcessing)
   destructor destroy; override;
 private
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
+  function evaluateQueryWithData(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
 end;
 
 type EInvalidArgument = Exception;
@@ -1465,8 +1466,7 @@ var next, res: TFollowToList;
             ekXPath2: followQueryCache := xpathparser.parseXPath2(follow, xpathparser.StaticContext);
             else{ekXPath3: }followQueryCache := xpathparser.parseXPath3(follow, xpathparser.StaticContext);
           end;
-        loadDataForQuery(data, followQueryCache);
-        res.merge(followQueryCache.evaluate(), data, self);
+        res.merge(evaluateQueryWithData(followQueryCache, data), data, self);
       end;
       if followTo <> nil then begin
         if data.recursionLevel + 1 <= followMaxLevel then
@@ -1575,8 +1575,7 @@ begin
 
 
   temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
-  loadDataForQuery(data, temp);
-  result := temp.evaluate().toString;
+  result := evaluateQueryWithData(temp, data).toString;
 end;
 
 destructor TProcessingContext.destroy;
@@ -1598,6 +1597,15 @@ begin
     xpathparser.RootElement := htmlparser.HTMLTree;
     xpathparser.ParentElement := xpathparser.RootElement;
   end;
+end;
+
+function TProcessingContext.evaluateQueryWithData(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean): IXQValue;
+begin
+  if query.Term = nil then exit(xqvalue());
+  loadDataForQuery(data, query);
+  if allowWithoutReturnValue and ((query.Term is TXQTermModule) and (query.Term.children[high(query.Term.children)] = nil)) then
+    query.Term.children[high(query.Term.children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
+  result := query.evaluate();
 end;
 
 procedure needRawWrapper;
@@ -1793,13 +1801,7 @@ function TExtraction.process(data: IData): TFollowToList;
     exit(false);
   end;
 
-  function safeEvaluate: IXQValue;
-  begin
-    if (extractQueryCache.Term = nil) then exit(xqvalue);
-    if ((extractQueryCache.Term is TXQTermModule) and (extractQueryCache.Term.children[high(extractQueryCache.Term.children)] = nil)) then
-      extractQueryCache.Term.children[high(extractQueryCache.Term.children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
-    result := extractQueryCache.evaluate();
-  end;
+
 
 var
   value: IXQValue;
@@ -1835,11 +1837,10 @@ begin
           ekXPath3: extractQueryCache := xpathparser.parseXPath3(extract, xpathparser.StaticContext);
           ekXQuery3: extractQueryCache := xpathparser.parseXQuery3(extract, xpathparser.StaticContext);
         end;
-      parent.loadDataForQuery(data, xpathparser.LastQuery);
 
       if termContainsVariableDefinition(extractQueryCache.Term) then begin
         THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
-        safeEvaluate;
+        parent.evaluateQueryWithData(extractQueryCache, data, true);
         printExtractedVariables(htmlparser, true);
       end else begin
         if firstExtraction then begin
@@ -1847,7 +1848,7 @@ begin
           if outputFormat = ofXMLWrapped then wln('<e>');
         end else wln(outputArraySeparator[outputFormat]);
 
-        value := safeEvaluate;
+        value := parent.evaluateQueryWithData(extractQueryCache, data, true);
         printExtractedValue(value, false);
         htmlparser.oldVariableChangeLog.add(defaultName, value);
       end;
