@@ -474,6 +474,8 @@ TProcessingContext = class(TDataProcessing)
   function replaceEnclosedExpressions(data: IData; expr: string): string;
 
   destructor destroy; override;
+private
+  procedure loadDataForQuery(const data: IData; const query: IXQuery);
 end;
 
 type EInvalidArgument = Exception;
@@ -1463,11 +1465,7 @@ var next, res: TFollowToList;
             ekXPath2: followQueryCache := xpathparser.parseXPath2(follow, xpathparser.StaticContext);
             else{ekXPath3: }followQueryCache := xpathparser.parseXPath3(follow, xpathparser.StaticContext);
           end;
-        if noOptimizations or (xqcdFocusDocument in followQueryCache.Term.getContextDependencies) then begin
-          htmlparser.parseHTMLSimple(data);
-          xpathparser.RootElement := htmlparser.HTMLTree;
-          xpathparser.ParentElement := xpathparser.RootElement;
-        end;
+        loadDataForQuery(data, followQueryCache);
         res.merge(followQueryCache.evaluate(), data, self);
       end;
       if followTo <> nil then begin
@@ -1560,7 +1558,6 @@ type
 
 function TProcessingContext.replaceEnclosedExpressions(data: IData; expr: string): string;
 var
-  noOpt: Boolean;
   standard: Boolean;
   i: Integer;
   temp: IXQuery;
@@ -1576,14 +1573,9 @@ begin
     end;
   if standard then exit(expr);
 
-  noOpt := (self = nil) {safety check} or (noOptimizations);
-  temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
-  if noOpt or (xqcdFocusDocument in temp.Term.getContextDependencies) then begin
-    htmlparser.parseHTMLSimple(data);
-    xpathparser.RootElement := htmlparser.HTMLTree;
-    xpathparser.ParentElement := xpathparser.RootElement;
-  end;
 
+  temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
+  loadDataForQuery(data, temp);
   result := temp.evaluate().toString;
 end;
 
@@ -1596,6 +1588,16 @@ begin
   nextSibling.free;
   if followTo <> self then followTo.free;
   inherited destroy;
+end;
+
+procedure TProcessingContext.loadDataForQuery(const data: IData; const query: IXQuery);
+begin
+  if ((self = nil) or (noOptimizations)) or
+     (xqcdFocusDocument in query.Term.getContextDependencies) then begin
+    htmlparser.parseHTMLSimple(data);
+    xpathparser.RootElement := htmlparser.HTMLTree;
+    xpathparser.ParentElement := xpathparser.RootElement;
+  end;
 end;
 
 procedure needRawWrapper;
@@ -1817,12 +1819,14 @@ begin
   case extractKind of
     ekTemplate: begin
       htmlparser.UnnamedVariableName:=defaultName;
+      htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
       htmlparser.parseHTML(data); //todo: full url is abs?
       pageProcessed(nil,htmlparser);
     end;
     ekXPath2, ekXPath3, ekCSS, ekXQuery1, ekXQuery3: begin
       xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.baseUri);
+      xpathparser.ParsingOptions.StringEntities:=xqseDefault;
       if extractQueryCache = nil then
         case extractKind of
           ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
@@ -1831,11 +1835,7 @@ begin
           ekXPath3: extractQueryCache := xpathparser.parseXPath3(extract, xpathparser.StaticContext);
           ekXQuery3: extractQueryCache := xpathparser.parseXQuery3(extract, xpathparser.StaticContext);
         end;
-      if parent.noOptimizations or (xqcdFocusDocument in xpathparser.LastQuery.Term.getContextDependencies) then begin
-        htmlparser.parseHTMLSimple(data);
-        xpathparser.RootElement := htmlparser.HTMLTree;
-        xpathparser.ParentElement := xpathparser.RootElement;
-      end;
+      parent.loadDataForQuery(data, xpathparser.LastQuery);
 
       if termContainsVariableDefinition(extractQueryCache.Term) then begin
         THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
