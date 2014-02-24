@@ -1001,6 +1001,8 @@ var x: IXQValue;
     temp: TProcessingContext;
     n: TTreeNode;
 begin
+  if dest.kind <> pvkSequence then
+    dest := xpathparser.evaluateXPath2('pxp:resolve-html(., $url)', dest);
   case dest.kind of
     pvkUndefined: exit;
     pvkObject: if parent <> nil then begin
@@ -1016,14 +1018,7 @@ begin
     pvkSequence:
       for x in dest do
         merge(x, basedata, parent);
-    pvkNode: begin
-      n := dest.toNode;
-      if n = nil then exit;
-      if n.typ <> tetOpen then addBasicUrl(dest.toString, basedata.baseUri)
-      else if SameText(n.value, 'a') then addBasicUrl(n.getAttribute('href', ''), basedata.baseUri)
-      else if SameText(n.value, 'frame') or SameText(n.value, 'iframe') or SameText(n.value, 'img') then addBasicUrl(n.getAttribute('src', ''), basedata.baseUri)
-      else addBasicUrl(n.deepNodeText(), basedata.baseUri);
-    end;
+    pvkNode: raise Exception.Create('Assert failure: Expected resolved url for following, but got raw '+dest.debugAsStringWithTypeAnnotation());
     else addBasicUrl(dest.toString, basedata.baseUri);
   end;
 end;
