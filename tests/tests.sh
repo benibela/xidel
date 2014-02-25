@@ -282,7 +282,7 @@ tests/test.sh xpath10 '<a>3</a>' -e ' . eq . '
  
 #magic variables
 tests/test.sh varraw '<a>3</a>' -e '$raw'
-tests/test.sh varurlhostpath 'http://example.org/bar' -e 'concat($url, "||", $host, "||", $path)'
+tests/test.sh varurlhostpath 'http://videlibri.sourceforge.net/xidelecho.php' -e 'concat($url, "||", $host, "||", $path)'
 tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
 
 #other stuff
@@ -352,7 +352,7 @@ tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a>
 tests/test.sh regression_text1b '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/text()}</a></r>'
 tests/test.sh regression_text1c '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/(text())}</a></r>'
 tests/test.sh regression_text1d '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/concat("-",text(),"-")}</a></r>'
-tests/test.sh regression_text1e '<a>1</a>' -f '<a>{object(("url", "&lt;a>2&lt;/a>"))}</a>' -e '/a/concat(">",text(),"<")'
+tests/test.sh regression_text1e '<a>1</a>' -f '<a>{object(("data", "&lt;a>2&lt;/a>"))}</a>' -e '/a/concat(">",text(),"<")'
 
 tests/test.sh regression_entity1a '<a>&amp;</a>' -e //a
 tests/test.sh regression_entity1b '<a>&amp;amp;</a>' -e //a
