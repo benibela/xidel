@@ -1224,6 +1224,8 @@ begin
     arrayAdd(urlsLevel, stepLevel);
   end;            }
   if obj.hasProperty('url', @temp) then
+    readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader)
+  else if obj.hasProperty('data', @temp) then
     readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader);
   tempreader.free;
 end;
