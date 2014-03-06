@@ -287,17 +287,19 @@ tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
 
 #other stuff
 tests/test.sh system -e 'system("echo 123") * 8'
-tests/test.sh namespace1 '<a xmlns="foobar">def</a>' -e / --printed-node-format xml
-tests/test.sh namespace2 '<a xmlns="foobar">def</a>' -e / --printed-node-format xml --ignore-namespaces
+tests/test.sh namespace1 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml
+tests/test.sh namespace2 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml --ignore-namespaces
 tests/test.sh repetitionoff tests/a.xml tests/a.xml -e //title
 tests/test.sh repetitionon tests/a.xml tests/a.xml -e //title --allow-repetitions
-tests/test.sh inputformatAuto --input-format auto '<a>x</a>'  -e 'outer-xml(/)'
+tests/test.sh inputformatAutoA --input-format auto '<a>x</a>'  -e 'outer-xml(/)'
+tests/test.sh inputformatAutoC --input-format auto '<c>x</c>'  -e 'outer-xml(/)'
 tests/test.sh inputformatXml --input-format xml '<a>x</a>'  -e 'outer-xml(/)'
 tests/test.sh inputformatHtml --input-format html '<a>x</a>'  -e 'outer-xml(/)'
-tests/test.sh inputformatAuto '<a>x</a>' --input-format auto  -e 'outer-xml(/)'
+tests/test.sh inputformatAutoA '<a>x</a>' --input-format auto  -e 'outer-xml(/)'
 tests/test.sh inputformatXml  '<a>x</a>' --input-format xml -e 'outer-xml(/)'
 tests/test.sh inputformatHtml  '<a>x</a>' --input-format html  -e 'outer-xml(/)'
-tests/test.sh inputformatAuto '<a>x</a>'  -e 'outer-xml(/)' --input-format auto
+tests/test.sh inputformatAutoA '<a>x</a>'  -e 'outer-xml(/)' --input-format auto
+tests/test.sh inputformatAutoC '<c>x</c>'  -e 'outer-xml(/)' --input-format auto
 tests/test.sh inputformatXml '<a>x</a>'  -e 'outer-xml(/)' --input-format xml
 tests/test.sh inputformatHtml  '<a>x</a>'  -e 'outer-xml(/)' --input-format html
 tests/test.sh optadhoc '<a>x</a>'  -e /
@@ -352,7 +354,7 @@ tests/test.sh regression_text1a '<r><a>1</a><a>2</a></r>' -e '<r><a>{text()}</a>
 tests/test.sh regression_text1b '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/text()}</a></r>'
 tests/test.sh regression_text1c '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/(text())}</a></r>'
 tests/test.sh regression_text1d '<r><a>1</a><a>2</a></r>' -e '<r><a>{following-sibling::a/concat("-",text(),"-")}</a></r>'
-tests/test.sh regression_text1e '<a>1</a>' -f '<a>{object(("data", "&lt;a>2&lt;/a>"))}</a>' -e '/a/concat(">",text(),"<")'
+tests/test.sh regression_text1e '<a>1</a>' -f '<a>{object(("data", "&lt;a>2&lt;/a>"))}</a>' -e '/html/body/a/concat(">",text(),"<")'
 
 tests/test.sh regression_entity1a '<a>&amp;</a>' -e //a
 tests/test.sh regression_entity1b '<a>&amp;amp;</a>' -e //a
