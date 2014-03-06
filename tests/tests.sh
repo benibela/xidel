@@ -302,6 +302,7 @@ tests/test.sh inputformatAutoA '<a>x</a>'  -e 'outer-xml(/)' --input-format auto
 tests/test.sh inputformatAutoC '<c>x</c>'  -e 'outer-xml(/)' --input-format auto
 tests/test.sh inputformatXml '<a>x</a>'  -e 'outer-xml(/)' --input-format xml
 tests/test.sh inputformatHtml  '<a>x</a>'  -e 'outer-xml(/)' --input-format html
+tests/test.sh inputformatAutoJson tests/data.json  -e '(($json).b, (.).c, .("d"), . ! e, . / f, . // property)' 
 tests/test.sh optadhoc '<a>x</a>'  -e /
 tests/test.sh optxml --xml '<a>x</a>'  -e /
 tests/test.sh opthtml --html '<a>x</a>'  -e /
