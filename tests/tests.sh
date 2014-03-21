@@ -287,6 +287,7 @@ tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
 
 #other stuff
 tests/test.sh system -e 'system("echo 123") * 8'
+echo 101 | tests/test.sh read -e 'read() * 8' --strict-type-checking
 tests/test.sh namespace1 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml
 tests/test.sh namespace2 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml --ignore-namespaces
 tests/test.sh repetitionoff tests/a.xml tests/a.xml -e //title
@@ -336,6 +337,9 @@ tests/test.sh post6 '<foo>bar</foo>' -e 'v:=/foo' --post 'data={$v}'  http://vid
 tests/test.sh post6 '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw 
 tests/test.sh post6b '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] # [ causes it to process both data. Does not make much sense, but is logical
 tests/test.sh post6c '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ -e "" --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] 
+
+tests/test.sh post7 -d "user=login" [ -d "&pass=password" http://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "&a=b" http://videlibri.sourceforge.net/xidelecho.php -e /  ]
+
 
 tests/test.sh put1a  --method=PUT --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
 tests/test.sh put1a  --method=POST --post test --method=PUT http://videlibri.sourceforge.net/xidelecho.php -e //meth    #override last
