@@ -2286,6 +2286,7 @@ end;
 var currentContext: TProcessingContext;
     cmdlineWrapper: TOptionReaderFromCommandLine;
     commandLineStack: array of array of TProperty;
+    commandLineStackLastPostData: string;
     contextStack: array of TProcessingContext;
 
 procedure pushCommandLineState;
@@ -2304,6 +2305,8 @@ begin
   SetLength(contextStack, length(contextStack) - 2);
   TCommandLineReaderBreaker(mycmdline).setProperties(commandLineStack[high(commandLineStack)]);
   SetLength(commandLineStack, high(commandLineStack));
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('post') then
+    commandLineStackLastPostData := TCommandLineReaderBreaker(mycmdline).readString('post');
 end;
 
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
@@ -2365,6 +2368,10 @@ begin
   end else if (name = 'html') or (name = 'xml') then begin
     TCommandLineReaderBreaker(sender).overrideVar('input-format', name);
     TCommandLineReaderBreaker(sender).overrideVar('output-format', name);
+  end else if name = 'post' then begin
+    if strBeginsWith(value, '&') then
+      TCommandLineReaderBreaker(sender).overrideVar('post', commandLineStackLastPostData + value);
+    commandLineStackLastPostData := TCommandLineReaderBreaker(sender).readString('post');
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
@@ -2467,7 +2474,7 @@ begin
 
   mycmdLine.beginDeclarationCategory('Extraction options:');
 
-  mycmdLine.declareString('extract', joined(['Expression to extract from the data.','If it starts with < it is interpreted as template, otherwise as XPath 2 expression']));
+  mycmdLine.declareString('extract', joined(['Expression to extract from the data.','If it starts with < it is interpreted as template, otherwise as XPath expression']));
   mycmdline.addAbbreviation('e');
   mycmdLine.declareString('extract-exclude', 'Comma separated list of variables ignored in an extract template. (black list) (default _follow)', '_follow');
   mycmdLine.declareString('extract-include', 'If not empty, comma separated list of variables to use in an extract template (white list)');
@@ -2503,6 +2510,7 @@ begin
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
     mycmdLine.declareString('post', 'Post request to send (url encoded)');
+    mycmdline.addAbbreviation('d');
     mycmdLine.declareString('method', 'Http method to use (e.g. GET, POST, PUT)', 'GET');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
