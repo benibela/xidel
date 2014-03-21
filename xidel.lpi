@@ -73,7 +73,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="'&lt;a>x&lt;/a>' --input-format auto  -e 'outer-xml(/)'"/>
+        <CommandLineParams Value="'{&quot;a&quot;: 1, &quot;b&quot;: 2}'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>

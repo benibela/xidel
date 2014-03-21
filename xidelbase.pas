@@ -531,7 +531,9 @@ begin
     else if strBeginsWith(rawData, '<?xml') then //mimesniff.spec says to check for this
       result := ifXML
     else if striEndsWith(baseUri, '.json')
-         or striContains(contentType, 'json')  then
+         or striContains(contentType, 'json')
+         or strBeginsWith(rawData, '{')
+         or strBeginsWith(rawData, '[') then
       result := ifJSON
     else
       result := ifXML;
@@ -2527,7 +2529,7 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
-  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict', 'auto');
+  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
   //mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
