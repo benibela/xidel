@@ -1,16 +1,22 @@
 Some important changes:
 
---------Xidel 0.7.2--------
+--------Xidel 0.8--------
 
 * improved JSONiq extension support
-  * updated to the new 1.0.1 standard. Most important: () operator to list object keys / unbox arrays, {| .. |} syntax for object merging, relaxed behaviour on sequences
-  * changed my dot notation to behave like the dot operator in JSONiq standalone
+  * updated to the new 1.0.3 standard. Most important: () operator to list object keys / unbox arrays, {| .. |} syntax for object merging, relaxed behaviour on sequences
+  * changed my dot notation to behave like the dot operator in JSONiq standalone, i.e. disabled the $var.property syntax, but added $var."property" 
   * fix object with keys containing a dot (.)
   * fix parsing of null in json input
+* Use arbitrary precision arithmetic for all numeric operations
+* Some minor XPath/XQuery 3 syntax: ! and || operators, and switch statement
 * new elements in multipage template: <if>, <choose>, <when>, <otherwise> similar to XSLT, <s> to evaluate short XQuery expressions like in singlepage templates  
 * allow template:optional flag on all template elements
-* improved html form/url handling: input elements can be passed to pxp:form to create their url encoded post data, uri-decode/uri-encode/uri-combine functions to modify urls
+* improved html form/url handling: input elements can be passed to pxp:form to create their url encoded post data, uri-decode/uri-encode/uri-combine functions to modify urls, resolve-html function that resolves references in html elements (e.g. @src when passed <img>) to the base uri
+* more := shenanigans: $var[] := appends to sequences, $sequence[index] := assigns to sequence elements, $array(index) := assigns to array elements, $var(property) := assigns to object properties. Can be combined, so e.g. $array(index)[] inserts in arrays. Assigning () removes elements
+* handle <base>-Element for resolving relative links
+* Handle hex encoded password in urls
 * other minor improvements and bug fixes
+
 
 --------Xidel 0.7--------
 
