@@ -375,6 +375,6 @@ tests/test.sh regression_object2 --dot-notation=on -e '$x := {"b": "c"}' -e '$x.
 tests/test.sh regression_multipage1  -e "<action><page url=\"tests/a.xml\"><template><title>{concat(., \"'\", '\"')}</title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage2 -e "<action><page url=\"tests/a.xml\"><template><title><t:read var=\"res\" source=\" concat(., &quot;'&quot;, '&quot;')\"/></title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage3 -e '<action><page url="http://example.org"><template><title>{resolve-uri("b.xml")}</title></template></page></action>' --extract-kind=multipage
-tests/test.sh regression_multipage3b -e '<action><page url="http://example.org/abc/def/ghi"><template><title>{resolve-uri("../b.xml")}</title></template></page></action>' --extract-kind=multipage
+tests/test.sh regression_multipage3b -e '<action><page url="http://videlibri.sourceforge.net/test/reddit/index.html"><template><head>{resolve-uri("../b.xml")}</head></template></page></action>' --extract-kind=multipage
 
 tests/test.sh regression_htmlparse '<ol><li>a<li>b<li>c</ol>' -e '/ol/li'
