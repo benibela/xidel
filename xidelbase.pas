@@ -1940,7 +1940,7 @@ procedure TExtraction.printExtractedVariables(vars: TXQVariableChangeLog; state:
   end;
   function showVar(n: string): boolean;
   begin
-    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName));
+    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName) ) and (n <> 'json'); //todo: make json configurable
   end;
 
 var
