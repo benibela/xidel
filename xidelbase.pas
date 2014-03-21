@@ -37,7 +37,7 @@ var cgimode: boolean = false;
     defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
 
     majorVersion: integer = 0;
-    minorVersion: integer = 7;
+    minorVersion: integer = 8;
 
 type TExtractionKind = (ekAuto, ekXPath2, ekXPath3, ekTemplate, ekCSS, ekXQuery1, ekXQuery3, ekMultipage);
 
