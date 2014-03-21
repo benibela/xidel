@@ -2727,6 +2727,14 @@ begin
   end;
 end;
 
+function xqfRead(const args: TXQVArray): IXQValue;
+var s: string;
+begin
+  requiredArgCount(args, 0);
+  ReadLn(s);
+  result := xqvalue(s);
+end;
+
 function xqFunctionJSONSafe(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
 var jn: TXQNativeModule;
 begin
@@ -2757,5 +2765,6 @@ var pxp: TXQNativeModule;
 initialization
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
+  pxp.registerFunction('read', @xqfRead, ['() as xs:string']);
 end.
 
