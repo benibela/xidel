@@ -7,7 +7,7 @@ The trivial usage is to extract an expression from a webpage like:
    xidel http://www.example.org --extract //title
 
 Instead of one or more urls, you can also pass file names or the xml data itself (xidel "<html>.." ...). 
-The --extract option can be abbreviated as -e, and there are five different kind of extract expressions:
+The --extract option can be abbreviated as -e, and there are few different kind of extract expressions:
  
   1 ) XPath 2 expressions, with some changes and additional functions.
   
@@ -18,6 +18,8 @@ The --extract option can be abbreviated as -e, and there are five different kind
   4 ) Templates, a simplified version of the page which is pattern matched against the input
   
   5 ) Multipage templates, i.e. a file that contains templates for several pages
+  
+  6 ) (XPath 3 and XQuery 3 expressions, but they are work in progress and very incomplete  )
 
 The different kinds except multipage templates are usually automatically detected, but 
 a certain type can be forced with the extract-kind option.
@@ -142,10 +144,10 @@ However, in the default mode, there are the following important extensions:
     
        Object stores a set of values as associative map. The values can be 
        accessed similar to a function call, e.g.: {"name": value, ...}("name").
-       Xidel also has {"name": value, ..}.name as an additional syntax to 
-       access properties.
-       jn:keys returns a sequence of all property names, libjn:values a sequence
-       of values.
+       Xidel also has {"name": value, ..}.name and {"name": value, ..}/name
+       as an additional, propietary syntax to access properties.
+       jn:keys or $object() returns a sequence of all property names, 
+       libjn:values a sequence of values.
        Used with global variables, you can copy an object with obj2 := obj 
        (objects are immutable, but properties can be changed with 
        obj2.foo := 12, which will create a new object with the changed property)
@@ -154,8 +156,6 @@ However, in the default mode, there are the following important extensions:
   
       If a string is prefixed by an "x", all expressions inside {}-parentheses 
       are evaluated, like in the value of a direct attribute constructor.
-      (Warning: This was changed in Xidel 0.7. Xidel <= 0.6 used 
-                "foo$var;bar" without prefix for this)
       
        
   Semantic:
@@ -190,6 +190,7 @@ However, in the default mode, there are the following important extensions:
                   You can use this to combine css and XPath, like in 'css("a.aclass")/@href'.
     eval("xpath") This will evaluate the string "xpath" as a XPath expression
     system("..")  Runs a certain program and returns its stdout result as string
+    read()        Reads a line from stdin
     deep-text()   This is the concatenated plain text of the every tag inside the current text. 
                   You can also pass a separator like deep-text(' ') to separate text of different nodes.
     inner-html()  This is the html content of node ., like innerHTML in javascript.  
@@ -225,6 +226,15 @@ However, in the default mode, there are the following important extensions:
 
 The pasdoc documentation of my XPath 2 / XQuery library explains more details and lists more functions:
 http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
+
+
+Xidel also defines the following global default variables:
+ 
+   $raw         Unparsed input text
+   $url         Url the input was retrieved from
+   $host, $path Respective part of the url
+   $json        Parsed json input, if it was json 
+
 
 
 
@@ -377,7 +387,7 @@ with the --template-file argument.
 You can also have multiple <action/>s in a multipage template (surrounded by a parent element with 
 name <actions>), and call the later actions with <call action=".."/> from another action.
 If a template with multiple actions is passed to Xidel it will always perform the first action,
-unless the --template-action parameter specifies another action to run. (in Xidel > 0.5)
+unless the --template-action parameter specifies another action to run. 
 
 There are also <variable>-elements to declare variables and <loop>-elements to repeat other elements, 
 see http://www.benibela.de/documentation/internettools/multipagetemplate.TMultiPageTemplate.html
@@ -400,6 +410,9 @@ xml:            The input will be parsed as xml.
                 
 xml-strict:     The input will be parsed as strict xml. 
                 This uses the standard fpc, validating xml parser.
+                
+json:           The input will be parsed as json and stored in . and the $json variable.
+                It can be changed by assigning to $json(..)(..).. := 
                 
 You can also use json files, by loading them explicitly with pxp:json() or jn:json-doc() within a
 XPath/XQuery expression.
