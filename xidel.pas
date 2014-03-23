@@ -36,7 +36,7 @@ begin
   end;
 end;
 
-{$R *.res}
+//{$R *.res}
 
 begin
   if Paramcount = 0 then begin
