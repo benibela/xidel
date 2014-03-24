@@ -2603,7 +2603,7 @@ begin
       if baseContext.dataSources[i] is TFollowToWrapper then
         baseContext.dataSources[i].readOptions(cmdlineWrapper);
 
-    if (length(baseContext.actions) = 0) and (baseContext.follow = '') then begin
+    if (length(baseContext.actions) = 0) and (baseContext.follow = '') and not mycmdline.readFlag('version') then begin
       writeln(stderr, 'No actions given.');
       writeln(stderr, 'Expected at least one --extract, -e, --extract-file, --xquery, --xpath, --css, or --template-file option.');
       ExitCode:=1;
