@@ -2672,21 +2672,31 @@ begin
   except
     on e: EXMLReadError do begin
       displayError(e);
+      ExitCode:=1;
      // if not cgimode then raise;
     end;
     on e: EHTMLParseException do begin
       displayError(e, true);
+      ExitCode:=1;
      // if not cgimode then raise;
     end;
     on e: EHTMLParseMatchingException do begin
       displayError(e, true);
+      ExitCode:=1;
      // if not cgimode then raise;
     end;
     on e: EXQEvaluationException do begin
+      ExitCode:=1;
       displayError(e);
      // if not cgimode then raise;
     end;
     on e: EXQParsingException do begin
+      ExitCode:=1;
+      displayError(e);
+     // if not cgimode then raise;
+    end;
+    on e: EInternetException do begin
+      ExitCode:=1;//e.errorCode;
       displayError(e);
      // if not cgimode then raise;
     end;
