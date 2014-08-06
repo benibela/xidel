@@ -108,6 +108,7 @@ var htmlparser:THtmlTemplateParserBreaker;
     xpathparser: TXQueryEngine;
     multipage: TTemplateReaderBreaker;
     multipagetemp: TMultiPageTemplate;
+    currentRoot: TTreeNode;
 
 procedure w(const s: string);
 {$ifdef win32}
@@ -1626,12 +1627,10 @@ begin
      (xqcdFocusDocument in query.Term.getContextDependencies) then begin
     if f = ifJSON then begin
       htmlparser.VariableChangelog.add('json', xpathparser.evaluateXPath2('jn:parse-json($raw)')); //todo: cache
-      xpathparser.RootElement := nil;
-      xpathparser.ParentElement := nil;
+      currentRoot := nil;
     end else begin
       htmlparser.parseHTMLSimple(data);
-      xpathparser.RootElement := htmlparser.HTMLTree;
-      xpathparser.ParentElement := xpathparser.RootElement;
+      currentRoot := htmlparser.HTMLTree;
     end;
   end;
 end;
@@ -1642,7 +1641,7 @@ begin
   if allowWithoutReturnValue and ((query.Term is TXQTermModule) and (query.Term.children[high(query.Term.children)] = nil)) then
     query.Term.children[high(query.Term.children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
 
-  if data.inputFormat <> ifJSON then result := query.evaluate()
+  if data.inputFormat <> ifJSON then result := query.evaluate(currentRoot)
   else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
 end;
 
