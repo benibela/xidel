@@ -320,8 +320,8 @@ tests/test.sh utf8  -e 'substring("äbcd",1,3)'
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
 tests/test.sh get1  http://videlibri.sourceforge.net/xidelecho.php -e //meth
-tests/test.sh get2a --post abc --method GET http://videlibri.sourceforge.net/xidelecho.php -e //meth
-tests/test.sh get2b --post abc --method GET http://videlibri.sourceforge.net/xidelecho.php -e //raw
+#disallowed by server?: tests/test.sh get2a --post abc --method GET http://videlibri.sourceforge.net/xidelecho.php -e //meth
+#disallowed by server?: tests/test.sh get2b --post abc --method GET http://videlibri.sourceforge.net/xidelecho.php -e //raw 
 tests/test.sh post1a  --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
 tests/test.sh post1b  --post test http://videlibri.sourceforge.net/xidelecho.php -e //raw
 tests/test.sh post2  --post "user=login&pass=password" http://videlibri.sourceforge.net/xidelecho.php -e //raw
@@ -330,7 +330,7 @@ tests/test.sh post3b  --post "" http://videlibri.sourceforge.net/xidelecho.php -
 tests/test.sh post3c  --post "" http://videlibri.sourceforge.net/xidelecho.php --download -
 tests/test.sh post4  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --post "456" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'
 tests/test.sh post4b  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'  http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'  #duplicated requests are ignored
-tests/test.sh post4c  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --method GET http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' #keep the data option
+tests/test.sh post4c  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --method PUT http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' #keep the data option
 tests/test.sh post4d [  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ] --method GET http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' 
 tests/test.sh post4d [  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ]  http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' 
 echo TEST | tests/test.sh post5  --post - http://videlibri.sourceforge.net/xidelecho.php -e //raw
@@ -346,8 +346,8 @@ tests/test.sh post7 -d "user=login" [ -d "&pass=password" http://videlibri.sourc
 tests/test.sh put1a  --method=PUT --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
 tests/test.sh put1a  --method=POST --post test --method=PUT http://videlibri.sourceforge.net/xidelecho.php -e //meth    #override last
 tests/test.sh put1b  --method=POST --post test --method=PUT http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh foobarmeth --method foobar  http://videlibri.sourceforge.net/xidelecho.php -e //meth
-echo foobar | tests/test.sh foobarmeth2 --method -  http://videlibri.sourceforge.net/xidelecho.php -e //meth
+tests/test.sh foobarmeth --method delete  http://videlibri.sourceforge.net/xidelecho.php -e //meth
+echo options | tests/test.sh foobarmeth2 --method -  http://videlibri.sourceforge.net/xidelecho.php -e //meth
 
 tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
 tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
