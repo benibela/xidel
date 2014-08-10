@@ -2433,6 +2433,41 @@ begin
   {$I printUsage.inc}
 end;
 
+procedure debugPrintContext(dp: TDataProcessing; indent: string = '');
+  procedure wswi(s: string);
+  begin
+    writeln(stderr, indent, s);
+  end;
+
+var
+  pc: TProcessingContext;
+  i: integer;
+begin
+  writeln(stderr, indent + dp.ClassName + strFromPtr(dp));
+  if dp is TProcessingContext then begin
+    pc := dp as TProcessingContext;;
+    writeln(stderr, indent + 'data sources: ');
+    for i := 0 to high(pc.dataSources) do
+      debugPrintContext(pc.dataSources[i], indent + '  ');
+    writeln(stderr, indent + 'actions: ');
+    for i := 0 to high(pc.actions) do
+      debugPrintContext(pc.actions[i], indent + '  ');
+    if pc.followTo <> nil then begin
+      writeln(stderr, indent + 'follow to: ');
+      if pc.followTo = dp then writeln(stderr, indent + ' recursion')
+      else debugPrintContext(pc.followTo, indent + '  ');
+    end;
+  end else if dp is TFollowToWrapper then begin
+    wswi('follow to wrapper');
+  end else if dp is TExtraction then begin
+    wswi('extract: '+TExtraction(dp).extract);
+  end else if dp is TDownload then begin
+    wswi('download: '+TDownload(dp).downloadTarget);
+  end;
+
+
+end;
+
 var baseContext: TProcessingContext;
 
 
@@ -2611,6 +2646,8 @@ begin
 
 
   baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
+
+  //debugPrintContext(baseContext);
 
   if allowInternetAccess and assigned(onPrepareInternet) then
     onPrepareInternet(baseContext.userAgent, baseContext.proxy);
