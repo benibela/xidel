@@ -22,7 +22,7 @@ tests/test.sh maxlevel0 tests/a.xml --follow-level 0 -e //title -f //A --allow-r
 tests/test.sh maxlevel1 tests/a.xml --follow-level 1 -e //title -f //A --allow-repetitions
 tests/test.sh maxlevel2  tests/a.xml --follow-level 2 -e //title -f //A --allow-repetitions
 tests/test.sh maxlevel3  tests/a.xml --follow-level 3 -e //title -f //A --allow-repetitions
-
+tests/test.sh levelcloned tests/a.xml  [ -f '(//a)[2]' -e 'extract($url,".*/(.*)",1)' ] -f '(//a)[1]'
 
 #"sibling tests"
 tests/test.sh sibling1a '<empty/>' -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'

@@ -1335,6 +1335,7 @@ begin
   TProcessingContext(result).follow := follow;
   TProcessingContext(result).followExclude := followExclude;
   TProcessingContext(result).followInclude := followInclude;
+  TProcessingContext(result).followMaxLevel := followMaxLevel;
   if followTo <> nil then
     if followTo = self then TProcessingContext(result).followTo := TProcessingContext(result)
     else TProcessingContext(result).followTo := TProcessingContext(followTo.clone(TProcessingContext(result)));
