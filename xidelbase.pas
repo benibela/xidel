@@ -44,7 +44,7 @@ type TExtractionKind = (ekAuto, ekXPath2, ekXPath3, ekTemplate, ekCSS, ekXQuery1
 var
     onPostParseCmdLine: procedure ();
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
-    onRetrieve: function (const method, url, postdata: string): string;
+    onRetrieve: function (const method, url, postdata, headers: string): string;
     onPreOutput: procedure (extractionKind: TExtractionKind);
 
 
@@ -277,6 +277,7 @@ THTTPRequest = class(TFollowTo)
   url: string;
   method: string;
   data: string;
+  header: string;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
   function retrieve(parent: TProcessingContext): IData; override;
@@ -722,6 +723,7 @@ begin
   result := THTTPRequest.create(url);
   THTTPRequest(result).method:=method;
   THTTPRequest(result).data:=data;
+  THTTPRequest(result).header:=header;
   result.assign(self);
 end;
 
@@ -744,7 +746,7 @@ function THTTPRequest.retrieve(parent: TProcessingContext): IData;
     i: Integer;
   begin
     try
-      result := onRetrieve(method, url, data);
+      result := onRetrieve(method, url, data ,header);
     except
       on e: EInternetException do begin
         errors := strSplit(parent.errorHandling, ',');
@@ -815,6 +817,7 @@ begin
   end;
   if isStdin(data) then
     data := strReadFromStdin;
+  reader.read('header', header);
 end;
 
 { TFileRequest }
@@ -2288,7 +2291,7 @@ end;
 var currentContext: TProcessingContext;
     cmdlineWrapper: TOptionReaderFromCommandLine;
     commandLineStack: array of array of TProperty;
-    commandLineStackLastPostData: string;
+    commandLineStackLastPostData, commandLineLastHeader: string;
     contextStack: array of TProcessingContext;
 
 procedure pushCommandLineState;
@@ -2374,6 +2377,9 @@ begin
     if strBeginsWith(value, '&') then
       TCommandLineReaderBreaker(sender).overrideVar('post', commandLineStackLastPostData + value);
     commandLineStackLastPostData := TCommandLineReaderBreaker(sender).readString('post');
+  end else if name = 'header' then begin
+    TCommandLineReaderBreaker(sender).overrideVar('header', commandLineLastHeader + value + #13#10);
+    commandLineLastHeader := TCommandLineReaderBreaker(sender).readString('header');
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
@@ -2546,9 +2552,10 @@ begin
     mycmdLine.declareFloat('wait', 'Wait a certain count of seconds between requests');
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
-    mycmdLine.declareString('post', 'Post request to send (url encoded)');
+    mycmdLine.declareString('post', 'Post request to send (url encoded) (prepending & concats multiple data)');
     mycmdline.addAbbreviation('d');
-    mycmdLine.declareString('method', 'Http method to use (e.g. GET, POST, PUT)', 'GET');
+    mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
+    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)', 'GET'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
   end;

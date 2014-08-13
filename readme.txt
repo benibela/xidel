@@ -47,7 +47,7 @@ usual elements, or the contained text if there are no such attributes.
 
 You can specify multiple --extract (-e) and --follow (-f) arguments to extract values from one page, 
 follow the links to the next pages and extract values from there as well ...
-Then it becomes important in which order the arguments are given, so e.g. it extracts before following, 
+Thereby it is important in which order the arguments are given, so e.g. it extracts before following, 
 and not the other way around.  
 You can usually read it left-to-right like an English sentence, extracting from the current page,
 or following to a new one, which will then become the next current page.

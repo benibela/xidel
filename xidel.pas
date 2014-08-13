@@ -25,13 +25,13 @@ begin
   defaultInternetAccessClass := TInternetAccessClass( result.ClassType);
 end;
 
-function retrieve(const method, url, post: string): string;
+function retrieve(const method, url, post, headers: string): string;
 begin
+  needInternetAccess;
+  defaultInternet.additionalHeaders.Text := headers;
   if cgimode then result := url //disallow remote access in cgi mode
   else if (post = '') and ((method = '') or (method = 'GET')) then result := simpleinternet.retrieve(url)
   else begin
-    needInternetAccess;
-    needInternetAccess();
     result:=defaultInternet.request(method, url, post);
   end;
 end;
