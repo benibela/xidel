@@ -1,5 +1,16 @@
 Some important changes:
 
+--------Xidel 0.8.4--------
+
+* implementing all syntax extensions described in my Balisage talk:
+  - adding pattern matching in let, for, typeswitch expressions
+  - different matching modes for attributes
+* support for custom headers on the command line
+* can import environment variables
+* changed html encoding detection to give content-type highest priority
+* fix nested forwarding in recursive calls
+* fix crashes/exceptions
+
 --------Xidel 0.8--------
 
 * improved JSONiq extension support

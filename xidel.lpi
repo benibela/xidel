@@ -73,7 +73,6 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-H &quot;a: b&quot; &quot;http://www.softpedia.com/get/Internet/Search-engine-tools-submiting/&quot; [ -e &quot;//span[@id='intelliTxt']/div/table/tbody/tr/td/table/tbody/tr/td/h2/a&quot; -e &quot;//span[@id='intelliTxt']/div/table/tbody/tr/td/table/tbody/tr/td/h2/a/@href&quot; -e &quot;//div[img/@class='padding_right15bottom5px']&quot; [ -f &quot;//span[@id='intelliTxt']/div/table/tbody/tr/td/table/tbody/tr/td/h2/a&quot; -e &quot;//div[@class='desch2']/p&quot; -e &quot;//div[@id='desc_plc']/p&quot; ] ] -f &quot;//a[(text()='>>')]&quot;"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
