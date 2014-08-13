@@ -791,11 +791,12 @@ begin
   url := TProcessingContext.replaceEnclosedExpressions(url);
   method := TProcessingContext.replaceEnclosedExpressions(method);
   data := TProcessingContext.replaceEnclosedExpressions(data);
+  header := TProcessingContext.replaceEnclosedExpressions(header);
 end;
 
 function THTTPRequest.equalTo(ft: TFollowTo): boolean;
 begin
-  result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data);
+  result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data) and (THTTPRequest(ft).header = header);
 end;
 
 function isStdin(s: string): boolean;
@@ -2576,7 +2577,7 @@ begin
     mycmdLine.declareString('post', 'Post request to send (url encoded) (prepending & concats multiple data)');
     mycmdline.addAbbreviation('d');
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
-    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)', 'GET'); mycmdline.addAbbreviation('H');
+    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
   end;
