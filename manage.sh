@@ -4,9 +4,11 @@
 source ../../../manageUtils.sh
 
 function getVersion(){
-  MINOR_VERSION=`grep minorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
-  MAJOR_VERSION=`grep majorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
-  VERSION=$MAJOR_VERSION.$MINOR_VERSION
+  MINOR_VERSION=`grep -i minorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
+  MAJOR_VERSION=`grep -i majorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
+  BUILD_VERSION=`grep -i buildVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
+  if [[ $BUILD_VERSION = 0 ]] ; then  VERSION=$MAJOR_VERSION.$MINOR_VERSION; 
+  else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
 }
 
 sfProject videlibri

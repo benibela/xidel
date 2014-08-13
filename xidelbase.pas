@@ -38,6 +38,7 @@ var cgimode: boolean = false;
 
     majorVersion: integer = 0;
     minorVersion: integer = 8;
+    buildVersion: integer = 4;
 
 type TExtractionKind = (ekAuto, ekXPath2, ekXPath3, ekTemplate, ekCSS, ekXQuery1, ekXQuery3, ekMultipage);
 
@@ -2409,9 +2410,16 @@ begin
   end;
 end;
 
+function getVersionString: string;
+begin
+  result := IntToStr(majorVersion)+'.'+IntToStr(minorVersion);
+  if buildVersion <> 0 then result += '.'+IntToStr(buildVersion);
+  if Result = '0.8.4' then result += ' (Balisage edition)'
+end;
+
 procedure printVersion;
 begin
-  writeln('Xidel '+IntToStr(majorVersion)+'.'+IntToStr(minorVersion));
+  writeln('Xidel '+getVersionString);
   writeln('');
   writeln('http://videlibri.sourceforge.net/xidel.html');
   writeln('by Benito van der Zander <benito@benibela.de>');
@@ -2592,7 +2600,7 @@ begin
   mycmdline.declareFlag('no-optimizations', 'Disables optimizations');
   mycmdline.declareFlag('deprecated-string-options', 'Replaces the old $foo; variables with the new {$foo} in arguments');
 
-  mycmdLine.declareFlag('version','Print version number ('+IntToStr(majorVersion)+'.'+IntToStr(minorVersion)+')');
+  mycmdLine.declareFlag('version','Print version number ('+getVersionString+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
 
   currentContext := TProcessingContext.Create;
