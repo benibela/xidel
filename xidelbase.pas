@@ -2318,6 +2318,7 @@ end;
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
 var
   specialized: string;
+  temps: String;
 begin
   if (name = 'follow') or (name = 'follow-file') or ((name = '') and (value <> '[') and (value <> ']') and (length(currentContext.actions) > 0))  then begin
     if name = 'follow-file' then
@@ -2381,6 +2382,17 @@ begin
   end else if name = 'header' then begin
     TCommandLineReaderBreaker(sender).overrideVar('header', commandLineLastHeader + value + #13#10);
     commandLineLastHeader := TCommandLineReaderBreaker(sender).readString('header');
+  end else if name = 'variable' then begin
+    temps:=TrimLeft(value);
+    if strBeginsWith(temps, '$') then delete(temps, 1, 1);
+    i := pos('=', temps);
+    if i <= 0 then begin
+      htmlparser.variableChangeLog.add(temps, GetEnvironmentVariable(temps));
+    end else begin
+      if (i > 1) and (temps[i-1] =':') then delete(temps, i-1, 1);
+      specialized := strSplitGet('=', temps);
+      htmlparser.variableChangeLog.add(trim(specialized), temps);
+    end;
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
@@ -2516,6 +2528,7 @@ begin
   LongDateFormat:='YYYY-MM-DD';
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
+  htmlparser:=THtmlTemplateParserBreaker.create;
 
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
   mycmdline.allowOverrides:=true;
@@ -2575,6 +2588,7 @@ begin
   mycmdLine.declareString('print-variables', joined(['Which of the separate variable lists are printed', 'Comma separated list of:', '  log: Prints every variable value', '  final: Prints only the final value of a variable, if there are multiple assignments to it', '  condensed-log: Like log, but removes assignments to object properties(default)']), 'condensed-log');
   mycmdLine.declareFlag('print-type-annotations','Prints all variable values with type annotations (e.g. string: abc, instead of abc)');
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
+  mycmdLine.declareString('variable','Declare a variable (value taken from environment if not given explicitely) (multiple variables are preliminary)');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
@@ -2703,7 +2717,7 @@ begin
     ofXMLWrapped: wln('<seq>');
   end;
 
-  htmlparser:=THtmlTemplateParserBreaker.create;
+
   htmlparser.TemplateParser.parsingModel:=pmHTML;
 
   htmlparser.KeepPreviousVariables:=kpvKeepValues;
