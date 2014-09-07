@@ -774,7 +774,7 @@ var
 begin
   if not allowInternetAccess then raise Exception.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
-  parent.printStatus('**** Retrieving:'+url+' ****');
+  parent.printStatus('**** Retrieving: '+url+' ****');
   if data <> '' then parent.printStatus('Data: '+data);
   result := TDataObject.create('', url);
   if assigned(onRetrieve) then (result as TDataObject).frawdata := doRetrieve(10);
@@ -838,7 +838,7 @@ end;
 function TFileRequest.retrieve(parent: TProcessingContext): IData;
 begin
   if not allowFileAccess then raise Exception.Create('File access not permitted');
-  parent.printStatus('**** Retrieving:'+url+' ****');
+  parent.printStatus('**** Retrieving: '+url+' ****');
   result := TDataObject.create(strLoadFromFileUTF8(url), url);
   (result as TDataObject).fbaseurl:=makeAbsoluteFilePath((result as TDataObject).fbaseurl);
 end;
