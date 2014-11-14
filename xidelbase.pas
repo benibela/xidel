@@ -1644,8 +1644,8 @@ end;
 function TProcessingContext.evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean): IXQValue;
 begin
   if query.Term = nil then exit(xqvalue());
-  if allowWithoutReturnValue and ((query.Term is TXQTermModule) and (query.Term.children[high(query.Term.children)] = nil)) then
-    query.Term.children[high(query.Term.children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
+  if allowWithoutReturnValue and ((query.Term is TXQTermModule) and (TXQTermModule(query.Term).children[high(TXQTermModule(query.Term).children)] = nil)) then
+    TXQTermModule(query.Term).children[high(TXQTermModule(query.Term).children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
 
   if data.inputFormat <> ifJSON then result := query.evaluate(currentRoot)
   else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
@@ -1837,10 +1837,14 @@ function TExtraction.process(data: IData): TFollowToList;
     i: Integer;
   begin
     if term = nil then exit(false);
-    if term is TXQTermDefineVariable then exit(true);
-    if (term is TXQTermModule) or (term is TXQTermDefineFunction) then exit(termContainsVariableDefinition(term.children[high(term.children)])); //todo: move to xquery engine
-    for i := 0 to high(term.children) do
-      if termContainsVariableDefinition(term.children[i]) then exit(true);
+    if term is TXQTermWithChildren then
+      with TXQTermWithChildren(term) do begin
+        if term is TXQTermDefineVariable then exit(true);
+        if (term is TXQTermModule) or (term is TXQTermDefineFunction) then
+           exit(termContainsVariableDefinition(children[high(children)])); //todo: move to xquery engine
+        for i := 0 to high(children) do
+          if termContainsVariableDefinition(children[i]) then exit(true);
+      end;
     exit(false);
   end;
 
@@ -1865,6 +1869,8 @@ begin
     ekTemplate: begin
       htmlparser.UnnamedVariableName:=defaultName;
       htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
+      htmlparser.TemplateParser.repairMissingEndTags:=false;
+      htmlparser.TemplateParser.repairMissingStartTags:=false;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
       htmlparser.parseHTML(data); //todo: full url is abs?
       pageProcessed(nil,htmlparser);
