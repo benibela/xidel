@@ -309,11 +309,11 @@ tests/test.sh inputformatAutoJson tests/data.json  -e '(($json).b, (.).c, .("d")
 tests/test.sh optadhoc '<a>x</a>'  -e /
 tests/test.sh optxml --xml '<a>x</a>'  -e /
 tests/test.sh opthtml --html '<a>x</a>'  -e /
-tests/test.sh moduleVars -e 'declare variable $a:=123' -e '$a'
+tests/test.sh moduleVars -e 'declare variable $a:=123; ()' -e '$a'
 tests/test.sh moduleFunc1 -e 'declare variable $a:=123; declare function local:xyz(){456}; 8' -e 'local:xyz()+$a'
-tests/test.sh moduleFunc2 -e 'declare variable $a:=123; declare function local:xyz(){456}' -e 'declare function local:abc(){$a*1000}; local:xyz() + local:abc()'
-tests/test.sh moduleFuncImport -e 'import module namespace foobar = "pseudo://test-module" at "tests/module.xq"' -e '$foobar:abc'
-tests/test.sh moduleFuncImport2 -e 'import module namespace rename = "pseudo://test-module" at "tests/module.xq"' -e 'rename:test()'
+tests/test.sh moduleFunc2 -e 'declare variable $a:=123; declare function local:xyz(){456}; ()' -e 'declare function local:abc(){$a*1000}; local:xyz() + local:abc()'
+tests/test.sh moduleFuncImport -e 'import module namespace foobar = "pseudo://test-module" at "tests/module.xq"; ()' -e '$foobar:abc'
+tests/test.sh moduleFuncImport2 -e 'import module namespace rename = "pseudo://test-module" at "tests/module.xq"; ()' -e 'rename:test()'
 
 tests/test.sh utf8  -e 'substring("äbcd",1,3)'
 
