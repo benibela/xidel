@@ -2832,7 +2832,7 @@ function xqFunctionJSONSafe(const context: TXQEvaluationContext; const args: TXQ
 var jn: TXQNativeModule;
 begin
   jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
-  result := jn.findBasicFunction('parse-json').func(args);
+  result := jn.findBasicFunction('parse-json', length(args)).func(args);
 end;
 
 function xqFunctionBlocked(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
@@ -2844,14 +2844,14 @@ procedure blockFileAccessFunctions;
 var fn, pxp, jn: TXQNativeModule;
 begin
   fn := TXQueryEngine.findNativeModule(XMLNamespaceURL_XPathFunctions);
-  fn.findComplexFunction('doc').func:=@xqFunctionBlocked;
-  fn.findComplexFunction('doc-available').func:=@xqFunctionBlocked;
+  fn.findComplexFunction('doc', 1).func:=@xqFunctionBlocked;
+  fn.findComplexFunction('doc-available', 1).func:=@xqFunctionBlocked;
 
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
-  pxp.findComplexFunction('json').func:=@xqFunctionJSONSafe;
+  pxp.findComplexFunction('json', 1).func:=@xqFunctionJSONSafe;
 
   jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
-  jn.findComplexFunction('json-doc').func:=@xqFunctionBlocked;
+  jn.findComplexFunction('json-doc', 1).func:=@xqFunctionBlocked;
 end;
 
 var pxp: TXQNativeModule;
