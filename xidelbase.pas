@@ -2322,6 +2322,14 @@ begin
     commandLineStackLastPostData := TCommandLineReaderBreaker(mycmdline).readString('post');
 end;
 
+procedure variableInterpret(pseudoself, sender: TObject; var name, value: string; const args: TStringArray; var argpos: integer);
+begin
+  if strBeginsWith(name, 'xmlns:') then begin
+    value := strCopyFrom(name, length('xmlns:') + 1) + '=' + value;
+    name := 'xmlns';
+  end;
+end;
+
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
 var
   specialized: string;
@@ -2399,6 +2407,15 @@ begin
       if (i > 1) and (temps[i-1] =':') then delete(temps, i-1, 1);
       specialized := strSplitGet('=', temps);
       htmlparser.variableChangeLog.add(trim(specialized), temps);
+    end;
+  end else if name = 'xmlns' then begin
+    temps:=trim(value);
+    i := pos('=', temps);
+    if i = 0 then htmlparser.QueryEngine.StaticContext.defaultElementTypeNamespace := TNamespace.create(temps, '')
+    else begin
+      if htmlparser.QueryEngine.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
+      specialized := strSplitGet('=', temps);
+      htmlparser.QueryEngine.StaticContext.namespaces.add(TNamespace.create(temps, specialized));
     end;
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
@@ -2537,6 +2554,7 @@ begin
 
   htmlparser:=THtmlTemplateParserBreaker.create;
 
+  mycmdline.onCustomOptionInterpretation := TOptionInterpretationEvent(procedureToMethod(TProcedure(@variableInterpret)));
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
   mycmdline.allowOverrides:=true;
 
@@ -2595,7 +2613,8 @@ begin
   mycmdLine.declareString('print-variables', joined(['Which of the separate variable lists are printed', 'Comma separated list of:', '  log: Prints every variable value', '  final: Prints only the final value of a variable, if there are multiple assignments to it', '  condensed-log: Like log, but removes assignments to object properties(default)']), 'condensed-log');
   mycmdLine.declareFlag('print-type-annotations','Prints all variable values with type annotations (e.g. string: abc, instead of abc)');
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
-  mycmdLine.declareString('variable','Declare a variable (value taken from environment if not given explicitely) (multiple variables are preliminary)');
+  mycmdLine.declareString('variable','Declares a variable (value taken from environment if not given explicitely) (multiple variables are preliminary)');
+  mycmdLine.declareString('xmlns','Declares a namespace');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
