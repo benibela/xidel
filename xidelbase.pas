@@ -2018,10 +2018,10 @@ begin
             if values.getSequenceCount = 1 then printExtractedValue(values, true)
             else begin
               w('[');
-              printExtractedValue(values.getChild(1), true);
+              printExtractedValue(values.get(1), true);
               for j:=2 to values.getSequenceCount do begin
                 w(', ');
-                printExtractedValue(values.getChild(j), true);
+                printExtractedValue(values.get(j), true);
               end;
               w(']');
             end;
@@ -2220,7 +2220,7 @@ begin
       //if cgimode then
       //  sayln(']');
     end;
-    ofXMLWrapped, ofRawXML, ofRawHTML: begin
+    ofXMLWrapped{, ofRawXML, ofRawHTML}: begin
       sayln('<error>');
       sayln('<message>'+xmlStrEscape(e.Message)+'</message>');
       if printPartialMatches then begin
@@ -2233,7 +2233,7 @@ begin
       //if cgimode then
       //  sayln('</seq>');
     end;
-    ofAdhoc: begin
+    else begin
       sayln( 'Error:');
       sayln( e.Message);
       if printPartialMatches then begin

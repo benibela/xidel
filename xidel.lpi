@@ -73,7 +73,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-e &quot;declare function vl:delete-current-books() { () }; ()&quot; --dot-notation=on --extract=&quot;book:=object()&quot; --print-type-annotations --extract-kind=template .//lbs/loans.stralsund.html --extract-file=../../data/libraries/templates/lbs/list"/>
+        <CommandLineParams Value="--xmlns:a b -e 'fn:avg(( (xs:boolean(&quot;true&quot;), xs:date(&quot;1993-03-31&quot;), 4, &quot;a&quot;)))'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
