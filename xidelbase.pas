@@ -275,10 +275,14 @@ end;
 { THTTPRequest }
 
 THTTPRequest = class(TFollowTo)
+private
+  variablesReplaced: boolean;
+public
   url: string;
   method: string;
   data: string;
   header: string;
+  multipart: string;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
   function retrieve(parent: TProcessingContext): IData; override;
@@ -725,6 +729,8 @@ begin
   THTTPRequest(result).method:=method;
   THTTPRequest(result).data:=data;
   THTTPRequest(result).header:=header;
+  THTTPRequest(result).multipart:=multipart;
+  THTTPRequest(result).variablesReplaced:=variablesReplaced;
   result.assign(self);
 end;
 
@@ -787,16 +793,31 @@ begin
 end;
 
 procedure THTTPRequest.replaceVariables;
+  procedure parseFormMime();
+  var mime: TMIMEMultipartData;
+    forms: TStringArray;
+    i: Integer;
+  begin
+    forms := strSplit(multipart, '&', false);
+    for i := 0 to high(forms) do begin
+      //todo
+    end;
+  end;
 begin
+  if variablesReplaced then exit; //this method is still supposed to be only called once
   url := TProcessingContext.replaceEnclosedExpressions(url);
   method := TProcessingContext.replaceEnclosedExpressions(method);
   data := TProcessingContext.replaceEnclosedExpressions(data);
   header := TProcessingContext.replaceEnclosedExpressions(header);
+  multipart := TProcessingContext.replaceEnclosedExpressions(multipart);
+
+  if multipart <> '' then parseFormMime();
+  variablesReplaced := true;
 end;
 
 function THTTPRequest.equalTo(ft: TFollowTo): boolean;
 begin
-  result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data) and (THTTPRequest(ft).header = header);
+  result := (ft is THTTPRequest) and (THTTPRequest(ft).url = url) and (THTTPRequest(ft).method = method) and (THTTPRequest(ft).data = data) and (THTTPRequest(ft).header = header) and (THTTPRequest(ft).multipart = multipart);
 end;
 
 function isStdin(s: string): boolean;
@@ -808,9 +829,13 @@ procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
 begin
   inherited;
+  variablesReplaced := reader is TOptionReaderFromObject;
   if method <> '' then exit; //already initialized, must abort to keep stdin working (todo: allow postfix data/method options?)
+  reader.read('header', header);
   method:='GET';
   if reader.read('post', data) then
+    method:='POST';
+  if reader.read('form', multipart) then
     method:='POST';
   if reader.read('method', temp) then begin
     method:=temp;
@@ -819,7 +844,6 @@ begin
   end;
   if isStdin(data) then
     data := strReadFromStdin;
-  reader.read('header', header);
 end;
 
 { TFileRequest }
@@ -2299,7 +2323,7 @@ end;
 var currentContext: TProcessingContext;
     cmdlineWrapper: TOptionReaderFromCommandLine;
     commandLineStack: array of array of TProperty;
-    commandLineStackLastPostData, commandLineLastHeader: string;
+    commandLineStackLastPostData, commandLineStackLastFormData, commandLineLastHeader: string;
     contextStack: array of TProcessingContext;
 
 procedure pushCommandLineState;
@@ -2320,6 +2344,8 @@ begin
   SetLength(commandLineStack, high(commandLineStack));
   if TCommandLineReaderBreaker(mycmdline).existsProperty('post') then
     commandLineStackLastPostData := TCommandLineReaderBreaker(mycmdline).readString('post');
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('form') then
+    commandLineStackLastFormData := TCommandLineReaderBreaker(mycmdline).readString('form');
 end;
 
 procedure variableInterpret(pseudoself, sender: TObject; var name, value: string; const args: TStringArray; var argpos: integer);
@@ -2392,8 +2418,12 @@ begin
     TCommandLineReaderBreaker(sender).overrideVar('output-format', name);
   end else if name = 'post' then begin
     if strBeginsWith(value, '&') then
-      TCommandLineReaderBreaker(sender).overrideVar('post', commandLineStackLastPostData + value);
+      TCommandLineReaderBreaker(sender).overrideVar('post', commandLineStackLastPostData + value); //todo: change it such that multiple -d next to each other always add (till next -f [ ?), and -d "" can be used to clear it
     commandLineStackLastPostData := TCommandLineReaderBreaker(sender).readString('post');
+  end else if name = 'form' then begin
+    if strBeginsWith(value, '&') then
+      TCommandLineReaderBreaker(sender).overrideVar('form', commandLineStackLastFormData + value);
+    commandLineStackLastFormData := TCommandLineReaderBreaker(sender).readString('form');
   end else if name = 'header' then begin
     TCommandLineReaderBreaker(sender).overrideVar('header', commandLineLastHeader + value + #13#10);
     commandLineLastHeader := TCommandLineReaderBreaker(sender).readString('header');
@@ -2600,6 +2630,8 @@ begin
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
     mycmdLine.declareString('post', 'Post request to send (url encoded) (prepending & concats multiple data)');
     mycmdline.addAbbreviation('d');
+    mycmdLine.declareString('form', 'Post request to send (multipart encoded)');
+    mycmdline.addAbbreviation('F');
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
     mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
