@@ -62,8 +62,8 @@ echo //abc2 | tests/test.sh stdin2 '<test>123<x/>foo<abc2>bar2!</abc2>def<x/></t
 #multipage template
 tests/test.sh multipage --extract '<action><page url="tests/a.xml"><template><title>{.}</title></template></page></action>' --extract-kind=multipage
 tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage
-tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{filter(., "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
-tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{filter($raw, "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
+tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{extract(., "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
+tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{extract($raw, "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
 
 
 tests/test.sh multipageVariable  --extract-kind=multipage --extract '<action><variable name="test">1+2+3</variable></action>' --xpath '$test' ##?? change to print all variables
