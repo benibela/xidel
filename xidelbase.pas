@@ -42,6 +42,8 @@ var cgimode: boolean = false;
 
 type TExtractionKind = (ekAuto, ekXPath2, ekXPath3, ekTemplate, ekCSS, ekXQuery1, ekXQuery3, ekMultipage);
 
+type EXidelException = class(Exception);
+
 var
     onPostParseCmdLine: procedure ();
     onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
@@ -159,8 +161,8 @@ end;
 
 function strLoadFromFileChecked(const fn: string): string;
 begin
-  result := strLoadFromFile(fn);
-  if Result = '' then raise Exception.Create('File '+fn+' is empty.');
+  result := strLoadFromFileUTF8(fn);
+  if Result = '' then raise EXidelException.Create('File '+fn+' is empty.');
 end;
 
 function strReadFromStdin: string;
@@ -653,7 +655,7 @@ var
 begin
   result := nil;
   if cgimode or not allowFileAccess then
-    raise Exception.Create('Download not permitted');
+    raise EXidelException.Create('Download not permitted');
 
   realUrl := data.baseUri;
   if guessType(realUrl) = rtRemoteURL then realurl := decodeURL(realUrl).path;
@@ -778,7 +780,7 @@ function THTTPRequest.retrieve(parent: TProcessingContext): IData;
 var
   i: Integer;
 begin
-  if not allowInternetAccess then raise Exception.Create('Internet access not permitted');
+  if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
   parent.printStatus('**** Retrieving: '+url+' ****');
   if data <> '' then parent.printStatus('Data: '+data);
@@ -797,11 +799,68 @@ procedure THTTPRequest.replaceVariables;
   var mime: TMIMEMultipartData;
     forms: TStringArray;
     i: Integer;
+    p: SizeInt;
+    name: String;
+    value: String;
+    paren: Char;
+    nvalue: String;
+    temp: String;
+    filename: String;
+    contenttype: String;
+    kind: Char;
+    t: Integer;
   begin
-    forms := strSplit(multipart, '&', false);
+    if data <> '' then raise EXidelException.Create('Cannot mix urlencoded and multipart data');
+    forms := strSplit(multipart, #0, false);
     for i := 0 to high(forms) do begin
-      //todo
+      p := pos('=', forms[i]);
+      name := copy(forms[i], 1, p-1);
+      value := strCopyFrom(forms[i], p+1);
+      filename := '';
+      contenttype := '';
+      kind := 'x';
+      if length(value) > 0 then begin
+        if value[1] in ['<','@'] then begin
+          kind := value[1];
+          delete(value, 1, 1);
+        end else kind := 'x';
+        if value[1] in ['"', ''''] then begin
+          paren := value[1];
+          nvalue := '';
+          t := 2;
+          while (t <= length(value)) do begin
+            if value[t] = '\' then begin
+              inc(t);
+              nvalue += value[t];
+            end else if value[t] = paren then break
+            else nvalue += value[t];
+            inc(t);
+          end;
+          delete(value, 1, t+1);
+        end else begin
+          p := pos(';', value);
+          if p = 0 then p := length(value) + 1;
+          nvalue := copy(value, 1, p-1);
+          delete(value, 1, p);
+        end;
+        if kind in ['<', '@'] then begin
+          if kind = '@' then filename := nvalue;
+          nvalue := strLoadFromFileUTF8(nvalue);
+        end;
+        if value <> '' then begin
+          for temp in strSplit(value, ';', false) do begin
+            case strSplitGet('=', temp) of
+              'filename': filename := temp;
+              'type':     contenttype := temp;
+              else raise EXidelException.Create('Unknown option in '+forms[i]);
+            end;
+          end;
+        end;
+      end;
+      mime.addFormData(name, nvalue, filename, contenttype, '');
     end;
+    data := mime.compose(header);
+    header := 'Content-Type: ' + ContentTypeMultipart + '; boundary="'+header+'"';
   end;
 begin
   if variablesReplaced then exit; //this method is still supposed to be only called once
@@ -861,7 +920,7 @@ end;
 
 function TFileRequest.retrieve(parent: TProcessingContext): IData;
 begin
-  if not allowFileAccess then raise Exception.Create('File access not permitted');
+  if not allowFileAccess then raise EXidelException.Create('File access not permitted');
   parent.printStatus('**** Retrieving: '+url+' ****');
   result := TDataObject.create(strLoadFromFileUTF8(url), url);
   (result as TDataObject).fbaseurl:=makeAbsoluteFilePath((result as TDataObject).fbaseurl);
@@ -946,7 +1005,7 @@ begin
     rtRemoteURL: result := THTTPRequest.Create(data);
     rtFile: result := TFileRequest.create(data);
     rtEmpty, rtXML: result := TDirectDataRequest.create(data);
-    else raise Exception.Create('Impossible 232');
+    else raise EXidelException.Create('Impossible 232');
   end;
   //todo: handle completely empty data ''
 end;
@@ -975,7 +1034,7 @@ begin
       'html': inputFormat:=ifHTML;
       'xml-strict': inputFormat:=ifXMLStrict;
       'json': inputFormat := ifJSON
-      else raise Exception.Create('Invalid input-format: '+ifs);
+      else raise EXidelException.Create('Invalid input-format: '+ifs);
     end;
 end;
 
@@ -1075,7 +1134,7 @@ begin
     pvkSequence:
       for x in dest do
         merge(x, basedata, parent);
-    pvkNode: raise Exception.Create('Assert failure: Expected resolved url for following, but got raw '+dest.debugAsStringWithTypeAnnotation());
+    pvkNode: raise EXidelException.Create('Assert failure: Expected resolved url for following, but got raw '+dest.debugAsStringWithTypeAnnotation());
     else addBasicUrl(dest.toString, basedata.baseUri);
   end;
 end;
@@ -1139,7 +1198,7 @@ begin
   else if striEqual(v, 'css') then extractKind:=ekCSS
   else if striEqual(v, 'template') then extractKind:=ekTemplate
   else if striEqual(v, 'multipage') then extractKind:=ekMultipage
-  else raise Exception.Create('Unknown kind for the extract expression: '+v);
+  else raise EXidelException.Create('Unknown kind for the extract expression: '+v);
 end;
 
 procedure TExtraction.readOptions(reader: TOptionReaderWrapper);
@@ -1716,7 +1775,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       ofAdhoc, ofRawHTML, ofRawXML: exit(s);
       ofBash: exit(bashStrEscape(s));
       ofWindowsCmd: exit(windowsCmdEscape(s));
-      else raise Exception.Create('Invalid output format');
+      else raise EXidelException.Create('Invalid output format');
     end;
   end;
 
@@ -1728,7 +1787,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       ofRawXML, ofXMLWrapped: exit(xmlStrEscape(s));
       ofBash: exit(bashStrEscape(s));
       ofWindowsCmd: exit(windowsCmdEscape(s));
-      else raise Exception.Create('Invalid output format');
+      else raise EXidelException.Create('Invalid output format');
     end;
   end;
 
@@ -1938,7 +1997,7 @@ begin
       multipage.setTemplate(nil);
       multipagetemp.free;
     end
-    else raise Exception.Create('Impossible');
+    else raise EXidelException.Create('Impossible');
   end;
 
   result := currentFollowList;
@@ -2201,7 +2260,7 @@ end;
 
 procedure TTemplateReaderBreaker.perform(actions: TStringArray);
 begin
-  if length(template.baseActions.children) = 0 then raise Exception.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
+  if length(template.baseActions.children) = 0 then raise EXidelException.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
   if length(actions) = 0 then callAction(template.baseActions.children[0])
   else for i:= 0 to high(actions) do
     callAction(actions[i]);
@@ -2455,7 +2514,7 @@ begin
       contextStack[high(contextStack)] := currentContext;
     end
     else if (name = '') and (value = ']') then begin
-      if length(contextStack) <= 1 then raise Exception.Create('Closing ] without opening [');
+      if length(contextStack) <= 1 then raise EXidelException.Create('Closing ] without opening [');
       currentContext.readOptions(cmdlineWrapper);
 
       if ( (currentContext = contextStack[high(contextStack)]) and (length(currentContext.actions) = 0) and (length(currentContext.dataSources) > 0) ) //like in [ foobar xyz ]
