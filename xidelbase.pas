@@ -196,11 +196,15 @@ end;
 
 
 type
+
+  { TOptionReaderWrapper }
+
   TOptionReaderWrapper = class
     function read(const name: string; out value: string): boolean; virtual; abstract;
     function read(const name: string; out value: integer): boolean; virtual; abstract;
     function read(const name: string; out value: boolean): boolean; virtual; abstract;
     function read(const name: string; out value: Extended): boolean; virtual; abstract;
+    function read(const name: string; out value: IXQValue): boolean; virtual;
   end;
 
   { TOptionReaderFromCommandLine }
@@ -223,6 +227,7 @@ type
     function read(const name: string; out value: integer): boolean; override;
     function read(const name: string; out value: boolean): boolean; override;
     function read(const name: string; out value: Extended): boolean; override;
+    function read(const name: string; out value: IXQValue): boolean; override;
   private
     obj: TXQValueObject;
   end;
@@ -490,6 +495,13 @@ end;
 
 type EInvalidArgument = Exception;
 
+{ TOptionReaderWrapper }
+
+function TOptionReaderWrapper.read(const name: string; out value: IXQValue): boolean;
+begin
+  result := false;
+end;
+
 { TDataObject }
 
 function TDataObject.rawData: string;
@@ -609,6 +621,14 @@ var
 begin
   result := obj.hasProperty(name, @temp);
   if result then value := temp.toFloat;
+end;
+
+function TOptionReaderFromObject.read(const name: string; out value: IXQValue): boolean;
+var
+  temp: TXQValue;
+begin
+  result := obj.hasProperty(name, @temp);
+  if result then value := temp as TXQValue;
 end;
 
 { TOptionReaderFromCommandLine }
@@ -886,11 +906,21 @@ end;
 
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
+  tempxq: IXQValue;
+  h: IXQValue;
 begin
   inherited;
-  variablesReplaced := reader is TOptionReaderFromObject;
   if method <> '' then exit; //already initialized, must abort to keep stdin working (todo: allow postfix data/method options?)
   reader.read('header', header);
+  if reader is TOptionReaderFromObject then begin
+    variablesReplaced := true;
+    if reader.read('headers', tempxq) then begin
+      for h in tempxq  do begin
+        if header <> '' then header := header + #13#10;
+        header += h.toString;
+      end;
+    end;
+  end;
   method:='GET';
   if reader.read('post', data) then
     method:='POST';
