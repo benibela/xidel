@@ -910,6 +910,8 @@ begin
   result := (s = '-') or (s = 'stdin:///') or (s = 'stdin:') or (s = 'stdin://');
 end;
 
+procedure closeMultiArgs(var oldValue: string; separator: string); forward;
+
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
   tempxq: IXQValue;
@@ -937,6 +939,8 @@ begin
     if isStdin(method) then
       method := trim(strReadFromStdin);
   end;
+  if reader is TOptionReaderFromCommandLine then closeMultiArgs(data, '&');
+  header := trim(header);
   if isStdin(data) then
     data := strReadFromStdin;
 end;
@@ -2378,6 +2382,8 @@ TCommandLineReaderBreaker = class(TCommandLineReader)
   procedure setProperties(newProperties: TPropertyArray);
   function getProperties(): TPropertyArray;
 
+
+
 end;
 
 { TCommandLineReaderBreaker }
@@ -2423,6 +2429,12 @@ var currentContext: TProcessingContext;
 
 procedure pushCommandLineState;
 begin
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('post') then
+    TCommandLineReaderBreaker(mycmdline).overrideVar('post', commandLineStackLastPostData);
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('form') then
+    TCommandLineReaderBreaker(mycmdline).overrideVar('form', commandLineStackLastFormData);
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('header') then
+    TCommandLineReaderBreaker(mycmdline).overrideVar('header', commandLineLastHeader);
   SetLength(commandLineStack, length(commandLineStack) + 1);
   commandLineStack[high(commandLineStack)] := TCommandLineReaderBreaker(mycmdline).getProperties;
   SetLength(commandLineStack[high(commandLineStack)], length(commandLineStack[high(commandLineStack)]));
@@ -2441,6 +2453,8 @@ begin
     commandLineStackLastPostData := TCommandLineReaderBreaker(mycmdline).readString('post');
   if TCommandLineReaderBreaker(mycmdline).existsProperty('form') then
     commandLineStackLastFormData := TCommandLineReaderBreaker(mycmdline).readString('form');
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('header') then
+    commandLineLastHeader := TCommandLineReaderBreaker(mycmdline).readString('header');
 end;
 
 procedure variableInterpret(pseudoself, sender: TObject; var name, value: string; const args: TStringArray; var argpos: integer);
@@ -2451,7 +2465,32 @@ begin
   end;
 end;
 
+procedure closeMultiArgs(var oldValue: string; separator: string);
+begin
+  if strEndsWith(oldValue, separator) then
+    delete(oldValue, length(oldValue) - length(separator) + 1, length(separator));
+end;
+
+function combineMultiArgs(var oldValue: string; appendValue, separator: string): string;
+begin
+  if (appendValue = '') then oldValue := ''
+  else begin
+    if appendValue[1] = '&' then delete(appendValue, 1, 1)
+    else if not strEndsWith(oldValue, separator) then oldValue := '';
+
+    oldValue := oldValue + appendValue + separator;
+  end;
+  Result := oldValue;
+end;
+
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
+  procedure closeAllMultiArgs;
+  begin
+    closeMultiArgs(commandLineStackLastPostData, '&');
+    closeMultiArgs(commandLineStackLastFormData, #0);
+    closeMultiArgs(commandLineLastHeader, #13#10);
+  end;
+
 var
   specialized: string;
   temps: String;
@@ -2485,6 +2524,7 @@ begin
     TCommandLineReaderBreaker(sender).removeVar('follow');
     TCommandLineReaderBreaker(sender).removeVar('extract');
     TCommandLineReaderBreaker(sender).removeVar('download');
+    closeAllMultiArgs;
   end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') or (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3')  then begin
     specialized := '';
     case name of
@@ -2511,18 +2551,13 @@ begin
   end else if (name = 'html') or (name = 'xml') then begin
     TCommandLineReaderBreaker(sender).overrideVar('input-format', name);
     TCommandLineReaderBreaker(sender).overrideVar('output-format', name);
-  end else if name = 'post' then begin
-    if strBeginsWith(value, '&') then
-      TCommandLineReaderBreaker(sender).overrideVar('post', commandLineStackLastPostData + value); //todo: change it such that multiple -d next to each other always add (till next -f [ ?), and -d "" can be used to clear it
-    commandLineStackLastPostData := TCommandLineReaderBreaker(sender).readString('post');
-  end else if name = 'form' then begin
-    if strBeginsWith(value, '&') then
-      TCommandLineReaderBreaker(sender).overrideVar('form', commandLineStackLastFormData + value);
-    commandLineStackLastFormData := TCommandLineReaderBreaker(sender).readString('form');
-  end else if name = 'header' then begin
-    TCommandLineReaderBreaker(sender).overrideVar('header', commandLineLastHeader + value + #13#10);
-    commandLineLastHeader := TCommandLineReaderBreaker(sender).readString('header');
-  end else if name = 'variable' then begin
+  end else if name = 'post' then
+    TCommandLineReaderBreaker(sender).overrideVar('post', combineMultiArgs(commandLineStackLastPostData, value, '&'))
+  else if name = 'form' then
+    TCommandLineReaderBreaker(sender).overrideVar('form', combineMultiArgs(commandLineStackLastFormData, value, #0))
+  else if name = 'header' then
+    TCommandLineReaderBreaker(sender).overrideVar('header', combineMultiArgs(commandLineLastHeader, value, #13#10))
+  else if name = 'variable' then begin
     temps:=TrimLeft(value);
     if strBeginsWith(temps, '$') then delete(temps, 1, 1);
     i := pos('=', temps);
@@ -2567,7 +2602,10 @@ begin
 
       currentContext := popCommandLineState;
 
-    end else currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    end else begin
+      closeAllMultiArgs;
+      currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    end;
   end;
 end;
 
@@ -3001,6 +3039,10 @@ begin
 end;
 
 var pxp: TXQNativeModule;
+
+{ TMultiParameterList }
+
+
 initialization
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);

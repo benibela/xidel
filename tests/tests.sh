@@ -340,7 +340,8 @@ tests/test.sh post6 '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' --post 'd
 tests/test.sh post6b '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] # [ causes it to process both data. Does not make much sense, but is logical
 tests/test.sh post6c '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ -e "" --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] 
 
-tests/test.sh post7 -d "user=login" [ -d "&pass=password" http://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "&a=b" http://videlibri.sourceforge.net/xidelecho.php -e /  ]
+tests/test.sh post7 -d "user=login" [ -d "&pass=password" http://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "a=b" http://videlibri.sourceforge.net/xidelecho.php -e /  ]
+tests/test.sh post8 -d "a=1" [ -d "" -d "b=2" http://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "c=3" http://videlibri.sourceforge.net/xidelecho.php -e /  ] -d d=4 http://videlibri.sourceforge.net/xidelecho.php -e / -d e=5 http://videlibri.sourceforge.net/xidelecho.php -e /
 
 
 tests/test.sh put1a  --method=PUT --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
