@@ -2744,7 +2744,11 @@ begin
 
   mycmdLine.beginDeclarationCategory('Follow options:');
 
-  mycmdLine.declareString('follow', joined(['Expression extracting links from the page which will be followed.', 'If the expression extracts a sequence, all elements are followed.', 'If the value is an "a" node, its @href attribute is followed, if it is a "i/frame" node its @src attribute is followed, otherwise its text().', 'If it is an object, its url properties and its other properties can override command line arguments','Otherwise, the string value is treated as url.']));
+  mycmdLine.declareString('follow', joined(['Expression selecting data from the page which will be followed.',
+                                            'If the expression returns a sequence, all its elements are followed.',
+                                            'If it is an HTML element with an resource property this property is used, e.g. from an A element it will follow to its @href property.',
+                                            'If it is an object, its url property and its other properties can override command line arguments',
+                                            'Otherwise, the string value is used as url.']));
   mycmdline.addAbbreviation('f');
   mycmdLine.declareString('follow-exclude', 'Comma separated list of variables ignored in a follow template. (black list)');
   mycmdLine.declareString('follow-include', 'Comma separated list of variables used in a follow template. (white list)');
@@ -2761,12 +2765,12 @@ begin
     mycmdLine.declareFloat('wait', 'Wait a certain count of seconds between requests');
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
-    mycmdLine.declareString('post', 'Post request to send (url encoded) (prepending & concats multiple data)');
+    mycmdLine.declareString('post', joined(['Post request to send (url encoded). Multiple close occurrences are joined. If the new argument starts with &, it will always be joined. If it is empty, it will clear the previous parameters. ']));
     mycmdline.addAbbreviation('d');
-    mycmdLine.declareString('form', 'Post request to send (multipart encoded)');
+    mycmdLine.declareString('form', 'Post request to send (multipart encoded). See --usage. Can be used multiple times like --post.');
     mycmdline.addAbbreviation('F');
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
-    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)'); mycmdline.addAbbreviation('H');
+    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b"). Can be used multiple times like --post.'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
   end;

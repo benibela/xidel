@@ -452,7 +452,48 @@ There is a special rule for json-wrapped  output, if the template assigns multip
 variable: Xidel will collect all these values in an array. I.e. (a:=1, b:=2, a:=3, c:=4)
 becomes "a": [1, 3], "b": 2. "c": 4
 
+======================================== Modifying HTTP requests ===========================================
 
+These options can be used to modify HTTP requests:
 
+--post, -d
 
+    You can use --post (-d) to specify data that should be transmitted. 
+    E.g. xidel -d "a=b" -d "c=d" http://example.org will send a POST request "a=b&c=d".
+       
+    Different requests will use different data, if given, 
+    so xidel  -d "a=b" http://example.org/1 -d "c=d" http://example.org/2
+    will send a=b to /1 and c=d /2.
+    However, if c=d was not given, it would send a=b to both urls.
+    
+    You can prepend & to always keep the previous data.
+    E.g. xidel -d "a=b" http://example.org/1 -d "&c=d" http://example.org/2
+    will send "a=b&c=d" to /2.
+    
+    An empty argument can be used to clear the data.
+    E.g. xidel -d "a=b" http://example.org/1 -d "" http://example.org/2
+    will send a GET request without any data to /2.
 
+--method
+    
+    The method can be set with --method, e.g. POST or PUT.
+    E.g. xidel -d "a=b" --method PUT http://example.org
+    
+--header, -H
+    
+    A header can be given with --header (-H).
+    E.g. xidel -H "Content-Type: text/html" http://example.org
+    
+    Headers use the same rules for concatenating as post data. (The & will be replaced by CRLF)
+    
+--form, -F
+
+   --form behaves similarly to --post, but it will send the data as multipart/form-data.
+    
+   It can also be used for file uploading, e.g. xidel -F a=@filename http://example.org
+   will upload the file filename in the parameter a. 
+   You can use -F "a=<filename"  to just upload the content of the file and not the file itself.
+
+   You can use ;type=... and ;filename=... to set the Content-Type and filename of the data.
+
+   See also the documentation of the XPath function pxp:form for creating multipart requests in -f.
