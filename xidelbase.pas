@@ -803,9 +803,15 @@ begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
   parent.printStatus('**** Retrieving: '+url+' ****');
-  if data <> '' then parent.printStatus('Data: '+data);
+  if data <> '' then parent.printStatus(method+': '+data);
   result := TDataObject.create('', url);
-  if assigned(onRetrieve) then (result as TDataObject).frawdata := doRetrieve(10);
+  if assigned(onRetrieve) then begin
+    (result as TDataObject).frawdata := doRetrieve(10);
+    if assigned(internet) then begin
+      (result as TDataObject).fbaseurl := internet.lastUrl;
+      (result as TDataObject).fdisplaybaseurl := internet.lastUrl;
+    end;
+  end;
   if parent.printReceivedHeaders and assigned(internet) then begin
     parent.printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
     for i:=0 to internet.lastHTTPHeaders.Count-1 do
