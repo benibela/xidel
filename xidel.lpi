@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--post &quot;123&quot; http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --post &quot;456&quot; http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'"/>
+        <CommandLineParams Value="--xmlns:a b -e 'fn:avg(( (xs:boolean(&quot;true&quot;), xs:date(&quot;1993-03-31&quot;), 4, &quot;a&quot;)))'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
