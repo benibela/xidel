@@ -886,7 +886,7 @@ procedure THTTPRequest.replaceVariables;
       mime.addFormData(name, nvalue, filename, contenttype, '');
     end;
     data := mime.compose(header);
-    header := 'Content-Type: ' + ContentTypeMultipart + '; boundary="'+header+'"';
+    header := TMIMEMultipartData.HeaderForBoundary(header);
   end;
 begin
   if variablesReplaced then exit; //this method is still supposed to be only called once
