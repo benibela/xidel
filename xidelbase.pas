@@ -886,7 +886,7 @@ procedure THTTPRequest.replaceVariables;
       mime.addFormData(name, nvalue, filename, contenttype, '');
     end;
     data := mime.compose(header);
-    header := 'Content-Type: ' + ContentTypeMultipart + '; boundary="'+header+'"';
+    header := TMIMEMultipartData.HeaderForBoundary(header);
   end;
 begin
   if variablesReplaced then exit; //this method is still supposed to be only called once
@@ -909,6 +909,8 @@ function isStdin(s: string): boolean;
 begin
   result := (s = '-') or (s = 'stdin:///') or (s = 'stdin:') or (s = 'stdin://');
 end;
+
+procedure closeMultiArgs(var oldValue: string; separator: string); forward;
 
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string;
@@ -937,6 +939,8 @@ begin
     if isStdin(method) then
       method := trim(strReadFromStdin);
   end;
+  if reader is TOptionReaderFromCommandLine then closeMultiArgs(data, '&');
+  header := trim(header);
   if isStdin(data) then
     data := strReadFromStdin;
 end;
@@ -2378,6 +2382,8 @@ TCommandLineReaderBreaker = class(TCommandLineReader)
   procedure setProperties(newProperties: TPropertyArray);
   function getProperties(): TPropertyArray;
 
+
+
 end;
 
 { TCommandLineReaderBreaker }
@@ -2423,6 +2429,12 @@ var currentContext: TProcessingContext;
 
 procedure pushCommandLineState;
 begin
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('post') then
+    TCommandLineReaderBreaker(mycmdline).overrideVar('post', commandLineStackLastPostData);
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('form') then
+    TCommandLineReaderBreaker(mycmdline).overrideVar('form', commandLineStackLastFormData);
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('header') then
+    TCommandLineReaderBreaker(mycmdline).overrideVar('header', commandLineLastHeader);
   SetLength(commandLineStack, length(commandLineStack) + 1);
   commandLineStack[high(commandLineStack)] := TCommandLineReaderBreaker(mycmdline).getProperties;
   SetLength(commandLineStack[high(commandLineStack)], length(commandLineStack[high(commandLineStack)]));
@@ -2441,6 +2453,8 @@ begin
     commandLineStackLastPostData := TCommandLineReaderBreaker(mycmdline).readString('post');
   if TCommandLineReaderBreaker(mycmdline).existsProperty('form') then
     commandLineStackLastFormData := TCommandLineReaderBreaker(mycmdline).readString('form');
+  if TCommandLineReaderBreaker(mycmdline).existsProperty('header') then
+    commandLineLastHeader := TCommandLineReaderBreaker(mycmdline).readString('header');
 end;
 
 procedure variableInterpret(pseudoself, sender: TObject; var name, value: string; const args: TStringArray; var argpos: integer);
@@ -2451,27 +2465,30 @@ begin
   end;
 end;
 
+procedure closeMultiArgs(var oldValue: string; separator: string);
+begin
+  if strEndsWith(oldValue, separator) then
+    delete(oldValue, length(oldValue) - length(separator) + 1, length(separator));
+end;
+
+function combineMultiArgs(var oldValue: string; appendValue, separator: string): string;
+begin
+  if (appendValue = '') then oldValue := ''
+  else begin
+    if appendValue[1] = '&' then delete(appendValue, 1, 1)
+    else if not strEndsWith(oldValue, separator) then oldValue := '';
+
+    oldValue := oldValue + appendValue + separator;
+  end;
+  Result := oldValue;
+end;
+
 procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
-  procedure parseVariableArg;
-  var
-    temps: String;
-    equalSign: SizeInt;
-    vars: bbutils.TStringArray;
+  procedure closeAllMultiArgs;
   begin
-    equalSign := pos('=', value);
-    if equalSign = 0 then temps := value
-    else begin
-      temps := copy(value, 1, equalSign - 1);
-      if strEndsWith(temps, ':') then delete(temps, length(temps), 1);
-    end;
-    vars := strSplit(temps, ',');
-    if (length(vars) <> 1) and (equalSign > 0) then raise EXidelException.Create('Cannot import multiple variables and specify a variable value at once. In '+value);
-    for temps in vars do begin
-      temps := trim(temps);
-      if strBeginsWith(temps, '$') then delete(temps, 1, 1);
-      if equalSign = 0 then htmlparser.variableChangeLog.add(temps, GetEnvironmentVariable(temps))
-      else htmlparser.variableChangeLog.add(trim(temps), strCopyFrom(value, equalSign+1));
-    end;
+    closeMultiArgs(commandLineStackLastPostData, '&');
+    closeMultiArgs(commandLineStackLastFormData, #0);
+    closeMultiArgs(commandLineLastHeader, #13#10);
   end;
 
 var
@@ -2507,6 +2524,7 @@ begin
     TCommandLineReaderBreaker(sender).removeVar('follow');
     TCommandLineReaderBreaker(sender).removeVar('extract');
     TCommandLineReaderBreaker(sender).removeVar('download');
+    closeAllMultiArgs;
   end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') or (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3')  then begin
     specialized := '';
     case name of
@@ -2533,19 +2551,24 @@ begin
   end else if (name = 'html') or (name = 'xml') then begin
     TCommandLineReaderBreaker(sender).overrideVar('input-format', name);
     TCommandLineReaderBreaker(sender).overrideVar('output-format', name);
-  end else if name = 'post' then begin
-    if strBeginsWith(value, '&') then
-      TCommandLineReaderBreaker(sender).overrideVar('post', commandLineStackLastPostData + value); //todo: change it such that multiple -d next to each other always add (till next -f [ ?), and -d "" can be used to clear it
-    commandLineStackLastPostData := TCommandLineReaderBreaker(sender).readString('post');
-  end else if name = 'form' then begin
-    if strBeginsWith(value, '&') then
-      TCommandLineReaderBreaker(sender).overrideVar('form', commandLineStackLastFormData + value);
-    commandLineStackLastFormData := TCommandLineReaderBreaker(sender).readString('form');
-  end else if name = 'header' then begin
-    TCommandLineReaderBreaker(sender).overrideVar('header', commandLineLastHeader + value + #13#10);
-    commandLineLastHeader := TCommandLineReaderBreaker(sender).readString('header');
-  end else if name = 'variable' then parseVariableArg
-  else if name = 'xmlns' then begin
+  end else if name = 'post' then
+    TCommandLineReaderBreaker(sender).overrideVar('post', combineMultiArgs(commandLineStackLastPostData, value, '&'))
+  else if name = 'form' then
+    TCommandLineReaderBreaker(sender).overrideVar('form', combineMultiArgs(commandLineStackLastFormData, value, #0))
+  else if name = 'header' then
+    TCommandLineReaderBreaker(sender).overrideVar('header', combineMultiArgs(commandLineLastHeader, value, #13#10))
+  else if name = 'variable' then begin
+    temps:=TrimLeft(value);
+    if strBeginsWith(temps, '$') then delete(temps, 1, 1);
+    i := pos('=', temps);
+    if i <= 0 then begin
+      htmlparser.variableChangeLog.add(temps, GetEnvironmentVariable(temps));
+    end else begin
+      if (i > 1) and (temps[i-1] =':') then delete(temps, i-1, 1);
+      specialized := strSplitGet('=', temps);
+      htmlparser.variableChangeLog.add(trim(specialized), temps);
+    end;
+  end else if name = 'xmlns' then begin
     temps:=trim(value);
     i := pos('=', temps);
     if i = 0 then htmlparser.QueryEngine.StaticContext.defaultElementTypeNamespace := TNamespace.create(temps, '')
@@ -2579,7 +2602,10 @@ begin
 
       currentContext := popCommandLineState;
 
-    end else currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    end else begin
+      closeAllMultiArgs;
+      currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    end;
   end;
 end;
 
@@ -2718,7 +2744,11 @@ begin
 
   mycmdLine.beginDeclarationCategory('Follow options:');
 
-  mycmdLine.declareString('follow', joined(['Expression extracting links from the page which will be followed.', 'If the expression extracts a sequence, all elements are followed.', 'If the value is an "a" node, its @href attribute is followed, if it is a "i/frame" node its @src attribute is followed, otherwise its text().', 'If it is an object, its url properties and its other properties can override command line arguments','Otherwise, the string value is treated as url.']));
+  mycmdLine.declareString('follow', joined(['Expression selecting data from the page which will be followed.',
+                                            'If the expression returns a sequence, all its elements are followed.',
+                                            'If it is an HTML element with an resource property this property is used, e.g. from an A element it will follow to its @href property.',
+                                            'If it is an object, its url property and its other properties can override command line arguments',
+                                            'Otherwise, the string value is used as url.']));
   mycmdline.addAbbreviation('f');
   mycmdLine.declareString('follow-exclude', 'Comma separated list of variables ignored in a follow template. (black list)');
   mycmdLine.declareString('follow-include', 'Comma separated list of variables used in a follow template. (white list)');
@@ -2735,12 +2765,12 @@ begin
     mycmdLine.declareFloat('wait', 'Wait a certain count of seconds between requests');
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
     mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
-    mycmdLine.declareString('post', 'Post request to send (url encoded) (prepending & concats multiple data)');
+    mycmdLine.declareString('post', joined(['Post request to send (url encoded). Multiple close occurrences are joined. If the new argument starts with &, it will always be joined. If it is empty, it will clear the previous parameters. ']));
     mycmdline.addAbbreviation('d');
-    mycmdLine.declareString('form', 'Post request to send (multipart encoded)');
+    mycmdLine.declareString('form', 'Post request to send (multipart encoded). See --usage. Can be used multiple times like --post.');
     mycmdline.addAbbreviation('F');
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
-    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)'); mycmdline.addAbbreviation('H');
+    mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b"). Can be used multiple times like --post.'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
   end;
@@ -3013,6 +3043,10 @@ begin
 end;
 
 var pxp: TXQNativeModule;
+
+{ TMultiParameterList }
+
+
 initialization
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
