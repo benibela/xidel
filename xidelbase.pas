@@ -2490,6 +2490,27 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
     closeMultiArgs(commandLineStackLastFormData, #0);
     closeMultiArgs(commandLineLastHeader, #13#10);
   end;
+  procedure parseVariableArg;
+  var
+    temps: String;
+    equalSign: SizeInt;
+    vars: bbutils.TStringArray;
+  begin
+    equalSign := pos('=', value);
+    if equalSign = 0 then temps := value
+    else begin
+      temps := copy(value, 1, equalSign - 1);
+      if strEndsWith(temps, ':') then delete(temps, length(temps), 1);
+    end;
+    vars := strSplit(temps, ',');
+    if (length(vars) <> 1) and (equalSign > 0) then raise EXidelException.Create('Cannot import multiple variables and specify a variable value at once. In '+value);
+    for temps in vars do begin
+      temps := trim(temps);
+      if strBeginsWith(temps, '$') then delete(temps, 1, 1);
+      if equalSign = 0 then htmlparser.variableChangeLog.add(temps, GetEnvironmentVariable(temps))
+      else htmlparser.variableChangeLog.add(trim(temps), strCopyFrom(value, equalSign+1));
+    end;
+  end;
 
 var
   specialized: string;
@@ -2557,18 +2578,8 @@ begin
     TCommandLineReaderBreaker(sender).overrideVar('form', combineMultiArgs(commandLineStackLastFormData, value, #0))
   else if name = 'header' then
     TCommandLineReaderBreaker(sender).overrideVar('header', combineMultiArgs(commandLineLastHeader, value, #13#10))
-  else if name = 'variable' then begin
-    temps:=TrimLeft(value);
-    if strBeginsWith(temps, '$') then delete(temps, 1, 1);
-    i := pos('=', temps);
-    if i <= 0 then begin
-      htmlparser.variableChangeLog.add(temps, GetEnvironmentVariable(temps));
-    end else begin
-      if (i > 1) and (temps[i-1] =':') then delete(temps, i-1, 1);
-      specialized := strSplitGet('=', temps);
-      htmlparser.variableChangeLog.add(trim(specialized), temps);
-    end;
-  end else if name = 'xmlns' then begin
+  else if name = 'variable' then parseVariableArg
+  else if name = 'xmlns' then begin
     temps:=trim(value);
     i := pos('=', temps);
     if i = 0 then htmlparser.QueryEngine.StaticContext.defaultElementTypeNamespace := TNamespace.create(temps, '')
