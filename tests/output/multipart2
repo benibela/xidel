@@ -1,0 +1,20 @@
+-----------------------------1212jhjg2ypsdofx0235p2z5as09
+Content-Disposition: form-data; name="a"
+
+b&c=d
+-----------------------------1212jhjg2ypsdofx0235p2z5as09
+Content-Disposition: form-data; name="e"
+
+f
+-----------------------------1212jhjg2ypsdofx0235p2z5as09
+Content-Disposition: form-data; name="f"; filename="tests/output/post1a"
+
+POST
+
+-----------------------------1212jhjg2ypsdofx0235p2z5as09
+Content-Disposition: form-data; name="g"; filename="tests/output/post1a"
+Content-Type: foo/bar
+
+POST
+
+-----------------------------1212jhjg2ypsdofx0235p2z5as09--

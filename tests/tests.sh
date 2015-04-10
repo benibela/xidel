@@ -356,6 +356,10 @@ tests/test.sh put1b  --method=POST --post test --method=PUT http://videlibri.sou
 tests/test.sh foobarmeth --method delete  http://videlibri.sourceforge.net/xidelecho.php -e //meth
 echo options | tests/test.sh foobarmeth2 --method -  http://videlibri.sourceforge.net/xidelecho.php -e //meth
 
+tests/test.sh multipart1 --form a=b http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw -e "'CT:'" -e //env/CONTENT_TYPE
+tests/test.sh multipart2 --form 'a=b&c=d' --form e=f --form "f=@tests/output/post1a" --form "g=@tests/output/post1a;type=foo/bar" http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw 
+
+
 tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
 tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
 
