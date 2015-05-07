@@ -30,7 +30,9 @@ const ExampleHTML: string = '<html><body>'#13#10+
 
     ExampleXPath: string = 'id("t2") / tbody / tr / td[1]';
 
-    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($name as xs:string){'#13#10'  id($name) / tbody / tr / td[1]'#13#10'};'#13#10'local:test("t2")';
+    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($table as element()){'#13#10 +
+                              '  $table / tbody / tr / td[1]'#13#10'};'#13#10+
+                              'local:test(id("t2"))';
 
     ExampleTemplateResult: string =
       'col: 123'#13#10 +
