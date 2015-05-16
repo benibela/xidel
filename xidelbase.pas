@@ -148,17 +148,6 @@ begin
   for i:=1 to high(s) do result := result + LineEnding + s[i];
 end;
 
-
-function makeAbsoluteFilePath(s: string): string; //todo: check if it really needed where it is used
-begin
-  result := s;
-  if strContains(s, '://') then exit;
-  if s = '' then exit;
-  if s[1] in AllowDirectorySeparators then exit;
-  if (length(s) >= 3) and (s[2] = ':') and (s[3] in AllowDirectorySeparators) then exit;
-  result := ExpandFileName(s)
-end;
-
 function strLoadFromFileChecked(const fn: string): string;
 begin
   result := strLoadFromFileUTF8(fn);
@@ -963,7 +952,8 @@ begin
   if not allowFileAccess then raise EXidelException.Create('File access not permitted');
   parent.printStatus('**** Retrieving: '+url+' ****');
   result := TDataObject.create(strLoadFromFileUTF8(url), url);
-  (result as TDataObject).fbaseurl:=makeAbsoluteFilePath((result as TDataObject).fbaseurl);
+  with result as TDataObject do
+    fbaseurl:=fileNameExpandToURI(fbaseurl);
 end;
 
 procedure TFileRequest.replaceVariables;
@@ -1999,7 +1989,7 @@ begin
       pageProcessed(nil,htmlparser);
     end;
     ekXPath2, ekXPath3, ekCSS, ekXQuery1, ekXQuery3: begin
-      xpathparser.StaticContext.BaseUri := makeAbsoluteFilePath(data.baseUri);
+      xpathparser.StaticContext.BaseUri := fileNameExpandToURI(data.baseUri);
       xpathparser.ParsingOptions.StringEntities:=xqseDefault;
       if extractQueryCache = nil then
         case extractKind of
