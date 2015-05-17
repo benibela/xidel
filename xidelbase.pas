@@ -519,34 +519,11 @@ begin
 end;
 
 function TDataObject.inputFormat: TInputFormat;
-  function checkRawDataForHtml: boolean; //following http://mimesniff.spec.whatwg.org/ (except allowing #9 as TT ) todo: what is with utf-16?
-  var tocheck: array[1..16] of string = ('<!DOCTYPE HTML', '<HTML', '<HEAD', '<SCRIPT', '<IFRAME', '<H1', '<DIV', '<FONT', '<TABLE', '<A', '<STYLE', '<TITLE', '<B', '<BODY', '<BR', '<P');
-    i: Integer;
-  begin
-    for i := low(tocheck) to high(tocheck) do
-      if (length(rawData) > length(tocheck[i])) and
-         (rawData[length(tocheck[i])+1] in [' ', '>', #9]) and
-         (striBeginsWith(rawData, tocheck[i])) then
-        exit(true);
-    exit(false);
-  end;
-
+const FormatMap: array[TInternetToolsFormat] of TInputFormat = ( ifXML, ifHTML, ifJSON, ifXML );
 begin
   result := finputFormat;
   if result = ifAuto then
-    if striEndsWith(baseUri, 'html') or striEndsWith(baseUri, 'htm')
-       or striContains(contenttype, 'html')
-       or checkRawDataForHtml() then
-      Result := ifHTML
-    else if strBeginsWith(rawData, '<?xml') then //mimesniff.spec says to check for this
-      result := ifXML
-    else if striEndsWith(baseUri, '.json')
-         or striContains(contentType, 'json')
-         or strBeginsWith(rawData, '{')
-         or strBeginsWith(rawData, '[') then
-      result := ifJSON
-    else
-      result := ifXML;
+    result := FormatMap[guessFormat(rawData, baseUri, contentType)];
 end;
 
 
@@ -1034,7 +1011,7 @@ begin
   case guessType(data) of
     rtRemoteURL: result := THTTPRequest.Create(data);
     rtFile: result := TFileRequest.create(data);
-    rtEmpty, rtXML: result := TDirectDataRequest.create(data);
+    rtEmpty, rtXML, rtJSON: result := TDirectDataRequest.create(data);
     else raise EXidelException.Create('Impossible 232');
   end;
   //todo: handle completely empty data ''
