@@ -1,4 +1,4 @@
-{Copyright (C) 2012  Benito van der Zander
+{Copyright (C) 2012-2015  Benito van der Zander
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -40,7 +40,6 @@ var cgimode: boolean = false;
     minorVersion: integer = 8;
     buildVersion: integer = 4;
 
-type TExtractionKind = (ekAuto, ekXPath2, ekXPath3, ekTemplate, ekCSS, ekXQuery1, ekXQuery3, ekMultipage);
 
 type EXidelException = class(Exception);
 
@@ -1475,60 +1474,6 @@ end;
 
 
 
-function guessExtractionKind(e: string): TExtractionKind;
-  function checkWords(first: string; second: array of string): boolean;
-  var
-    temp: PChar;
-    i: Integer;
-  begin
-    if length(e) < length(first) + 1 then exit(false);
-    if not strBeginsWith(e, first) then exit(false);
-    if not (e[length(first)+1] in [#1..#32]) then exit(false);
-    if length(second) = 0 then exit(true);
-    temp := @e[length(first)+1];
-    while temp^ in [#1..#32] do inc(temp); //skip additional whitespace
-    for i:= 0 to high(second) do
-      if strBeginsWith(temp, second[i]) then exit(true);
-    exit(false);
-  end;
-var
-  dots: Integer;
-  i: Integer;
-begin
-  { try to detect the type of an extract expression:
-    Template:  if it is an xml file, i.e. starts with a <
-    CSS:       If it contains many # or .    i.e. if there is a [#.] before any other non letter/space character
-    XQuery:    If it starts with a XQuery only command (i.e. xquery version, declare function, ...)
-    XPath:     otherwise
-  }
-
-
-  if (e = '') or (e = '.' {just context item}) then exit(ekXPath3);
-  if e[1] in [#0..#32] then e := trim(e);
-  if (e[1] = '<') then exit(ekTemplate);
-
-  if e[1] = '#' then exit(ekCSS);
-
-  if checkWords('xquery', ['version']) or checkWords('typeswitch', []) or checkWords('import', ['module', 'schema']) or
-     checkWords('module', ['namespace']) or
-     checkWords('declare', ['function', 'variable', 'namespace', 'default', 'boundary-space', 'base-uri', 'option', 'construction', 'copy-namespace'])
-     or checkWords('let', []) {<- that will be changed to mean xpath 3 some time} then
-    exit(ekXQuery3);
-
-  result := ekXPath3;
-
-  dots := 0;
-  for i := 1 to length(e) do
-    case e[i] of
-      'a'..'z','A'..'Z',#1..#32: ;
-      '#': exit(ekCSS);
-      '.': if ((i = 1) or (e[i-1] in ['a'..'z','A'..'Z'])) and ((i = length(e)) or (e[i+1] in ['a'..'z','A'..'Z'])) then
-         dots+=1;
-      else exit(ekXPath3);
-    end;
-  if dots > 0 then exit(ekCSS)
-  else exit(ekXPath3);
-end;
 
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
