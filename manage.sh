@@ -16,6 +16,9 @@ getVersion
 
 action=2
 
+BASE=$HGROOT/programs/internet/xidel
+
+
 function pushhg(){
 	VIDELIBRIBASE=$HGROOT/programs/internet/VideLibri
 	PUBLICHG=$HGROOT/../videlibrixidelpublichg
@@ -68,6 +71,12 @@ release)
         ;;
         
 hg)     pushhg;;
+
+mirror) 
+        SF_PROJECT= 
+        mirroredProject xidel
+        syncHg _hg.filemap
+        ;;
 
 src)
 	pushhg
