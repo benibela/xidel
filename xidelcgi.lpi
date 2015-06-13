@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -48,12 +48,14 @@
       <Unit0>
         <Filename Value="xidelcgi.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xidelcgi"/>
       </Unit0>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
+    <Target>
+      <Filename Value="xidelcgi"/>
+    </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <OtherUnitFiles Value="/home/benito/hg/components/pascal/import/synapse/;/home/benito/hg/components/pascal/import/regexpr/Source/;/home/benito/hg/components/pascal/internet/;.;../../../components/pascal/import/bigint"/>
@@ -70,12 +72,6 @@
         </Win32>
       </Options>
     </Linking>
-    <Other>
-      <CompilerMessages>
-        <UseMsgFile Value="True"/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

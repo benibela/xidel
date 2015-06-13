@@ -4,7 +4,7 @@ program xidelsoap;
 
 uses
   xidelbase, simplehtmltreeparser,
-  rcmdlinecgi, utf8tools, sysutils, strutils, bbutils
+  rcmdlinecgi, utf8tools, sysutils, strutils, bbutils, extendedhtmlparser
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
