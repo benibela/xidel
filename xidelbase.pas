@@ -1931,7 +1931,7 @@ begin
         if firstExtraction then begin
           firstExtraction := false;
           if outputFormat = ofXMLWrapped then wln('<e>');
-        end else wln(outputArraySeparator[outputFormat]);
+        end else w(outputArraySeparator[outputFormat]);
 
         value := parent.evaluateQuery(extractQueryCache, data, true);
         printExtractedValue(value, false);

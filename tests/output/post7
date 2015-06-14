@@ -1,5 +1,4 @@
 POST
 user=login&pass=password
-
 POST
 user=login&a=b
