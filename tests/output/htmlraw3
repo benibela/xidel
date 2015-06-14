@@ -3,7 +3,6 @@
 <span class="title"><title>AAA</title></span>
 <span class="result"><a href="b.xml">b</a></span>
 <span class="result"><a href="c.xml">c</a></span>
-
 <span class="title"><title>BBB</title></span>
 <span class="result"><a href="c.xml">c</a></span>
 <span class="result"><a href="b1.xml">b1</a></span>

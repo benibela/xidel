@@ -61,9 +61,8 @@ type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML,
 var //output options
     outputFormat: TOutputFormat;
     outputEncoding: TEncoding = eUTF8;  //default to utf-8
-    outputHeader, outputFooter: string;
-    firstExtraction: boolean = true;
-    outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
+    outputHeader, outputFooter, outputSeparator: string;
+    //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
 
     internet: TInternetAccess;
@@ -138,7 +137,76 @@ begin
   w(LineEnding);
 end;
 
-function joined(s: array of string): string;
+var firstItem: boolean = true;
+
+procedure writeItem(const s: string);
+begin
+  if not firstItem then begin
+    w(outputSeparator);
+  end;
+  w(s);
+  firstItem := false;
+end;
+
+procedure writeVarName(const s: string);
+begin
+  writeItem(s);
+  firstItem := true; //prevent another line break / separator
+end;
+
+var firstGroup: boolean = true;
+
+procedure writeBeginGroup;
+begin
+  case outputFormat of
+    ofXMLWrapped: begin
+      w('<e>');
+    end;
+    ofJsonWrapped: if not firstGroup then wln(', ');
+  end;
+  firstGroup := false;
+end;
+
+procedure writeEndGroup;
+begin
+  case outputFormat of
+    ofXMLWrapped: wln('</e>');
+  end;
+end;
+
+{procedure printBeginValueGroup;
+begin
+
+end;
+
+procedure printBeginValue(varname: string);
+begin
+  case outputFormat of
+    ofXMLWrapped: w('<e>');
+  end;
+  firstValue := false;
+end;
+
+procedure printInnerValueSeparator;
+begin
+  if not firstValue then begin
+    w(outputSeparator);
+    //w(outputArraySeparator[outputFormat]);
+  end;
+  firstValue := false;
+end;
+
+procedure printEndValue;
+begin
+end;
+
+procedure printEndValueGroup;
+begin
+
+end;                             }
+
+
+function joined(s: array of string): string; //for command line help
 var
   i: Integer;
 begin
@@ -1686,19 +1754,25 @@ begin
   else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
 end;
 
+var hasRawWrapper: boolean = false;
 procedure needRawWrapper;
-begin
-  if outputFooter <> '' then exit;
-  case outputFormat of
-    ofRawHTML: begin
-      wln('<html><body>');
-      outputFooter := '</body></html>';
-    end;
-    ofRawXML: begin
-      wln('<xml>');
-      outputFooter := '</xml>';
-    end;
+  procedure setHeaderFooter(const h, f: string);
+  begin
+    w(h);
+    if outputSeparator = LineEnding then wln();
+    if not mycmdline.existsProperty('output-footer') then outputFooter := f + LineEnding;
   end;
+
+begin
+  if hasRawWrapper then exit;
+  hasRawWrapper := true;
+  if not mycmdline.existsProperty('output-header') then
+    case outputFormat of
+      ofRawHTML: setHeaderFooter('<html><body>', LineEnding +  '</body></html>');
+      ofRawXML: setHeaderFooter('<xml>', LineEnding + '</xml>');
+      ofJsonWrapped: setHeaderFooter('[', LineEnding + ']');
+      ofXMLWrapped: setHeaderFooter('<seq>', '</seq>');
+    end;
 end;
 
 function bashStrEscape(s: string): string;
@@ -1743,6 +1817,51 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
     end;
   end;
 
+  function singletonToString(const v: IXQValue): string;
+    function escapeToXQueryString(const s: string): string;
+    begin
+      result := StringReplace(s, '&', '&amp;', [rfReplaceAll]);
+      if pos('"', result) = 0 then exit('"' + result + '"');
+      if pos('''', result) = 0 then exit('''' + result + '''');
+      result := StringReplace(s, '"', '""', [rfReplaceAll]);
+      result := '"' + result + '"';
+    end;
+
+  begin
+    case v.kind of
+      pvkNode: begin
+        if (outputFormat <> ofAdhoc) and (printTypeAnnotations or (not (v.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText))) and not invariable then needRawWrapper;
+        case printedNodeFormat of
+          tnsText: result := escape(v.toString);
+          tnsXML: result := cmdescape(v.toNode.outerXML());
+          tnsHTML: result := cmdescape(v.toNode.outerHTML());
+          else raise EInvalidArgument.Create('Unknown node print format');
+        end;
+        if printTypeAnnotations then
+          if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
+            result := 'text{' + escapeToXQueryString(result) + '}';
+      end;
+      pvkObject, pvkArray: begin
+        if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+        result := escape(v.jsonSerialize(printedNodeFormat));
+      end;
+      else if not printTypeAnnotations then begin
+        if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+        exit(escape(v.toString));
+      end else case v.kind of
+        pvkBoolean:
+          if v.toBoolean then result := escape('true()')
+          else result := escape('false()');
+        pvkNull: result := 'null';
+        pvkInt64, pvkFloat, pvkBigDecimal: result := escape(v.toString);
+        pvkString, pvkQName, pvkDateTime:
+          if v.typeAnnotation.schema.url = XMLNamespaceURL_XMLSchema then result := escape('xs:'+v.typeName+'('+escapeToXQueryString(v.toString)+')')
+          else result := escape('Q{'+v.typeAnnotation.schema.url + '}' + v.typeName+'('+escapeToXQueryString(v.toString)+')');
+        pvkFunction: raise EXidelException.Create('Cannot serialize function');
+      end;
+    end;
+  end;
+
 var
   i: Integer;
   temp: TXQValueObject;
@@ -1754,34 +1873,27 @@ begin
         printCmdlineVariable(defaultName, value);
         exit;
       end;
-      if value is TXQValueSequence then begin
-        if (outputFormat <> ofAdhoc) and ((value.getSequenceCount > 0) or printTypeAnnotations) and not invariable then needRawWrapper;
-        if printTypeAnnotations then w(escape(value.typeName+': '));
-        i := 0;
-        for x in value do begin
-          if i <> 0 then wln();
-          printExtractedValue(x, true);
-          i += 1;
+      case value.getSequenceCount of
+        0: begin
+          if not printTypeAnnotations then exit;
+          if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+          writeItem(escape('empty-sequence()'));
         end;
-      end else if value is TXQValueNode then begin
-        if (outputFormat <> ofAdhoc) and (printTypeAnnotations or (not (value.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText))) and not invariable then needRawWrapper;
-        if printTypeAnnotations then w(escape(value.typeName+': '));
-        case printedNodeFormat of
-          tnsText: w(escape(value.toString));
-          tnsXML: w(cmdescape(value.toNode.outerXML()));
-          tnsHTML: w(cmdescape(value.toNode.outerHTML()));
-          else raise EInvalidArgument.Create('Unknown node print format');
+        1: begin
+          //if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+          writeItem(singletonToString(value.get(1)))
         end;
-      end
-      else if (value is TXQValueObject) or (value is TXQValueJSONArray) then begin
-        if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-        if printTypeAnnotations then begin needRawWrapper; w(escape(value.typeName+': ')); end;
-        w(escape(value.jsonSerialize(printedNodeFormat)));
-      end
-      else begin
-        if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-        if printTypeAnnotations then w(escape(value.typeName+': '));
-        w(escape(value.toString));
+        else begin
+          if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
+          if not printTypeAnnotations then begin
+            for x in value do writeItem(singletonToString(x));
+          end else begin
+            writeItem(escape('(') + singletonToString(value.get(1)) + escape(', '));
+            for i := 2 to value.getSequenceCount - 1 do
+              writeItem(singletonToString(value.get(i)) + escape(', '));
+            writeItem(singletonToString(value.get(value.getSequenceCount)) + escape(')'));
+          end;
+        end;
       end;
     end;
     ofJsonWrapped: begin
@@ -1814,7 +1926,7 @@ begin
     if usedCmdlineVariables[i].name = name then begin
       if usedCmdlineVariables[i].count = 1 then
         case outputFormat of
-          ofBash: wln(name+'[0]="$'+name+'"');
+          ofBash: writeItem(name+'[0]="$'+name+'"');
           ofWindowsCmd: printCmdlineVariable(name+'[0]', usedCmdlineVariables[i].value);
         end;
       printCmdlineVariable(name+'['+IntToStr(usedCmdlineVariables[i].count)+']', value);
@@ -1823,11 +1935,10 @@ begin
     end;
 
   case outputFormat of
-    ofBash: w(name+'=');
-    ofWindowsCmd: w('SET '+name+'=');
+    ofBash: writeVarName(name+'=');
+    ofWindowsCmd: writeVarName('SET '+name+'=');
   end;
   printExtractedValue(value, true);
-  wln;
   SetLength(usedCmdlineVariables, length(usedCmdlineVariables)+1);
   usedCmdlineVariables[high(usedCmdlineVariables)].name:=name;
   usedCmdlineVariables[high(usedCmdlineVariables)].count:=1;
@@ -1839,11 +1950,6 @@ procedure TExtraction.printExtractedVariables(parser: THtmlTemplateParser; showD
 var
   i: Integer;
 begin
-  if firstExtraction then begin
-    firstExtraction := false;
-    if outputFormat = ofXMLWrapped then wln('<e>');
-  end else w(outputArraySeparator[outputFormat]);
-
   if pvFinal in printVariables then
     printExtractedVariables(parser.variables, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
 
@@ -1928,16 +2034,12 @@ begin
         parent.evaluateQuery(extractQueryCache, data, true);
         printExtractedVariables(htmlparser, true);
       end else begin
-        if firstExtraction then begin
-          firstExtraction := false;
-          if outputFormat = ofXMLWrapped then wln('<e>');
-        end else w(outputArraySeparator[outputFormat]);
-
         value := parent.evaluateQuery(extractQueryCache, data, true);
+        writeBeginGroup;
         printExtractedValue(value, false);
+        writeEndGroup;
         htmlparser.oldVariableChangeLog.add(defaultName, value);
       end;
-      wln;
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
       multipage.onPageProcessed:=@pageProcessed;
@@ -1986,9 +2088,9 @@ procedure TExtraction.printExtractedVariables(vars: TXQVariableChangeLog; state:
     result := ((length(extractInclude) = 0) and (arrayIndexOf(extractExclude, n) = -1)) or
               ((length(extractInclude) > 0) and (arrayIndexOf(extractInclude, n) > -1));
   end;
-  function showVar(n: string): boolean;
+  function showVar(const n: string): boolean;
   begin
-    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName) ) and (n <> 'json'); //todo: make json configurable
+    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName) ) and (n <> 'json') //todo: make json configurable
   end;
 
 var
@@ -1998,32 +2100,32 @@ var
   values: IXQValue;
   j: Integer;
 begin
+  writeBeginGroup;
   parent.printStatus(state);
   case outputFormat of
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then w(vars.Names[i] + ': ');
+           if showVar(vars.Names[i]) then writeVarName(vars.Names[i] + ': ');
            printExtractedValue(vars.get(i), showVar(vars.Names[i]));
-           wln;
          end;
     end;
     ofRawXML: begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then w('<'+vars.Names[i] + '>');
+           if showVar(vars.Names[i]) then writeVarName('<'+vars.Names[i] + '>');
            printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
-           if showVar(vars.Names[i]) then wln('</'+vars.Names[i] + '>');
+           if showVar(vars.Names[i]) then w('</'+vars.Names[i] + '>');
          end;
     end;
     ofRawHTML: begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then w('<span class="'+vars.Names[i] + '">');
+           if showVar(vars.Names[i]) then writeVarName('<span class="'+vars.Names[i] + '">');
            printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
-           if showVar(vars.Names[i]) then wln('</span>');
+           if showVar(vars.Names[i]) then w('</span>');
          end;
     end;
     ofJsonWrapped:
@@ -2040,15 +2142,15 @@ begin
         wln(']');
       end else begin
         first := true;
-        wln('{');
+        writeItem('{');
         setlength(tempUsed, vars.count);
         FillChar(tempUsed[0], sizeof(tempUsed[0])*length(tempUsed), 0);
         for i:=0 to vars.count-1 do begin
           if tempUsed[i] then continue;
           if acceptName(vars.Names[i]) then begin
-            if first then first := false
-            else wln(',');
-            w(jsonStrEscape(vars.Names[i]) + ': ');
+            if not first then wln(', ');
+            first := false;
+            writeVarName(jsonStrEscape(vars.Names[i]) + ': ');
             values := vars.getAll(vars.Names[i]);
             if values.getSequenceCount = 1 then printExtractedValue(values, true)
             else begin
@@ -2064,8 +2166,7 @@ begin
           for j := i + 1 to vars.count-1 do
             if vars.Names[i] = vars.Names[j] then tempUsed[j] := true;
         end;
-        wln();
-        wln('}');
+        w(LineEnding + '}');
     end;
     ofXMLWrapped: begin
       if hideVariableNames then begin
@@ -2081,7 +2182,7 @@ begin
         if not first then w('</e>');
         wln('</seq>');
       end else begin
-        wln('<object>');
+        w(LineEnding + '<object>' + LineEnding);
         for i:=0 to vars.count-1 do
            if acceptName(vars.Names[i])  then begin
              w('<'+vars.Names[i] + '>');
@@ -2095,6 +2196,7 @@ begin
       for i:=0 to vars.count-1 do
         printCmdlineVariable(vars.Names[i], vars.Values[i]);
   end;
+  writeEndGroup;
 end;
 
 
@@ -2711,11 +2813,12 @@ begin
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
+  mycmdLine.declareString('output-separator', 'Separator between multiple items (default: line break)', LineEnding);
+  mycmdLine.declareString('output-header', 'Header for the output.', '');
+  mycmdLine.declareString('output-footer', 'Footer for the output.', '');
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
-  //mycmdLine.declareString('output-header', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
-  //mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </xml> if you want to wrap everything in an xml node)', '');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -2802,38 +2905,42 @@ begin
 
   cmdlineWrapper.Free;
 
-  outputHeader := mycmdline.readString('output-declaration');
-  outputFooter := ''; //mycmdline.readString('output-footer');
+  outputHeader := mycmdline.readString('output-declaration') + mycmdline.readString('output-header');
+  if (outputHeader <> '') and not mycmdline.existsProperty('output-header') then outputHeader += LineEnding;
+  outputSeparator := mycmdline.readString('output-separator');
+  outputFooter := mycmdline.readString('output-footer');
   case mycmdLine.readString('output-format') of
     'adhoc': outputFormat:=ofAdhoc;
     'html': begin
       outputFormat:=ofRawHTML;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<!DOCTYPE html>'+LineEnding;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<!DOCTYPE html>'+LineEnding+outputHeader;
     end;
     'xml': begin
       outputFormat:=ofRawXML;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding+outputHeader;
     end;
     'xml-wrapped': begin
       outputFormat:=ofXMLWrapped;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding+outputHeader;
     end;
     'json', 'json-wrapped': begin
       outputFormat:=ofJsonWrapped;
       if (mycmdLine.readString('output-format') = 'json') then writeln(stderr, 'Warning: Output-format json is deprecated, use json-wrapped instead');
     end;
-    'bash': outputFormat:=ofBash;
-    'cmd':  outputFormat:=ofWindowsCmd;
+    'bash': begin
+      outputFormat:=ofBash;
+    end;
+    'cmd':  begin
+      outputFormat:=ofWindowsCmd;
+    end
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
+
 
   if assigned(onPreOutput) then onPreOutput(guessExtractionKind(mycmdline.readString('extract')));
 
   if outputHeader <> '' then w(outputHeader);
-  case outputFormat of
-    ofJsonWrapped: wln('[');
-    ofXMLWrapped: wln('<seq>');
-  end;
+  if outputFormat in [ofJsonWrapped, ofXMLWrapped] then needRawWrapper;
 
 
   htmlparser.TemplateParser.parsingModel:=pmHTML;
@@ -2888,24 +2995,24 @@ begin
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
   globalDuplicationList.Free;
-  mycmdLine.free;
   alternativeXMLParser.Free;
 
   case outputFormat of
-    ofJsonWrapped: wln(']');
+    {ofJsonWrapped:  wln(']');
     ofXMLWrapped: begin
       if not firstExtraction then wln('</e>');
       wln('</seq>');
-    end;
+    end;}
     ofWindowsCmd:
       for i := 0 to high(usedCmdlineVariables) do
         if usedCmdlineVariables[i].count > 1 then
           wln('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
   end;
 
-  if outputfooter <> '' then
-    wln(outputFooter);
+  if outputfooter <> '' then w(outputFooter)
+  else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
 
+  mycmdLine.free;
 end;
 
 
@@ -2949,6 +3056,7 @@ end;
 function xqFunctionBlocked(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
 begin
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
+  result := nil;
 end;
 
 procedure blockFileAccessFunctions;

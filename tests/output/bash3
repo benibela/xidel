@@ -2,7 +2,6 @@ title='AAA'
 result='b'
 result[0]="$result"
 result[1]='c'
-
 title[0]="$title"
 title[1]='BBB'
 result[2]='c'

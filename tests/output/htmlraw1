@@ -1,3 +1,5 @@
 <!DOCTYPE html>
 <html><body>
-<a href="b.xml">b</a><a href="c.xml">c</a></body></html>
+<a href="b.xml">b</a>
+<a href="c.xml">c</a>
+</body></html>

@@ -1,8 +1,5 @@
 result='1'
-
 result[0]="$result"
 result[1]='2'
 result[2]='3'
-
 result[3]='4'
-

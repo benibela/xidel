@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xml>
-<a href="b.xml">b</a><a href="c.xml">c</a>
-<a href="c.xml">c</a><a href="b1.xml">b1</a><a href="b2.xml">b2</a></xml>
+<a href="b.xml">b</a>
+<a href="c.xml">c</a>
+<a href="c.xml">c</a>
+<a href="b1.xml">b1</a>
+<a href="b2.xml">b2</a>
+</xml>
