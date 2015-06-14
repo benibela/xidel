@@ -1842,7 +1842,7 @@ begin
   if firstExtraction then begin
     firstExtraction := false;
     if outputFormat = ofXMLWrapped then wln('<e>');
-  end else wln(outputArraySeparator[outputFormat]);
+  end else w(outputArraySeparator[outputFormat]);
 
   if pvFinal in printVariables then
     printExtractedVariables(parser.variables, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
