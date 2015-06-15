@@ -1875,9 +1875,12 @@ begin
       end;
       case value.getSequenceCount of
         0: begin
-          if not printTypeAnnotations then exit;
+          if not printTypeAnnotations then begin
+            if invariable and (outputFormat in [ofBash, ofWindowsCmd]) then writeItem('');
+            exit;
+          end;
           if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-          writeItem(escape('empty-sequence()'));
+          writeItem(escape('()'));
         end;
         1: begin
           //if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
