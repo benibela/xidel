@@ -54,7 +54,7 @@ procedure perform;
 
 implementation
 
-uses process, strutils, xquery_json, xquery_utf8;
+uses process, strutils, bigdecimalmath, xquery_json, xquery_utf8;
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
@@ -1827,6 +1827,14 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       result := '"' + result + '"';
     end;
 
+    function qualifiedTypeName(const arg: string; const ignoreDefault: string = ''): string;
+    begin
+      if v.typeAnnotation.schema.url <> XMLNamespaceURL_XMLSchema then
+         exit(escape('Q{'+v.typeAnnotation.schema.url + '}' + v.typeName+'('+arg+')'));
+      if v.typeName = ignoreDefault then exit(escape(arg));
+      exit(escape('xs:'+v.typeName+'('+escapeToXQueryString(v.toString)+')'));
+    end;
+
   begin
     case v.kind of
       pvkNode: begin
@@ -1849,14 +1857,14 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
         exit(escape(v.toString));
       end else case v.kind of
-        pvkBoolean:
-          if v.toBoolean then result := escape('true()')
-          else result := escape('false()');
-        pvkNull: result := 'null';
-        pvkInt64, pvkFloat, pvkBigDecimal: result := escape(v.toString);
-        pvkString, pvkQName, pvkDateTime:
-          if v.typeAnnotation.schema.url = XMLNamespaceURL_XMLSchema then result := escape('xs:'+v.typeName+'('+escapeToXQueryString(v.toString)+')')
-          else result := escape('Q{'+v.typeAnnotation.schema.url + '}' + v.typeName+'('+escapeToXQueryString(v.toString)+')');
+        pvkBoolean:    result := qualifiedTypeName(IfThen(v.toBoolean, 'true()', 'false()'), 'boolean');
+        pvkNull:       result := 'null';
+        pvkInt64:      result := qualifiedTypeName(v.toString, 'integer');
+        pvkFloat:      result := qualifiedTypeName(v.toString, '');
+        pvkBigDecimal: result := qualifiedTypeName(v.toString, IfThen(IsIntegral(v.toDecimal), 'integer', 'decimal') );
+        pvkString:     result := qualifiedTypeName(escapeToXQueryString(v.toString), 'string' );
+        pvkQName, pvkDateTime:
+          result := qualifiedTypeName(escapeToXQueryString(v.toString), '' );
         pvkFunction: raise EXidelException.Create('Cannot serialize function');
       end;
     end;
