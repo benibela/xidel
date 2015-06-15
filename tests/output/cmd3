@@ -1,0 +1,11 @@
+SET title=AAA
+SET result=b
+SET result[0]=b
+SET result[1]=c
+SET title[0]=AAA
+SET title[1]=BBB
+SET result[2]=c
+SET result[3]=b1
+SET result[4]=b2
+SET #title=2
+SET #result=5

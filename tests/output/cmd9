@@ -1,0 +1,6 @@
+result='1'
+result[0]="$result"
+result[1]='2'
+result[2]='5'
+result[3]=''
+v='18'

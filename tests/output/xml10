@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+<e>
+<object>
+<result>1</result>
+<result>2</result>
+<result>3</result>
+</object>
+</e>
+<e>
+<object>
+<result>1</result>
+</object>
+</e>
+<e>7</e>
+</seq>

@@ -1,1 +1,1 @@
-result='xs:string("""'"'"'\\")'
+result='"""'"'"'\\"'

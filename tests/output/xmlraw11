@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+(2, 
+xs:int(&quot;17&quot;), 
+xs:untypedAtomic(&quot;?&quot;), 
+3.7, 
+xs:float(&quot;10&quot;))
+{&quot;a&quot;: 1}
+<a>bc</a>
+[10]
+</xml>

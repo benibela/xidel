@@ -1,1 +1,1 @@
-result=$'xs:string("""\'\\\\\n\r")'
+result=$'"""\'\\\\\n\r"'

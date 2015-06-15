@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+<e><seq><e>1</e><e>2</e></seq></e>
+<e>5</e>
+<e><seq/></e>
+<e>7</e>
+<e>
+<object>
+<v>18</v>
+</object>
+</e>
+</seq>
