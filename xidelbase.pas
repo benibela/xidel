@@ -3009,7 +3009,7 @@ begin
     ofWindowsCmd:
       for i := 0 to high(usedCmdlineVariables) do
         if usedCmdlineVariables[i].count > 1 then
-          wln('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
+          writeItem('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
   end;
 
   if outputfooter <> '' then w(outputFooter)
