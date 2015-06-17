@@ -210,6 +210,12 @@ tests/test.sh xmlraw9b --output-format xml --print-type-annotations -e '(1,2)' -
 #tests/test.sh htmlraw9b --output-format html --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
 tests/test.sh bash9b --output-format bash --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
 
+tests/test.sh separator-adhoc --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+tests/test.sh separator-xml --output-format xml --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+tests/test.sh separator-html --output-format html --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+
+tests/test.sh separator-xml2 --output-format xml --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+tests/test.sh separator-html2 --output-format html --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
 
 tests/test.sh adhoc10  '<x><a>1</a><a>2</a><a>3</a></x>' -e '<a>{.}</a>+' -e '<a>{.}</a>' -e 7
 tests/test.sh xml10  --output-format xml-wrapped  '<x><a>1</a><a>2</a><a>3</a></x>' -e '<a>{.}</a>+' -e '<a>{.}</a>' -e 7

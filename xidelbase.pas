@@ -1763,16 +1763,21 @@ procedure needRawWrapper;
     if not mycmdline.existsProperty('output-footer') then outputFooter := f + LineEnding;
   end;
 
+var
+  le: string;
 begin
   if hasRawWrapper then exit;
   hasRawWrapper := true;
-  if not mycmdline.existsProperty('output-header') then
+  if not mycmdline.existsProperty('output-header') then begin
+    if not mycmdline.existsProperty('output-separator') then le := LineEnding
+    else le := '';
     case outputFormat of
-      ofRawHTML: setHeaderFooter('<html><body>', LineEnding +  '</body></html>');
-      ofRawXML: setHeaderFooter('<xml>', LineEnding + '</xml>');
-      ofJsonWrapped: setHeaderFooter('[', LineEnding + ']');
+      ofRawHTML: setHeaderFooter('<html><body>', le +  '</body></html>');
+      ofRawXML: setHeaderFooter('<xml>', le + '</xml>');
+      ofJsonWrapped: setHeaderFooter('[', le + ']');
       ofXMLWrapped: setHeaderFooter('<seq>', '</seq>');
     end;
+  end;
 end;
 
 function bashStrEscape(s: string): string;
@@ -2825,8 +2830,8 @@ begin
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   mycmdLine.declareString('output-separator', 'Separator between multiple items (default: line break)', LineEnding);
-  mycmdLine.declareString('output-header', 'Header for the output.', '');
-  mycmdLine.declareString('output-footer', 'Footer for the output.', '');
+  mycmdLine.declareString('output-header', '2nd header for the output. (e.g. <html>)', '');
+  mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </html>)', '');
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
