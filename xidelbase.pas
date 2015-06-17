@@ -2122,7 +2122,7 @@ begin
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then writeVarName(vars.Names[i] + ': ');
+           if showVar(vars.Names[i]) then writeVarName(vars.Names[i] + ' := ');
            printExtractedValue(vars.get(i), showVar(vars.Names[i]));
          end;
     end;

@@ -1,2 +1,2 @@
-v: bar
+v := bar
 data=bar

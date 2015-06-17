@@ -1,4 +1,4 @@
 hello
-temp: hello
+temp := hello
 7
-res: 7
+res := 7

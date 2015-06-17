@@ -1,1 +1,1 @@
-_result: <raw>foobar&amp;123</raw>
+_result := <raw>foobar&amp;123</raw>

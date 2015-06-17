@@ -1,1 +1,1 @@
-_result: http://example.org/b.xml
+_result := http://example.org/b.xml

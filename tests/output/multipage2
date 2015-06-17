@@ -1,2 +1,2 @@
-_result: AAA
-_result: BBB
+_result := AAA
+_result := BBB
