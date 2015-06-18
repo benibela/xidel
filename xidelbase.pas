@@ -510,7 +510,7 @@ TProcessingContext = class(TDataProcessing)
   printReceivedHeaders: boolean;
   errorHandling: string;
 
-  quiet: boolean;
+  quiet, printPostData: boolean;
 
   ignoreNamespace: boolean;
   compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityNoExtendedJson, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
@@ -835,8 +835,8 @@ var
 begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
-  parent.printStatus('**** Retrieving: '+url+' ****');
-  if data <> '' then parent.printStatus(method+': '+data);
+  parent.printStatus('**** Retrieving ('+method+'): '+url+' ****');
+  if parent.printPostData and (data <> '') then parent.printStatus(data);
   result := TDataObject.create('', url);
   if assigned(onRetrieve) then begin
     (result as TDataObject).frawdata := doRetrieve(10);
@@ -1348,6 +1348,7 @@ begin
   if reader.read('output-encoding', tempstr) then setOutputEncoding(tempstr); //allows object returned by extract to change the output-encoding
 
   reader.read('quiet', quiet);
+  reader.read('verbose', printPostData);
 
   {if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
   else begin
@@ -1458,6 +1459,7 @@ begin
   errorHandling:=errorHandling;
 
   quiet := other.quiet;
+  printPostData := other.printPostData;
 
   compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
   compatibilityNoJSON := other.compatibilityNoJSON;
@@ -2819,6 +2821,7 @@ begin
   mycmdLine.beginDeclarationCategory('Output options:');
 
   mycmdLine.declareFlag('quiet','Do not print status information to stderr', 'q');
+  mycmdline.declareFlag('verbose', 'Print more status information');
   mycmdLine.declareString('default-variable-name', 'Variable name for values read in the template without explicitely given variable name', 'result');
   mycmdLine.declareString('print-variables', joined(['Which of the separate variable lists are printed', 'Comma separated list of:', '  log: Prints every variable value', '  final: Prints only the final value of a variable, if there are multiple assignments to it', '  condensed-log: Like log, but removes assignments to object properties(default)']), 'condensed-log');
   mycmdLine.declareFlag('print-type-annotations','Prints all variable values with type annotations (e.g. string: abc, instead of abc)');
