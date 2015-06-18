@@ -2709,13 +2709,21 @@ begin
     writeln(stderr, indent + 'actions: ');
     for i := 0 to high(pc.actions) do
       debugPrintContext(pc.actions[i], indent + '  ');
+    if pc.follow <> '' then wswi('follow: ' + pc.follow);
     if pc.followTo <> nil then begin
       writeln(stderr, indent + 'follow to: ');
       if pc.followTo = dp then writeln(stderr, indent + ' recursion')
       else debugPrintContext(pc.followTo, indent + '  ');
     end;
+    if pc.nextSibling <> nil then begin
+      writeln(stderr, indent + 'Next Sibling');
+      debugPrintContext(pc.nextSibling, indent);
+    end;
   end else if dp is TFollowToWrapper then begin
-    wswi('follow to wrapper');
+    wswi(     'follow to wrapper: ' + TFollowToWrapper(dp).followTo.ClassName);
+    indent += '                   ';
+    if TFollowToWrapper(dp).followTo is THTTPRequest then wswi(THTTPRequest(TFollowToWrapper(dp).followTo).url)
+    else if TFollowToWrapper(dp).followTo is TFileRequest then wswi(TFileRequest(TFollowToWrapper(dp).followTo).url)
   end else if dp is TExtraction then begin
     wswi('extract: '+TExtraction(dp).extract);
   end else if dp is TDownload then begin
@@ -2838,6 +2846,7 @@ begin
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
+  mycmdline.declareFlag('debug-arguments', 'Shows how the command line arguments were parsed');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -2917,7 +2926,8 @@ begin
 
   baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
 
-  //debugPrintContext(baseContext);
+  if mycmdline.readFlag('debug-arguments') then
+    debugPrintContext(baseContext);
 
   if allowInternetAccess and assigned(onPrepareInternet) then
     onPrepareInternet(baseContext.userAgent, baseContext.proxy);
