@@ -1548,6 +1548,7 @@ begin
     TProcessingContext(result).nextSibling := nextSibling.clone(TProcessingContext(result)) as TProcessingContext;
   end;
 
+  TProcessingContext(result).follow := follow;
   if followTo <> nil then
     if followTo = self then TProcessingContext(result).followTo := TProcessingContext(result)
     else TProcessingContext(result).followTo := TProcessingContext(followTo.clone(TProcessingContext(result)));
