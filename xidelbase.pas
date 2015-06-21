@@ -493,9 +493,15 @@ end;
 
 { TProcessingContext }
 
+//Processing is done in processing contexts
+//A processing context can have its own data sources (TFollowTo or data sources of a nested processing context) or receive the data from its parent
+//To every data source actions are applied (e.g. tdownload or textraction). These actions can also yield new data sources (e.g. follow := assignments or nested processing contexts with yieldDataToParent)
+//The expression in follow is evaluated and the resulting data processed in the context followTo
+//Then processing continues in nextSibling
+//Remaining unprocessed data is passed to the parent
 TProcessingContext = class(TDataProcessing)
-  dataSources: array of TDataProcessing;
-  actions: array of TDataProcessing;
+  dataSources: array of TDataProcessing; //data sources, e.g. a list of URLs
+  actions: array of TDataProcessing;     //actions e.g. a download target
 
   follow: string;
   followQueryCache: IXQuery;
@@ -2594,7 +2600,11 @@ var
   specialized: string;
   temps: String;
 begin
-  if (name = 'follow') or (name = 'follow-file')  then begin //follow creates a new followTo context
+  if (name = 'follow') or (name = 'follow-file')             //follow always create new processing context
+     or ((name = '') and (value <> '[') and (value <> ']')   //plain data/url
+          and (((currentContext.parent <> nil) and (currentContext.parent.followTo = currentContext)) or (length(currentContext.actions) > 0))) //only creates new context, if previous context is not a follow context and had no action yet (otherwise it becomes new data source in the previous context)
+  then begin
+
     if name = 'follow-file' then
       if isStdin(value) then TCommandLineReaderBreaker(sender).overrideVar('follow', '-')
       else TCommandLineReaderBreaker(sender).overrideVar('follow', strLoadFromFileChecked(value));
@@ -2603,13 +2613,22 @@ begin
     currentContext.readOptions(cmdlineWrapper);
     TCommandLineReaderBreaker(sender).clearNameless;
 
-    if (length(currentContext.actions) > 0) and (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
-      TProcessingContext(currentContext.actions[high(currentContext.actions)]).last.yieldDataToParent := true; //a follow directly after a closing bracket like ] -f // will apply it to the last data there
-    //following (applying the later commands to the data read by the current context)
-    currentContext.followTo := TProcessingContext.Create;
-    currentContext.followTo.assignOptions(currentContext);
-    currentContext.followTo.parent := currentcontext;
-    currentContext := currentContext.followTo;
+    if name <> '' then begin
+      if (length(currentContext.actions) > 0) and (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
+        TProcessingContext(currentContext.actions[high(currentContext.actions)]).last.yieldDataToParent := true; //a follow directly after a closing bracket like ] -f // will apply it to the last data there
+      //following (applying the later commands to the data read by the current context)
+      currentContext.followTo := TProcessingContext.Create;
+      currentContext.followTo.assignOptions(currentContext);
+      currentContext.followTo.parent := currentcontext;
+      currentContext := currentContext.followTo;
+    end else begin
+      //sibling (later commands form a new context, unrelated to the previous one)
+      currentContext.nextSibling := TProcessingContext.Create;
+      currentContext.nextSibling.assignOptions(currentContext);
+      currentContext.nextSibling.parent := currentContext.parent;
+      currentContext := currentContext.nextSibling;
+      currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
+    end;
 
     TCommandLineReaderBreaker(sender).removeVar('follow');
     TCommandLineReaderBreaker(sender).removeVar('extract');
@@ -2685,15 +2704,6 @@ begin
 
     end else begin
       closeAllMultiArgs;
-      currentContext := contextStack[high(contextStack)];
-      while currentContext.nextSibling <> nil do currentContext := currentContext.nextSibling;
-      if (currentContext.follow <> '') or (length(currentContext.actions) > 0) then begin
-        //sibling (later commands form a new context, unrelated to the previous one)
-        currentContext.nextSibling := TProcessingContext.Create;
-        currentContext.nextSibling.assignOptions(currentContext);
-        currentContext.nextSibling.parent := currentContext.parent;
-        currentContext := currentContext.nextSibling;
-      end;
       currentContext.readNewDataSource(TFollowTo.createFromRetrievalAddress(value), cmdlineWrapper);
     end;
   end;
