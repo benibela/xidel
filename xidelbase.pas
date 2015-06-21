@@ -37,8 +37,8 @@ var cgimode: boolean = false;
     defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
 
     majorVersion: integer = 0;
-    minorVersion: integer = 8;
-    buildVersion: integer = 4;
+    minorVersion: integer = 9;
+    buildVersion: integer = 0;
 
 
 type EXidelException = class(Exception);
