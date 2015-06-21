@@ -415,6 +415,7 @@ TFollowToList = class(TFpObjectList)
   function containsEqual(ft: TFollowTo): boolean;
 private
   procedure addBasicUrl(absurl: string; baseurl: string);
+  procedure addObject(absurl: string; baseurl: string; options: TXQValueObject);
 end;
 
 
@@ -1189,23 +1190,48 @@ end;
 procedure TFollowToList.merge(dest: IXQValue; basedata: IData; parent: TProcessingContext);
 var x: IXQValue;
     temp: TProcessingContext;
+    tempv: TXQValue;
     n: TTreeNode;
+    keys: TStringList;
+    isPureDataSource: Boolean;
+    i: Integer;
+
 begin
   if dest.kind <> pvkSequence then
     dest := xpathparser.evaluateXPath2('pxp:resolve-html(., $url)', dest);
   case dest.kind of
     pvkUndefined: exit;
-    pvkObject: if parent <> nil then begin
-      temp := TProcessingContext.Create();
-      temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
-      temp.parent := parent;
-      temp.followTo := parent.followTo; //need to copy follow, so it follows to the new data
-      temp.nextSibling := parent.nextSibling;
-      temp.mergeWithObject(dest as TXQValueObject);
-      merge(temp.process(basedata));
-      temp.followTo := nil;
-      temp.nextSibling := nil;
-      temp.Free;
+    pvkObject: begin
+      keys := TStringList.Create;
+      (dest as TXQValueObject).enumerateKeys(keys);
+      isPureDataSource := true;
+      for i := 0 to keys.Count - 1 do
+        case keys[i] of
+          'header', 'headers', 'post', 'data', 'url', 'form', 'method': ;
+          else begin
+            isPureDataSource := false;
+            break;
+          end;
+        end;
+      keys.free;
+      if isPureDataSource then begin
+        if (dest as TXQValueObject).hasProperty('url', @tempv) then
+          addObject( tempv.toString, basedata.baseUri, dest as TXQValueObject)
+        else if (dest as TXQValueObject).hasProperty('data', @tempv) then
+          addObject(tempv.toString, basedata.baseUri, dest as TXQValueObject );
+      end else if parent <> nil then begin
+        temp := TProcessingContext.Create();
+        temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
+        temp.parent := parent;
+        temp.follow := parent.follow; //need to copy follow and follow-to, so it follows to the new data
+        temp.followTo := parent.followTo;
+        temp.nextSibling := parent.nextSibling;
+        temp.mergeWithObject(dest as TXQValueObject);
+        merge(temp.process(basedata));
+        temp.followTo := nil;
+        temp.nextSibling := nil;
+        temp.Free;
+      end;
     end;
     pvkSequence:
       for x in dest do
@@ -1229,6 +1255,20 @@ begin
   if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(absurl) = rtFile) then
     absurl := strResolveURI(absurl, baseurl);
   Add(TFollowTo.createFromRetrievalAddress(absurl));
+end;
+
+procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQValueObject);
+var
+  followTo: TFollowTo;
+  reader: TOptionReaderFromObject;
+begin
+  if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(absurl) = rtFile) then
+    absurl := strResolveURI(absurl, baseurl);
+  followTo := TFollowTo.createFromRetrievalAddress(absurl);
+  reader := TOptionReaderFromObject.create(options);
+  followTo.readOptions(reader);
+  reader.free;
+  add(followTo);
 end;
 
 procedure TDataProcessing.readOptions(reader: TOptionReaderWrapper);
@@ -1474,7 +1514,6 @@ begin
   ignoreNamespace:=other.ignoreNamespace;
   noOptimizations:=other.noOptimizations;
 
-  follow := other.follow;
   followExclude := other.followExclude;
   followInclude := other.followInclude;
   followMaxLevel := other.followMaxLevel;
