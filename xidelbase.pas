@@ -1678,27 +1678,31 @@ begin
   for i := 0 to high(dataSources) do
     next.merge(dataSources[i].process(nil));
   if (length(actions) = 0) and (follow = '') then begin
+    //nothing is to be done
     if res <> nil then res.free; //does this ever happen?
-    exit(next);
-  end;
+    result := next; //yield data to caller (??)
+    next := nil;
+  end else begin
+    //normal processing
+    if (data = nil) and (length(dataSources) = 0) and (length(actions) > 0) then
+      for i := 0 to high(actions) do
+        if actions[i] is TProcessingContext then //evaluate subexpressions, even if there is no data source (they might have their own sources)
+          next.merge(actions[i].process(nil), i + 1);
 
-  if (data = nil) and (length(dataSources) = 0) and (length(actions) > 0) then
-    for i := 0 to high(actions) do
-      if actions[i] is TProcessingContext then //evaluate subexpressions, even if there is no data source (they might have their own sources)
-        next.merge(actions[i].process(nil), i + 1);
-
-  curRecursionLevel := 0;
-  if data <> nil then curRecursionLevel:=data.recursionLevel+1;
-  while next.Count > 0 do begin
-    if curRecursionLevel <= followMaxLevel then begin
-      subProcess(next.First.retrieve(self, curRecursionLevel), next.first.nextAction);
-      if wait > 0.001 then Sleep(trunc(wait * 1000));
+    curRecursionLevel := 0;
+    if data <> nil then curRecursionLevel:=data.recursionLevel+1;
+    while next.Count > 0 do begin
+      if curRecursionLevel <= followMaxLevel then begin
+        subProcess(next.First.retrieve(self, curRecursionLevel), next.first.nextAction);
+        if wait > 0.001 then Sleep(trunc(wait * 1000));
+      end;
+      next.Delete(0);
     end;
-    next.Delete(0);
+
+
+    result := res;
   end;
 
-
-  result := res;
   if nextSibling <> nil then begin
     res := nextSibling.process(nil);
     if result = nil then result := res
