@@ -1197,12 +1197,14 @@ begin
     pvkUndefined: exit;
     pvkObject: if parent <> nil then begin
       temp := TProcessingContext.Create();
-      temp.assignOptions(parent);
+      temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
       temp.parent := parent;
+      temp.followTo := parent.followTo; //need to copy follow, so it follows to the new data
+      temp.nextSibling := parent.nextSibling;
       temp.mergeWithObject(dest as TXQValueObject);
-      if length(temp.actions) = 0 then
-        temp.assignActions(parent);
       merge(temp.process(basedata));
+      temp.followTo := nil;
+      temp.nextSibling := nil;
       temp.Free;
     end;
     pvkSequence:
@@ -1471,6 +1473,11 @@ begin
   compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
   ignoreNamespace:=other.ignoreNamespace;
   noOptimizations:=other.noOptimizations;
+
+  follow := other.follow;
+  followExclude := other.followExclude;
+  followInclude := other.followInclude;
+  followMaxLevel := other.followMaxLevel;
 end;
 
 procedure TProcessingContext.assignActions(other: TProcessingContext);
@@ -1496,10 +1503,6 @@ begin
     TProcessingContext(result).nextSibling := nextSibling.clone(TProcessingContext(result)) as TProcessingContext;
   end;
 
-  TProcessingContext(result).follow := follow;
-  TProcessingContext(result).followExclude := followExclude;
-  TProcessingContext(result).followInclude := followInclude;
-  TProcessingContext(result).followMaxLevel := followMaxLevel;
   if followTo <> nil then
     if followTo = self then TProcessingContext(result).followTo := TProcessingContext(result)
     else TProcessingContext(result).followTo := TProcessingContext(followTo.clone(TProcessingContext(result)));
@@ -2711,6 +2714,7 @@ begin
     for i := 0 to high(pc.actions) do
       debugPrintContext(pc.actions[i], indent + '  ');
     if pc.follow <> '' then wswi('follow: ' + pc.follow);
+    if pc.yieldDataToParent then wswi('yield to parent');
     if pc.followTo <> nil then begin
       writeln(stderr, indent + 'follow to: ');
       if pc.followTo = dp then writeln(stderr, indent + ' recursion')
