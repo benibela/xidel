@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-e '123 = &quot;&quot;'"/>
+        <CommandLineParams Value="--debug-arguments --verbose -e 'a:=1' --variable 'user,pass' 'https://moodle.uni-luebeck.de/' -f 'form(//form, {&quot;username&quot;: $user, &quot;password&quot;: $pass})'  -f '25335 ! x&quot;https://moodle.uni-luebeck.de/course/modedit.php?update={.}&amp;return=0&amp;sr=0&quot;' -e 1  -f 'form((//form)[1], {&quot;introeditor[text]&quot;: &quot;???==?&quot;})' -e 0"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
