@@ -346,6 +346,7 @@ public
   data: string;
   header: string;
   multipart: string;
+  rawURL: boolean;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
   function retrieve(parent: TProcessingContext): IData; override;
@@ -793,10 +794,12 @@ begin
   THTTPRequest(result).header:=header;
   THTTPRequest(result).multipart:=multipart;
   THTTPRequest(result).variablesReplaced:=variablesReplaced;
+  THTTPRequest(result).rawURL:=rawURL;
   result.assign(self);
 end;
 
 function THTTPRequest.retrieve(parent: TProcessingContext): IData;
+var escapedURL: string;
   function doRetrieve(retries: integer): string;
     function matches(filter: string; value: string): boolean;
     var
@@ -815,7 +818,7 @@ function THTTPRequest.retrieve(parent: TProcessingContext): IData;
     i: Integer;
   begin
     try
-      result := onRetrieve(method, url, data ,header);
+      result := onRetrieve(method, escapedURL, data ,header);
     except
       on e: EInternetException do begin
         errors := strSplit(parent.errorHandling, ',');
@@ -842,9 +845,11 @@ var
 begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
-  parent.printStatus('**** Retrieving ('+method+'): '+url+' ****');
+  escapedURL := url;
+  if not rawURL then escapedURL := urlHexEncode(url, [#32..#126]); //    fn:escape-html-uri
+  parent.printStatus('**** Retrieving ('+method+'): '+escapedURL+' ****');
   if parent.printPostData and (data <> '') then parent.printStatus(data);
-  result := TDataObject.create('', url);
+  result := TDataObject.create('', escapedURL);
   if assigned(onRetrieve) then begin
     (result as TDataObject).frawdata := doRetrieve(10);
     if assigned(internet) then begin
@@ -959,6 +964,7 @@ var temp: string;
 begin
   inherited;
   if method <> '' then exit; //already initialized, must abort to keep stdin working (todo: allow postfix data/method options?)
+  reader.read('raw-url', rawURL);
   reader.read('header', header);
   if reader is TOptionReaderFromObject then begin
     variablesReplaced := true;
@@ -2883,6 +2889,7 @@ begin
     mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b"). Can be used multiple times like --post.'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
+    mycmdLine.declareFlag('raw-url', 'Do not escape the url (preliminary)');
   end;
 
   mycmdLine.beginDeclarationCategory('Output options:');
