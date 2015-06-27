@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom,
+  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom, LazUTF8,
   rcmdline
   ;
 
@@ -2473,7 +2473,7 @@ TCommandLineReaderBreaker = class(TCommandLineReader)
   procedure setProperties(newProperties: TPropertyArray);
   function getProperties(): TPropertyArray;
 
-
+  procedure parseUTF8;
 
 end;
 
@@ -2510,6 +2510,23 @@ end;
 function TCommandLineReaderBreaker.getProperties: TPropertyArray;
 begin
   result := propertyArray;
+end;
+
+procedure TCommandLineReaderBreaker.parseUTF8;
+{$ifndef windows}
+var args: TStringArray;
+  i: Integer;
+{$endif}
+begin
+  if Paramcount = 0 then exit;
+
+  {$ifdef windows}
+  parse(SysToUTF8(string(GetCommandLine)), true);
+  {$else}
+  setlength(args, Paramcount);
+  for i:=0 to high(args) do args[i] := SysToUTF8(paramstr(i+1));
+  parse(args);
+  {$endif}
 end;
 
 var currentContext: TProcessingContext;
@@ -2939,7 +2956,7 @@ begin
 
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
 
-  mycmdLine.parse();
+  TCommandLineReaderBreaker(mycmdLine).parseUTF8();
 
   if Assigned(onPostParseCmdLine) then onPostParseCmdLine();
 
