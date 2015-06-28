@@ -2,32 +2,35 @@
 ================================================ Basics ================================================
 
 
-The trivial usage is to extract an expression from a webpage like:
+The most common usage is to extract an expression from a webpage like:
   
    xidel http://www.example.org --extract //title
 
 Instead of one or more urls, you can also pass file names or the xml data itself (xidel "<html>.." ...). 
-The --extract option can be abbreviated as -e, and there are few different kind of extract expressions:
+The --extract option can be abbreviated as -e, and there are different kinds of extract expressions:
  
-  1 ) XPath 2 expressions, with some changes and additional functions.
+  1 ) XPath 2 expressions, with some extensions and additional functions.
   
   2 ) XQuery 1 expressions
   
-  3 ) CSS 3 selectors. 
- 
-  4 ) Templates, a simplified version of the page which is pattern matched against the input
-  
-  5 ) Multipage templates, i.e. a file that contains templates for several pages
-  
-  6 ) (XPath 3 and XQuery 3 expressions, but they are work in progress and very incomplete  )
+  3 ) XPath 3 and XQuery 3 expressions, but these standards are not entirely supported yet
 
-The different kinds except multipage templates are usually automatically detected, but 
+  4 ) CSS 3 selectors
+ 
+  5 ) Templates, a simplified version of the page which is pattern matched against the input
+  
+  6 ) Multipage templates, i.e. a file that contains templates for several pages
+  
+
+These different kinds except multipage templates are usually automatically detected, but 
 a certain type can be forced with the extract-kind option.
 Or by using the shorter --xpath "..", --xquery "..", --css ".." options.
 Especially XQuery and template expressions are easily confused by the auto detector. 
 (Xidel assumes templates, if the expression starts with a "<" )
+If no XPath/XQuery version is given, Xidel uses the 3.0 mode.
 
-See the sections below for a more detailed description of each expression kind.
+
+See the sections below for a more detailed description of each kind of expression.
 
 
 
@@ -37,16 +40,21 @@ The next important option is --follow (abbreviated as -f) to follow links on a p
 
 This will print the titles of all pages that are linked from http://www.example.org.
 
---follow supports the same expressions as --extract, and it will follow the href or src attributes of the 
-usual elements, or the contained text if there are no such attributes.
+--follow supports the same expressions as --extract. If it selects an element, it will 
+go to the data referenced by that element (e.g. in a @href or @src attribute).
+Non standard elements are converted to a string, which is interpreted as an url.
+It will also follow forms, and the form-function can be used to fill-in some values in the form, e.g.:
 
+  xidel http://www.example.org -f "form((//form)[1], {'username': 'foobar', 'password': 'XXX'})" -e //title
+
+to submit the first form on a page to login somewhere. 
 
 
 ==============================  Recursion / Argument order and grouping ===============================
 
 
-You can specify multiple --extract (-e) and --follow (-f) arguments to extract values from one page, 
-follow the links to the next pages and extract values from there as well ...
+You can specify multiple --extract (-e) and --follow (-f) arguments to extract values from a page, 
+e.g. follow the links to the next pages and extract values from there as well ...
 Thereby it is important in which order the arguments are given, so e.g. it extracts before following, 
 and not the other way around.  
 You can usually read it left-to-right like an English sentence, extracting from the current page,
@@ -55,22 +63,22 @@ For example:
 
 a) xidel http://site1  -e "select content 1"  http://site2  -e "select content 2" 
   
-    This will extract content 1 from site 1 and content 2 from site 2
+    This will extract "content 1" from site 1 and "content 2" from site 2
 
 b) xidel http://site1 http://site2 -e "select content 1"  -e "select content 2"
 
-    This will extract content 1 and 2 from site 1 as well as from site 2
+    This will extract "content 1" and "content 2" from site 1 as well as from site 2
 
-c) xidel http://site1  -e "select content 1"     -f "//a (:select links:)"  -e "select content 2"
+c) xidel http://site1  -e "select content 1"     -f "//a (: i.e. select links:)"  -e "select content 2"
 
-    This will extract the "content 1" from site1, and "content 2" from all sites the first site has links to. 
+    This will extract "content 1" from site1, and "content 2" from all sites the first site has links to. 
     
-d) xidel http://site1  -f "//a (:select links:)" -e "select content 1"      -e "select content 2"
+d) xidel http://site1  -f "//a" -e "select content 1"      -e "select content 2"
  
     This will extract "content 1" and "content 2" from all sites the first site links to, and will not 
     extract anything from site1.    
 
-e) xidel http://site1  -e "select content 1"     -e "select content 2"      -f "//a (:select links:)"
+e) xidel http://site1  -e "select content 1"     -e "select content 2"      -f "//a"
 
    This  is some kind of special case. Since -f is the last option, it will repeat the previous operation, i.e.
    it will extract content 1 and 2 from site1 and ALL sites that can be reached by a selected link on site1 
@@ -91,7 +99,7 @@ then it affects the immediate preceding option.
 You can always override the argument order by using [ and ] to group the options.
 For example:
 
-f) xidel http://site1 [ -f "//a (:select links:)" -e "select content 1" ]  -e "select content 2"
+f) xidel http://site1 [ -f "//a (:i.e. select links:)" -e "select content 1" ]  -e "select content 2"
   
    This will extract content 1 from all sites linked by site1 and content 2 from site1 itself.
    I.e. the extract of content 2 is not affected by the follow-option within the [..] brackets.
@@ -110,16 +118,18 @@ g) xidel http://site1 [ -f //a[@type1] --download type1/ ]
 
 
 
-========================================== XPath 2.0 / XQuery ===========================================
+====================================== XPath 2.0 / XQuery / 3.0 =======================================
 
-XPath expressions provide an easy way to extract calculated values from x/html. 
-See http://en.wikipedia.org/wiki/XPath_2.0 for details.
+XPath expressions provide an easy and Turing-complete way to extract calculated values from x/html.  
+See http://en.wikipedia.org/wiki/XPath_2.0 (or http://en.wikipedia.org/wiki/XPath_3.0) for details.
+XQuery is a superset language that can e.g. create new xml/html elements.
 
 Xidel also supports JSONiq and some custom extensions, so it deviates in a few ways from the standard. 
-However, you can disable this differences with the respective options (see link below or the
+However, you can disable these differences with the respective options (see link below or the
 command line parameter listing printed by --help).
-Switched to full standard compatible mode, its implementation passes 99.3% of the XPath 2 only tests and 
-97.8% of the XQuery 1 tests in the XQuery Testsuite (skipping tests for invalid input queries)
+In the most standard compatible mode it passes between 89.9% (for XQuery 3.0) to 99.2% (for XPath 2.0 
+with valid inputs) of the new XQuery Test Suite test cases.
+
 
 However, in the default mode, there are the following important extensions:
 
@@ -128,7 +138,8 @@ However, in the default mode, there are the following important extensions:
     Variable assignment:                                         $var := value
    
       adds $var to a set of global variables, which can be created and accessed 
-      everywhere
+      everywhere.
+      (Xidel prints the value of all variables to stdout, unless you use the --extract-exclude option)
 
     JSONiq literals                                           true, false, null
     
@@ -136,16 +147,16 @@ However, in the default mode, there are the following important extensions:
     
     JSONiq arrays:                                                     [a,b,c]
 
-       Arrays store a list of values and can be nested with each other and 
+       Arrays store a list of values and can be nested within each other and 
        within sequences.
        jn:members converts an array to a sequence.
 
     JSONiq objects:                                      {"name": value, ...}
     
-       Object stores a set of values as associative map. The values can be 
+       Objects store a set of values as associative map. The values can be 
        accessed similar to a function call, e.g.: {"name": value, ...}("name").
        Xidel also has {"name": value, ..}.name and {"name": value, ..}/name
-       as an additional, propietary syntax to access properties.
+       as an additional, proprietary syntax to access properties.
        jn:keys or $object() returns a sequence of all property names, 
        libjn:values a sequence of values.
        Used with global variables, you can copy an object with obj2 := obj 
@@ -156,6 +167,7 @@ However, in the default mode, there are the following important extensions:
   
       If a string is prefixed by an "x", all expressions inside {}-parentheses 
       are evaluated, like in the value of a direct attribute constructor.
+      E.g. x"There are {1+2+3} elements" prints "There are 6 elements".
       
        
   Semantic:
@@ -165,7 +177,7 @@ However, in the default mode, there are the following important extensions:
      This is more useful for html (think of @class = 'foobar'), but can be 
      disabled by passing collation urls to the string functions. 
      
-     Everything is weakly typed, e.g 'false' = false() is true, and 1+"2" is 3. 
+     It is mostly weakly typed, e.g 'false' = false() is true, and 1+"2" is 3. 
 
      Unknown namespace prefixes are resolved with the namespace bindings of the 
      input data. 
@@ -174,7 +186,9 @@ However, in the default mode, there are the following important extensions:
      'declare default element namespace "..."' in XQuery, it will only find 
      elements in that namespace)
 
-     XML Schemas, error codes and static type checking are not supported.
+     XML Schemas are not supported. The library used for regular expressions does not support the 
+     exact syntax specified by the XPath/XQuery standard.
+     
 
   Certain additional functions:
   
@@ -185,9 +199,12 @@ However, in the default mode, there are the following important extensions:
     extract("string","regex"[,<match>,[<flags>]])
                   This applies the regex "regex" to "string" and returns only the matching part. 
                   If the <match> argument is used, only the <match>-th submatch will be returned.
-                  (this function used to be called "filter")
+                  <match> can be a sequence of numbers to select multiple matches.
     css("sel")    This returns the nodes below the context node matched by the specified css 3 selector.
                   You can use this to combine css and XPath, like in 'css("a.aclass")/@href'.
+    join(sequence) or join(sequence, separator)
+                  This is basically the same as string-join, but can be used for non-string values.
+                  E.g. join((1,2,3)) returns the string "1 2 3".
     eval("xpath") This will evaluate the string "xpath" as a XPath expression
     system("..")  Runs a certain program and returns its stdout result as string
     read()        Reads a line from stdin
@@ -201,17 +218,20 @@ However, in the default mode, there are the following important extensions:
                   Treats the string "list" as a list of strings separated by "sep" and tests if 
                   "string" is contained in that list. (just like css class matching)
     form(form, [overridden parameters = ()])
-                  Converts a html form in a http request, by url encoding all inputs descendants
+                  Converts a html form to an http request, by url encoding all inputs descendants
                   of the given form node. You can give a sequence of parameters to  override.
                   e.g. form(//form[1], "foo=bar&xyz=123") returns a request for the first form,
-                  with the foo and xyz parameters overriden by bar and 123.
+                  with the foo and xyz parameters overridden by bar and 123.
                   You can also use a JSON object to set the override parameters, e.g.
-                  {"foo": "bar", "xyz": 123}, in that case they are url encoded.
+                  {"foo": "bar", "xyz": 123}, in tis case they are automatically url encoded.
                   It returns an object with .url, .method and .post properties.
+    request-combine(request, [overridden parameters = ()])
+                  This function can be used to modify the object returned by form. (preliminary)
+                  The second parameter behaves like that parameter of form.
     match(<template>, <node>)
                   Performs pattern matching between the template (see below for template documentation) 
                   and the nodes, and returns a list or an object of matched values.
-                  For exmple match(<a>{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns <a>FOO</a>, and
+                  For example match(<a>{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns <a>FOO</a>, and
                   match(<a>*{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns (<a>FOO</a>, <a>BAR</a>).
                   It is also possible to use named variables in the template, in which case an object 
                   is returned, e.g:
@@ -220,13 +240,19 @@ However, in the default mode, there are the following important extensions:
                     <a>FOO</a> and <a>BAR</a>.
                   The template can be a node or a string. Written as string the above example would be
                     match("<a>{.}</a>", <x><a>FOO</a><a>BAR</a></x>).
+    transform(node, transformer-function)
+                  This function can perform an arbitrary transformation of a document, by calling the 
+                  transformer-function for every descendant node and replacing the node with the value returned by the function.
+                  E.g. transform(/, function($x) { if (name($x) = "a") then <a>{$x/@*, <b>{$x/node()}</b>}</a> else $x } )
+                  will make every link bold.
                  
     All additional functions except the jn/libjn functions are in the pxp: namespace, which is also set
     as default namespace.
 
-The pasdoc documentation of my XPath 2 / XQuery library explains more details and lists more functions:
+The pasdoc documentation of my XPath 2 / XQuery / 3 library explains more details and lists more functions:
 http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
 
+Future versions might drop the JSONiq object/array syntax in favor of the new XQuery 3.1 map/array syntax.
 
 Xidel also defines the following global default variables:
  
@@ -280,12 +306,14 @@ you get the following:
 
   <li class="video-list-item">
     <a>
-      <span dir="ltr" class="title">{title:=.}</span>
-      <span class="stat attribution"><span class="yt-user-name " dir="ltr">{username:=.}</span></span>
-      <span class="stat view-count">{views:=filter(., "[0-9.]+")}</span>
+      <span dir="ltr" class="title">{$title:=.}</span>
+      <span class="stat attribution"><span class="yt-user-name " dir="ltr">{$username:=.}</span></span>
+      <span class="stat view-count">{$views:=extract(., "[0-9.]+")}</span>
       {url := @href}
     </a>
   </li>+
+  
+(:=. is optional and thus could be omitted in the first two {}-expressions to get a shorter template)
 
 This template can directly passed as an extract-expression, applied to the page of an youtube video,
 and will return all recommended/related videos.
@@ -395,9 +423,9 @@ for more details.
 
 =========================================== Input formats =============================================
 
-Xidel supports html and xml input, and the option input-format can be used to set the parsing behaviour:
+Xidel supports html and xml input, and the option input-format can be used to set the parsing behavior:
   
-auto:           Automatically switch between html and xml
+auto:           Automatically detect the format 
   
 html:           The input will be parsed as html. 
                 Missing tags like head, body, tbody are automatically created.
@@ -409,13 +437,18 @@ xml:            The input will be parsed as xml.
                 support DTDs.
                 
 xml-strict:     The input will be parsed as strict xml. 
-                This uses the standard fpc, validating xml parser.
+                This uses the standard validating xml parser of FreePascal.
                 
 json:           The input will be parsed as json and stored in . and the $json variable.
                 It can be changed by assigning to $json(..)(..).. := 
                 
-You can also use json files, by loading them explicitly with pxp:json() or jn:json-doc() within a
-XPath/XQuery expression.
+XPath/JSONiq also provides functions to load data explicitly within expressions:
+
+fn:doc                          Load an html/xml document from an url
+fn:unparsed-text                Load a text document from an url
+fn:parse-xml                    Parse an xml document from a string
+pxp:json or jn:json-doc         Load a JSON file
+
 
 =========================================== Output formats =============================================
 
@@ -435,7 +468,6 @@ xml-wrapped:    It will print a xml-based machine readable output.
 json-wrapped:   It will print a json-based machine readable output.
                 Sequences become arrays [ ... ].
                 Objects become objects. {"prop-1": "value 1", "prop-2": "value 2", ... }       
-                (this was called json before Xidel 0.7)
 
 bash:           Prints a bash script that sets the internal variables as bash variables.
                 E.g.
@@ -451,6 +483,14 @@ object properties.
 There is a special rule for json-wrapped  output, if the template assigns multiple values to the same
 variable: Xidel will collect all these values in an array. I.e. (a:=1, b:=2, a:=3, c:=4)
 becomes "a": [1, 3], "b": 2. "c": 4
+
+Only the string value of elements is printed, unless the --printed-node-format is set to xml or html.
+(E.g. <a>bc</a> only prints "bc")
+
+The separators between elements can be set with --output-separator. 
+
+Output parameter should be given before any extract parameter.
+(as future versions may allow to use a different output format for every extract expression)
 
 ======================================== Modifying HTTP requests ===========================================
 

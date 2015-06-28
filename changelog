@@ -1,5 +1,22 @@
 Some important changes:
 
+--------Xidel 0.9--------
+
+* support of more XQuery 3 expressions and functions:
+  - anonymous functions, higher order function, function references, function tests
+  - new flwor clauses: group by, tumbling and sliding window, count, allowing empty
+  - try+catch expressions
+  - URI qualified names, e.g. Q{http://www.w3.org/2000/xmlns/}foo instead xmlns:foo
+  - fn:unparsed-text, parse-xml, environment-variable, path, round#2, string-join#1, fn:serialize ...
+* change output format of variables, type annotations, line separators and stderr-information
+* add support for multipart form requests and file uploads via a --form parameter
+* Add custom functions pxp:transform  and pxp:request-combine
+* fix some issues with non ascii characters in cli arguments
+* fix raw data/url after --follow=... arguments and multiple --follow with form requests
+* fix some HTML parsing bugs
+* fix a large number of XPath/XQuery compatibility bugs.
+
+
 --------Xidel 0.8.4--------
 
 * implementing all syntax extensions described in my Balisage talk:
