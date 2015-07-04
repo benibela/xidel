@@ -2744,7 +2744,7 @@ procedure printVersion;
 begin
   writeln('Xidel '+getVersionString);
   writeln('');
-  writeln('http://videlibri.sourceforge.net/xidel.html');
+  writeln('http://www.videlibri.de/xidel.html');
   writeln('by Benito van der Zander <benito@benibela.de>');
   writeln();
 end;
