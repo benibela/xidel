@@ -201,7 +201,7 @@ begin
   w('<script src="../codemirror/jquery-ui-1.10.2.custom.min.js"></script>');
 
   w('<hr>');
-  w('Result of the above expression applied to the above html file:<br>');
+  w('Result of the above expression applied to the above HTML file:<br>');
   w('<textarea id="result" rows="30" cols="100">');
 
   if  (mycmdline.readString('data') = '') and (mycmdline.readString('extract') = '') then
@@ -210,8 +210,8 @@ begin
     else w(ExampleOtherResult);
     end;
 
-  permalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
-  rawpermalink := 'http://videlibri.sourceforge.net/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+  permalink := 'http://www.videlibri.de/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+  rawpermalink := 'http://www.videlibri.de/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
 
 
   flush(stdout);
@@ -236,9 +236,9 @@ var compatibiltiyOptionsOn: array[1..3] of string =
     );
 
 procedure printPost;
-function link(ref, title: string; desc: string = ''): string;
+function link(ref, title: string; desc: string = ''; attribs: string = ''): string;
 begin
-  result := '&nbsp;&nbsp;&nbsp;&nbsp;<a href="'+ref+'">'+title+'</a>'+desc+'.<br>';
+  result := '&nbsp;&nbsp;&nbsp;&nbsp;<a href="'+ref+'"'+attribs+'>'+title+'</a>'+desc+'.<br>';
 end;
 
 begin
@@ -252,7 +252,7 @@ begin
   //w(cgi.QueryString);
 
   w('<h2>What is this about?</h2>');
-  w('Here you can test html templates, CSS 3 selectors, standard XPath 2 / XQuery and JSONiq expressions.<br>');
+  w('Here you can test HTML templates, CSS 3 selectors, standard XPath 2.0 / 3.0 / XQuery 1.0 / 3.0 and JSONiq expressions.<br>');
   w('It is an example for my Pascal Internet Tools library written for VideLibri and implementing these queries.<br>');
   //w('The template example shows the two most basic template commands (read/loop) and copies the first column of a table.'+' .<br>');
 
@@ -261,9 +261,11 @@ begin
   w(link('http://benibela.de/documentation/internettools/extendedhtmlparser.THtmlTemplateParser.html', 'Documentation of the template syntax'));
   w('<br>Other related links:<br>');
   w(link('http://www.benibela.de/sources_en.html#internettools', 'Internet Tools library', ', the library page'));
-  w(link('http://www.benibela.de/documentation/internettools/internettoolsxqts.html', 'XQuery Testsuite Results', ', (and <a href="http://www.benibela.de/documentation/internettools/internettoolsxqts_path.html">XPath only results</a>)'));
-  w(link('http://videlibri.sourceforge.net/xidel.html', 'Xidel command line tool', ', a litte tool using this library for web page downloading / scraping'));
-  w(link('https://sourceforge.net/p/videlibri/code/ci/tip/tree/', 'Source repository'));
+  w(link('http://www.benibela.de/documentation/internettools/xqts.html', 'XQuery Test Suite Results'));
+  w(link('http://www.videlibri.de/xidel.html', 'Xidel command line tool', ', a litte tool using this library for web page downloading / scraping'));
+  w(link('https://sourceforge.net/p/videlibri/code/ci/tip/tree/', 'Source repository', '', ' rel="nofollow"'));
+  w(link('https://github.com/benibela/xidel', 'Github mirror (Xidel excluding library)', '', ' rel="nofollow"'));
+  w(link('https://bitbucket.org/benibela/xidel', 'Bitbucket mirror (Xidel excluding library)', '', ' rel="nofollow"'));
 
 
   w('<script>lastQueryEditMode="'+firstExtractionKind+'"; ');
@@ -275,7 +277,7 @@ begin
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
   w('<!-- Piwik -->');
   w('<script type="text/javascript">');
-  w('var pkBaseURL = (("https:" == document.location.protocol) ? "https://videlibri.sourceforge.net/piwik/" : "http://videlibri.sourceforge.net/piwik/");');
+  w('var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.videlibri.de/piwik/" : "http://www.videlibri.de/piwik/");');
   w('document.write(unescape("%3Cscript src=''" + pkBaseURL + "piwik.js'' type=''text/javascript''%3E%3C/script%3E"));');
   w('</script><script type="text/javascript">');
   w('try {');
@@ -283,7 +285,7 @@ begin
   w('piwikTracker.trackPageView();');
   w('piwikTracker.enableLinkTracking();');
   w('} catch( err ) {}');
-  w('</script><noscript><p><img src="http://videlibri.sourceforge.net/piwik/piwik.php?idsite=3" style="border:0" alt="" /></p></noscript>');
+  w('</script><noscript><p><img src="http://www.videlibri.de/piwik/piwik.php?idsite=3" style="border:0" alt="" /></p></noscript>');
   w('<!-- End Piwik Tracking Code -->');
 
   {sl := tstringlist.create;
