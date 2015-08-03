@@ -1,0 +1,733 @@
+.\" Process this file with
+.\" groff -man -Tascii xidel.1
+.\"
+.de URL
+\\$2 \(laURL: \\$1 \(ra\\$3
+..
+.if \n[.g] .mso www.tmac
+.TH XIDEL 1 "SEPTEMBER 2014" Linux "User Manuals"
+.SH NAME
+xidel \- is a command line tool to download and extract data from html/xml pages.
+.SH SYNOPSIS
+.HP 5
+The trivial usage is to extract an expression from a webpage like:
+
+.B xidel
+http://www.example.org \-\-extract //title
+.HP 5
+The next important option is \-\-follow to follow links on a page. The following example will print the titles of all pages that are linked from http://www.example.org.
+
+.B xidel
+http://www.example.org \-\-follow //a \-\-extract //title 
+.SH DESCRIPTION
+.B xidel
+supports:
+.IP "Extract expressions: there are few different kind of extract expressions" 5
+o CSS 3 Selectors    : to extract simple elements
+.br
+o XPath 2            : to extract values and calculate things with them
+.br
+o XQuery 1           : to create new documents from the extracted values
+.br
+o JSONiq             : to work with JSON apis
+.br
+o Templates          : to extract several expressions in an easy way using a annotated version of the page for pattern-matching
+.br
+o Multipage templates: i.e. a file that contains templates for several pages
+.IP "Following:" 5
+o HTTP Codes         : Redirections like 30x are automatically followed, while keeping things like cookies
+.br
+o Links              : It can follow all links on a page as well as some extracted values
+.IP "Output formats:"
+o Adhoc              : just prints the data in a human readable format
+.br
+o XML                : encodes the data in xml
+.br
+o HTML               : encodes the data in html
+.br
+o JSON               : encodes the data in a json
+.br
+o bash/cmd           : exports the data as shell variables
+.IP "Connections: HTTP / HTTPS as well as local files or stdin"
+.IP "Systems: Windows (using wininet), Linux (using synapse+openssl), Mac (with newest synapse)"
+.SH OPTIONS
+The following command line options are valid: 
+.P
+.B Input / Output options:
+.HP 30
+.TP
+.I \-\-data=<string>
+Data/URL/File/Stdin(\-) to process (\-\-data= prefix can be omitted)
+
+Instead of one or more urls, you can also pass file names or the xml data itself (
+.B xidel
+"<html>.." ...). 
+.TP
+.I \-\-input\-format=<string>
+Xidel supports html and xml input, and the option input\-format can be used to set the parsing behaviour:
+.RS 10
+.HP 20
+.IP "auto:"
+Automatically switch between html and xml
+.IP "html:"
+The input will be parsed as html. Missing tags like head, body, tbody are automatically created.
+
+(beware that this means table/tr is never valid, and either table//tr or table/tbody/tr has to be used)
+.IP "xml:"
+The input will be parsed as xml. 
+
+However, it still uses the html parser, so it will correct missing end tags and not support DTDs.
+.IP "xml\-strict:"
+The input will be parsed as strict xml. This uses the standard fpc, validating xml parser.
+.IP "json:"
+The input will be parsed as json and stored in . and the $json variable.
+
+It can be changed by assigning to $json(..)(..).. := 
+                
+You can also use json files, by loading them explicitly with pxp:json() or jn:json\-doc() within a XPath/XQuery expression.
+.RE
+.TP
+.I \-\-output\-format=<string>
+Output format: 
+.RS 10
+.HP 20
+.IP "adhoc:"
+Simple human readable. A very simple format, it will just print all values (default)
+.IP "xml:"
+The output will be serialized as xml
+.IP "html:"
+The output will be serialized as html
+.IP "xml\-wrapped:
+It will print a xml\-based machine readable output.
+
+Sequences will become <seq><e>value 1</e><e>value 2</e>...</seq>
+
+Objects will become <object><property\-1>value 1</property\-1><prop\-2>..</prop\-2>..</object>
+
+(so in contrast to xml, it will keep variable names and type information intact)
+.IP "json\-wrapped:"
+It will print a json\-based machine readable output.
+
+Sequences become arrays [ ... ].
+
+Objects become objects. {"prop\-1": "value 1", "prop\-2": "value 2", ... }
+
+(this was called json before Xidel 0.7)
+.IP "bash:"
+Prints a bash script that sets the internal variables as bash variables. E.g.
+
+eval $(
+.B xidel
+http://data \-e 'title:=//title' \-e 'links:=//a')
+
+can be used to set the bash variable $title to the title of a page and the variable $links to a bash array of all links on the page.
+.IP "cmd:"
+Like bash, but for Windows cmd.exe
+.TP
+Generally it prints a sequence of all processed pages (i.e. each page a single sequence element), and the variables defined as global variables or read by a template become variables or object properties. There is a special rule for json\-wrapped  output, if the template assigns multiple values to the same variable: Xidel will collect all these values in an array. I.e. (a:=1, b:=2, a:=3, c:=4) becomes "a": [1, 3], "b": 2. "c": 4
+.RE
+.TP
+.I \-\-xml
+Abbreviation for \-\-input\-format=xml  \-\-output\-format=xml
+.TP
+.I \-\-html
+Abbreviation for \-\-input\-format=html \-\-output\-format=html
+
+.TP
+.I \-\-download=<string>
+Downloads/saves the data to a given filename (\- prints to stdout, . uses the filename of the url)
+.TP
+.B Extraction options:
+.HP 30
+.TP
+.I "\-\-extract=<string> or \-e"
+Expression to extract from the data. If it starts with < it is interpreted as template, otherwise as XPath expression.
+
+The different kinds except multipage templates are usually automatically detected, but a certain type can be forced with the extract\-kind option. Or by using the shorter \-\-xpath "..", \-\-xquery "..", \-\-css ".." options. Especially XQuery and template expressions are easily confused by the auto detector. 
+
+(Xidel assumes templates, if the expression starts with a "<" )
+.TP
+.I \-\-extract\-exclude=<string>
+Comma separated list of variables ignored in an extract template. (black list) (default _follow)
+.TP
+.I \-\-extract\-include=<string>
+If not empty, comma separated list of variables to use in an extract template (white list)
+.TP
+.I \-\-extract\-file=<file>
+File containing an extract expression (for longer expressions)
+.TP
+.I \-\-extract\-kind=<string>
+How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath{|2|3}, xquery{|1|3}, css, template or multipage
+.P
+.B "Abbreviations for \-\-extract option:"
+.HP 30
+.TP
+.I \-\-css=<string>
+Abbreviation for \-\-extract\-kind=css       \-\-extract=...
+.TP
+.I \-\-xpath=<string>
+Abbreviation for \-\-extract\-kind=xpath3    \-\-extract=...
+.TP
+.I \-\-xquery=<string>
+Abbreviation for \-\-extract\-kind=xquery3   \-\-extract=...
+.TP
+.I \-\-xpath2=<string>
+Abbreviation for \-\-extract\-kind=xpath2    \-\-extract=...
+.TP
+.I \-\-xquery1=<string>
+Abbreviation for \-\-extract\-kind=xquery1   \-\-extract=...
+.TP
+.I \-\-xpath3=<string>
+Abbreviation for \-\-extract\-kind=xpath3    \-\-extract=...
+.TP
+.I \-\-xquery3=<string>
+Abbreviation for \-\-extract\-kind=xquery3   \-\-extract=...
+.TP
+.I \-\-template\-file=<file>
+Abbreviation for \-\-extract\-kind=multipage \-\-extract\-file=...  \-\-template\-action=<string>
+
+Select which action from the multipage template should be run (multiple actions are allowed with comma separated values)
+.P
+.B Follow options:
+.HP 30
+.TP
+.I \-\-follow=<string>  or \-f
+Expression extracting links from the page which will be followed. It supports the same expressions as \-\-extract. If the expression extracts a sequence, all elements are followed. If the value is an "a" node, its @href attribute is followed, if it is a "i/frame" node its @src attribute is followed, otherwise its text(). If it is an object, its url properties and its other properties can override command line arguments Otherwise, the string value is treated as url.
+.TP
+.I \-\-follow\-exclude=<string>
+Comma separated list of variables ignored in a follow template. (black list)
+.TP
+.I \-\-follow\-include=<string>
+Comma separated list of variables used in a follow template. (white list)
+.TP
+.I \-\-follow\-file=<file>
+File containing a follow expression (for longer expressions)
+.TP
+.I \-\-follow\-level=<int>
+Maximal recursion deep (default: 99999)
+.TP
+.I \-\-allow\-repetitions
+Follow all links, even if that page was already visited.
+.P
+.B HTTP connection options:
+.HP 30
+.TP
+.I \-\-wait=<float>
+Wait a certain count of seconds between requests
+.TP
+.I \-\-user\-agent=<string>
+Useragent used in http request
+.TP
+.I \-\-proxy=<string>
+Proxy used for http/s requests
+.TP
+.I \-\-post=<string>  or \-d
+Post request to send (url encoded) (prepending & concats multiple data)
+.TP
+.I \-\-method=<string>
+HTTP method to use (e.g. GET, POST, PUT)
+.TP
+.I \-\-header=<string>  or \-H
+Additional header to include (e.g. "Set\-Cookie: a=b") (preliminary, the behaviour of multiple headers is going to change)
+.TP
+.I \-\-print\-received\-headers
+Print the received headers
+.TP
+.I \-\-error\-handling=<string>
+How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)
+.P
+.B More output options:
+.HP 30
+.TP
+.I \-\-default\-variable\-name=<string>
+Variable name for values read in the template without explicitely given variable name
+.TP
+.I \-\-print\-variables=<string>
+Which of the separate variable lists are printed. Comma separated list of:
+.RS 10
+.HP 20
+.IP "log:"
+Prints every variable value
+.IP "final:"
+Prints only the final value of a variable, if there are multiple assignments to it
+.IP "condensed\-log:"
+Like log, but removes assignments to object properties(default)
+.RE
+.TP
+.I \-\-print\-type\-annotations
+Prints all variable values with type annotations (e.g. string: abc, instead of abc)
+.TP
+.I \-\-hide\-variable\-names
+Do not print the name of variables defined in an extract template
+.TP
+.I \-\-variable=<string>
+Declare a variable (value taken from environment if not given explicitely) (multiple variables are preliminary)
+.TP
+.I \-\-printed\-node\-format=<string>
+Format of an extracted node: text, html or xml
+.HP 30
+.TP
+.I \-\-output-encoding=<string>
+Character encoding of the output.  utf\-8 (default), latin1, utf\-16be, utf\-16le, oem (windows console) or input (no encoding conversion)
+.TP
+.I \-\-output\-declaration=<string>
+Header for the output. (e.g.  <!DOCTYPE html>, default depends on output\-format)
+.P
+.B XPath/XQuery compatibility options:
+.HP 30
+.TP
+.I \-\-no\-json
+Disables the JSONiq syntax extensions (like [1,2,3] and {"a": 1, "b": 2})
+.TP
+.I \-\-no\-json\-literals
+Disables the json true/false/null literals
+.TP
+.I \-\-dot\-notation=<string>
+Specifies if the dot operator $object.property can be used.  Possible values: off, on, unambiguous (default, does not allow $obj.prop, but ($obj).prop ) 
+.TP
+.I \-\-no\-dot\-notation
+Disables the dot notation for property access, like in $object.property (deprecated)
+.TP
+.I \-\-only\-json\-objects
+Do not allow non\-JSON types in object properties (like  () or (1,2) instead of null and [1,2]) 
+.TP
+.I \-\-no\-extended\-json
+Disables non\-jsoniq json extensions
+.TP
+.I \-\-strict\-type\-checking
+Disables weakly typing ("1" + 2 will raise an error, otherwise it evaluates to 3)
+.TP
+.I \-\-strict\-namespaces
+Disables the usage of undeclared namespace. Otherwise foo:bar always matches an element with prefix foo.
+.TP
+.I \-\-no\-extended\-strings
+Does not allow x\-prefixed strings like x"foo{1+2+3}bar"
+.TP
+.I \-\-ignore\-namespaces
+Removes all namespaces from the input document
+.TP
+.I \-\-no\-optimizations
+Disables optimizations
+.TP
+.I \-\-deprecated\-string\-options
+Replaces the old $foo; variables with the new {$foo} in arguments
+.TP
+.B "Miscelleaneous options:"
+.TP
+.I \-\-quiet or \-q
+Do not print status information to stderr
+.TP
+.I \-\-version
+Print version number (0.8.4 (Balisage edition))
+.TP
+.I \-\-usage
+Print help, examples and usage information
+.SH VERSIONS
+.HP 12
+.IP "2014\-08\-13: Minor release"
+The 0.8.4 versions extends some standard XQuery expressions with pattern matching, adds options to set HTTP headers and read environment variables, and fixes some bugs... 
+
+.IP "2014\-03\-24: New release"
+The 0.8 release improves the JSONiq support and our own JSON extensions, adds arbitrary precision arithmetic, a trivial subset of XPath/XQuery 3, new functions for resolving uri or html hrefs, and more... 
+
+.IP "2013\-03\-26: New release"
+The 0.7 release adds JSONiq support, grouping of command line options, new input/output formats, fixes html parsing/serialization, changes the syntax of extended strings and some other stuff
+
+.IP "2012\-11\-06: New release"
+The 0.6 release adds XQuery support, the form and match functions, improves the Windows command\-line interface, merges the two old cgi services to a single one and fixes several interpreter bugs
+
+.IP "2012\-09\-05: Initial release of Xidel"
+First release of the VideLibri backend as stand\-alone command\-line tool
+.SH BUGS
+A trivial subset of "XPath 3" / "XQuery 3" is supported but they are work in progress and very incomplete.
+.SH EXAMPLES \- Basics
+.HP 5
+.IP "1. Print all urls found by a google search."
+.B xidel
+http://www.google.de/search?q=test \-\-extract "//a/extract(@href, 'url[?]q=([^&]+)&', 1)[. != '']"
+
+.IP "2. Print the title of all pages found by a google search and download them:"
+.B xidel
+http://www.google.de/search?q=test \-\-follow "//a/extract(@href, 'url[?]q=([^&]+)&', 1)[. != '']" \-\-extract //title \-\-download '{$host}/'
+
+Generally follow all links on a page and print the titles of the linked pages:
+
+With XPath    : 
+.B xidel
+http://example.org \-f //a \-e //title
+
+With CSS      : 
+.B xidel
+http://example.org \-f "css('a')" \-\-css title
+
+With Templates: 
+.B xidel
+http://example.org \-f "<a>{.}</a>*" \-e "<title>{.}</title>"
+
+.IP "3. Another template example:"
+If you have an example.xml file like "<x><foo>ood</foo><bar>IMPORTANT!</bar></x>". You can read the important part like:
+
+.B xidel
+example.xml \-e "<x><foo>ood</foo><bar>{.}</bar></x>"
+
+(and this will also check, if the part with the ood is there, and fail otherwise)
+
+.IP "5. Calculate something with XPath:"
+.B xidel
+\-e "(1 + 2 + 3) * 1000000000000 + 4 + 5 + 6 + 7.000000008"
+
+.IP "6. Print all newest stackoverflow questions with title and url:"
+.B xidel
+http://stackoverflow.com \-e "<A class='question\-hyperlink'>{title:=text(), url:=@href}</A>*"
+
+.IP "7. Print all reddit comments of an user, with html and url:"
+.B xidel
+"http://www.reddit.com/user/username/" \-\-extract "<t:loop><div class='usertext\-body'><div>{outer\-xml(.)}</div></div><ul class='flat\-list buttons'><a><t:s>link:=@href</t:s>permalink</a></ul></div></div></t:loop>" \-\-follow "<a rel='nofollow next'>{.}</a>?"
+
+.IP "8. Check if your reddit letter is red:"
+Webscraping, combining CSS, XPath, JSONiq and automatically form evaluation:
+
+.B xidel
+http://reddit.com \-f "form(css('form.login\-form')[1], {'user': '$your_username', 'passwd': '$your_password'})" \-e "css('#mail')/@title"
+
+Using the Reddit API:
+
+.B xidel
+\-d "user=$your_username&passwd=$your_password&api_type=json" https://ssl.reddit.com/api/login \-\-method GET 'http://www.reddit.com/api/me.json' \-e '($json).data.has_mail'
+
+.IP "9. Use XQuery, to create a html table of odd and even numbers:"
+
+Windows: 
+.B xidel
+\-\-xquery "<table>{for $i in 1 to 1000 return <tr><td>{$i}</td><td>{if ($i mod 2 = 0) then 'even' else 'odd'}</td></tr>}</table>" \-\-output\-format xml
+Linux  : 
+.B xidel
+\-\-xquery '<table>{for $i in 1 to 1000 return <tr><td>{$i}</td><td>{if ($i mod 2 = 0) then "even" else "odd"}</td></tr>}</table>' \-\-output\-format xml
+
+(xidel itself supports ' and "\-quotes on all platforms, but ' does not escape <> in Windows cmd, and " does not escape $ in the Linux shells)
+
+.IP "10. Export variables to bash"
+
+eval "$(
+.B xidel
+http://site \-e 'title:=//title' \-e 'links:=//a/@href' \-\-output\-format bash)"
+
+This sets the bash variable $title to the title of the page and $links becomes an array of all links there
+
+.P
+You may also want to read the readme file of Xidel, the documentation of my template language and XPath 2/XQuery library. Or look at its results on the XQuery Testsuite (XPath 2 only), skipping tests testing for the rejection of invalid input. 
+.SH EXAMPLES \- Recursion / Argument order and grouping
+You can specify multiple \-\-extract (\-e) and \-\-follow (\-f) arguments to extract values from one page, follow the links to the next pages and extract values from there as well ...
+Then it becomes important in which order the arguments are given, so it extracts before following, or the other way around.  
+You can usually read it left\-to\-right like an English sentence, extracting from the current page, or following to a new one, which will then become the next current page.
+For example:
+
+.HP 5
+.IP "a) This will extract content 1 from site 1 and content 2 from site 2"
+.B xidel
+http://site1  \-e "select content 1"  http://site2  \-e "select content 2"
+  
+
+.IP "b) This will extract content 1 and 2 from site 1 as well as from site 2"
+.B xidel
+http://site1 http://site2 \-e "select content 1"  \-e "select content 2"
+
+
+.IP "c) This will extract the 'content 1' from site1, and 'content 2' from all sites the first site has links to."
+.B xidel
+http://site1  \-e "select content 1"     \-f "//a (:select links:)"  \-e "select content 2"
+
+    
+.IP "d) This will extract 'content 1' and 'content 2' from all sites the first site links to, and will not extract anything from site1."
+.B xidel
+http://site1  \-f "//a (:select links:)" \-e "select content 1"      \-e "select content 2"
+ 
+
+.IP "e) This  is some kind of special case."
+.B xidel
+http://site1  \-e "select content 1"     \-e "select content 2"      \-f "//a (:select links:)"
+
+Since \-f is the last option, it will repeat the previous operation, i.e. it will extract content 1 and 2 from site1 and ALL sites that can be reached by a selected link on site1 or any other of the processed sites. 
+Only if there were another \-e after \-f, it would extract that from the first set of followed links and stop.
+ 
+In some kinds of extract expression you can create new variables, if you assign values to a variable called "_follow", that value will be included in the next follow expression. 
+If you assign an object to _follow, its properties will override the command line parameters with the same value. 
+
+Generally an option modifier (like \-\-extract\-kind) affects all succeeding options, unless there are none, then it affects the immediate preceding option.
+
+
+.P
+You can always override the argument order by using [ and ] to group the options.
+For example:
+
+.IP "f) This will extract content 1 from all sites linked by site1 and content 2 from site1 itself."
+.B xidel
+http://site1 [ \-f "//a (:select links:)" \-e "select content 1" ]  \-e "select content 2"
+  
+i.e. the extract of content 2 is not affected by the follow\-option within the [..] brackets.
+
+.IP "g) This will download all links of type 1 in a directory type1, all links of type2 in directory type2... (if written on one line)"
+.B xidel
+http://site1 [ \-f //a[@type1] \-\-download type1/ ] \\
+                   [ \-f //a[@type2] \-\-download type2/ ] \\
+                   [ \-f //a[@type3] \-\-download type3/ ] 
+   
+[ and ] must be surrounded by a space.
+.SH EXAMPLES \- XPath 2.0 / XQuery
+XPath expressions provide an easy way to extract calculated values from x/html. 
+See http://en.wikipedia.org/wiki/XPath_2.0 for details.
+
+Xidel also supports JSONiq and some custom extensions, so it deviates in a few ways from the standard. 
+However, you can disable this differences with the respective options (see link below or the command line parameter listing printed by \-\-help).
+Switched to full standard compatible mode, its implementation passes 99.3% of the XPath 2 only tests and 97.8% of the XQuery 1 tests in the XQuery Testsuite (skipping tests for invalid input queries)
+
+However, in the default mode, there are the following important extensions:
+
+  Syntax:
+  
+    Variable assignment:                                         $var := value
+   
+      adds $var to a set of global variables, which can be created and accessed 
+      everywhere
+
+    JSONiq literals                                           true, false, null
+    
+      true and false are evaluated as true(), false(), null becomes jn:null()
+    
+    JSONiq arrays:                                                     [a,b,c]
+
+       Arrays store a list of values and can be nested with each other and 
+       within sequences.
+       jn:members converts an array to a sequence.
+
+    JSONiq objects:                                      {"name": value, ...}
+    
+       Object stores a set of values as associative map. The values can be 
+       accessed similar to a function call, e.g.: {"name": value, ...}("name").
+       Xidel also has {"name": value, ..}.name and {"name": value, ..}/name
+       as an additional, propietary syntax to access properties.
+       jn:keys or $object() returns a sequence of all property names, 
+       libjn:values a sequence of values.
+       Used with global variables, you can copy an object with obj2 := obj 
+       (objects are immutable, but properties can be changed with 
+       obj2.foo := 12, which will create a new object with the changed property)
+      
+    Extended strings:                                                x"..{..}.."
+  
+      If a string is prefixed by an "x", all expressions inside {}\-parentheses 
+      are evaluated, like in the value of a direct attribute constructor.
+      
+       
+  Semantic:
+     
+     All string comparisons are case insensitive, and "clever", e.g.: 
+              '9xy' = '9XY' < '10XY' < 'xy'
+     This is more useful for html (think of @class = 'foobar'), but can be 
+     disabled by passing collation urls to the string functions. 
+     
+     Everything is weakly typed, e.g 'false' = false() is true, and 1+"2" is 3. 
+
+     Unknown namespace prefixes are resolved with the namespace bindings of the 
+     input data. 
+     Therefore //a always finds all links, independent of any xmlns\-attributes.
+     (however, if you explicitly declare a namespace like 
+     'declare default element namespace "..."' in XQuery, it will only find 
+     elements in that namespace)
+
+     XML Schemas, error codes and static type checking are not supported.
+
+  Certain additional functions:
+  
+    jn:*, libjn:* The standard JSONiq and JSONlib functions
+    json("str.")  Parses a string as json, or downloads json from an url.(only use with trusted input)
+    serialize\-json(value) 
+                  Converts a value to JSON
+    extract("string","regex"[,<match>,[<flags>]])
+                  This applies the regex "regex" to "string" and returns only the matching part. 
+                  If the <match> argument is used, only the <match>\-th submatch will be returned.
+                  (this function used to be called "filter")
+    css("sel")    This returns the nodes below the context node matched by the specified css 3 selector.
+                  You can use this to combine css and XPath, like in 'css("a.aclass")/@href'.
+    eval("xpath") This will evaluate the string "xpath" as a XPath expression
+    system("..")  Runs a certain program and returns its stdout result as string
+    read()        Reads a line from stdin
+    deep\-text()   This is the concatenated plain text of the every tag inside the current text. 
+                  You can also pass a separator like deep\-text(' ') to separate text of different nodes.
+    inner\-html()  This is the html content of node ., like innerHTML in javascript.  
+    outer\-html()  This is the same as inner\-html, but includes the node itself
+    inner\-xml()   This is the xml content of node, similar to inner\-html()
+    outer\-xml()   Like outer\-html(), but xml\-serialized
+    split\-equal("list", "string"[, "sep" = " "])
+                  Treats the string "list" as a list of strings separated by "sep" and tests if 
+                  "string" is contained in that list. (just like css class matching)
+    form(form, [overridden parameters = ()])
+                  Converts a html form in a http request, by url encoding all inputs descendants
+                  of the given form node. You can give a sequence of parameters to  override.
+                  e.g. form(//form[1], "foo=bar&xyz=123") returns a request for the first form,
+                  with the foo and xyz parameters overriden by bar and 123.
+                  You can also use a JSON object to set the override parameters, e.g.
+                  {"foo": "bar", "xyz": 123}, in that case they are url encoded.
+                  It returns an object with .url, .method and .post properties.
+    match(<template>, <node>)
+                  Performs pattern matching between the template (see below for template documentation) 
+                  and the nodes, and returns a list or an object of matched values.
+                  For exmple match(<a>{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns <a>FOO</a>, and
+                  match(<a>*{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>) returns (<a>FOO</a>, <a>BAR</a>).
+                  It is also possible to use named variables in the template, in which case an object 
+                  is returned, e.g:
+                    match(<x><a>{{first:=.}}</a><a>{{second:=.}}</a></x>, <x><a>FOO</a><a>BAR</a></x>)
+                  returns an object with two properties "first" and "bar", containing respectively
+                    <a>FOO</a> and <a>BAR</a>.
+                  The template can be a node or a string. Written as string the above example would be
+                    match("<a>{.}</a>", <x><a>FOO</a><a>BAR</a></x>).
+                 
+    All additional functions except the jn/libjn functions are in the pxp: namespace, which is also set
+    as default namespace.
+
+The pasdoc documentation of my XPath 2 / XQuery library explains more details and lists more functions:
+http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
+
+
+Xidel also defines the following global default variables:
+ 
+   $raw         Unparsed input text
+   $url         Url the input was retrieved from
+   $host, $path Respective part of the url
+   $json        Parsed json input, if it was json 
+
+.SH EXAMPLES \- CSS 3.0 Selectors
+CSS 3 Selectors are fully supported, except some pseudoclasses like :hover and ::before that do not make sense in a gui less, reading-only application.  (It is however not much tested, since I personally only use XPath)
+
+The easiest way to use CSS selectors with the command line is to write it like --extract "css('selector')" (the "-quotes are necessary to escape the '-quotes.) 
+
+Alternatively you can use --extract-kind=css --extract="your selector", or --css="your selector"
+
+.SH EXAMPLES \- Templates
+Templates are a very easy way to extract complex data from a webpage.  Each template is basically a stripped-down excerpt of the webpage, in which the relevant parts have 
+been annotated.
+
+The best way to describe templates is with a real world example:
+
+The following is the html of an entry of one of the recommended videos you can always see at the right side of an youtube video: (skipped the image part for clarity)
+
+  <li class="video-list-item">
+    <a href="/watch?v=F6SeX76_F5Q&amp;feature=related" class="related-video yt-uix-contextlink yt-uix-sessionlink" 
+       data-sessionlink="ved=CBQQzRooEQ%3D%3D&amp;ei=CIDyscip97ECFcWw3godn3H0ug%3D%3D&amp;feature=related">
+      <!-- skipped -->
+      <span dir="ltr" class="title" title="Idras Sunhawk Lyrics">Idras Sunhawk Lyrics</span>
+      <span class="stat attribution">by <span class="yt-user-name " dir="ltr">FolkAndPaganSongs</span></span>
+      <span class="stat view-count">5.634 views</span>
+    </a>
+  </li>
+
+As you see there are actual interesting values like the url/title/username/view texts, and irrelevant, changing values like the session url.  If you now remove the irrelevant parts, and annotate the interesting values as {name:=value}, you get the following:
+
+  <li class="video-list-item">
+    <a>
+      <span dir="ltr" class="title">{title:=.}</span>
+      <span class="stat attribution"><span class="yt-user-name " dir="ltr">{username:=.}</span></span>
+      <span class="stat view-count">{views:=filter(., "[0-9.]+")}</span>
+      {url := @href}
+    </a>
+  </li>+
+
+This template can directly passed as an extract-expression, applied to the page of an youtube video, and will return all recommended/related videos.  More precisely, it will return four (interleaved) arrays "title", "username", "views", "url" each containing the relevant values.
+
+A basic template as above consists of three different kind of expressions:
+
+ <li .../>   A normal html element will be matched to the processed html page.
+             This means it will search the first element on the page, that has the same node name,
+             all the attributes with the same values, and whose children match the children of the 
+             template element.             
+ 
+ {..}        A {} marker will execute the contained XPath expression, once the corresponding 
+             place in the html page has been found. 
+             The context node . will refer to the surrounding element, and you can use my extended 
+             XPath syntax (var := value) to create a variable. (see XPath above)
+             Often you want to read the entire matched element in a variable with $name, which
+             can be written as {$name := .} or further abbreviated as {$name} .             
+             It can also be used within attributes, like <a x="{.}"/> to read the attribute value.
+             (the parentheses can be also replaced by <template:s>..</template:s> or <t:s>..</t:s>)
+             
+ 
+  +          Finally the loop marker will repeat the matching of the previous element as long as 
+             possible (an similar syntax is <t:loop>..</t:loop> or <t:loop>..</t:loop>).
+            
+            
+
+This is sufficient for most basic scraping operations, but you can also use the following things in a template:
+ 
+ textnodes                Textnodes are matched like html element nodes.
+                          A textnode in the webpage is considered a valid match, if it starts
+                          with the same text as the text node in the template.
+                          (but you can change this behavior to ends-with/exact/regex-comparisons with 
+                          the  <t:meta [default-text-matching="??"] [default-case-sensitive="??"]/>
+                          command)
+ 
+ <t:if test="??"/>        All children of a template:if-tag are ignored if the test-XPath-expressions 
+                          evaluates to false()
+ 
+ <t:switch [value="??"]>  Only one of the child elements will be used for matching
+
+ <t:switch-prioritized>   Same a t:switch, but it will choose the earliest template child that has a match.
+ 
+ t:optional="true"        Html nodes can be marked as optional, and they will be ignored, if no possible
+                          match can be found
+ 
+ t:condition="??"         A XPath expression that c be The context node (.) refers to a potential match.
+ 
+ *                        Like +, but it can also match none
+ 
+ {min,max} or {count}     Matches between [min,max] or {count}-many occurrences of the previous element
+ 
+ 
+ <t:loop min=.. max=../>  The same as above. However, t:loop will repeat all its children, while a marker 
+                          like + can only repeat the single, previous element.
+                          
+ ?                        Short notation for t:optional. 
+ 
+(see http://www.benibela.de/documentation/internettools/extendedhtmlparser.THtmlTemplateParser.html for  more detailed explanations)
+ 
+
+There is also a Greasemonkey script to create templates directly by just selecting the text on the corresponding webpage.
+.SH EXAMPLES \- Multipage templates
+Multipage templates collect several single page templates in a xml file.
+
+They are basically just a list of <page/> nodes with <post/> data and associated <template/>s
+E.g.
+
+  <action>
+    <page url="http://www.example.org/url">
+      <post name="var">unescaped post data</post>
+      <post>your=escaped&post=data&...</post>
+      <template> 
+        <a>{alink:=.}</a>* 
+      </template>
+    </page>
+    
+    <page ...> ... </page>
+    
+    ...
+  </action>
+
+All pages are downloaded with GET or respectively POST requests, and processed with the given template. The page-node also accepts a "test" attribute, which gives an XPath expression that needs to be true, if the page element should be used. In the attributes and the text of post-nodes, everything enclosed in {..} parentheses is evaluated as xpath expression. (like in an extended x".." string, see above)
+
+Since this would be cumbersome to pass directly to --extract, you can also specify the containing file with the --template-file argument.
+
+You can also have multiple <action/>s in a multipage template (surrounded by a parent element with name <actions>), and call the later actions with <call action=".."/> from another action. If a template with multiple actions is passed to Xidel it will always perform the first action, unless the --template-action parameter specifies another action to run. 
+
+There are also <variable>-elements to declare variables and <loop>-elements to repeat other elements, see http://www.benibela.de/documentation/internettools/multipagetemplate.TMultiPageTemplate.html for more details.
+.SH AUTHOR
+Benito van der Zander, <benito_NOSPAM_benibela.de>, 
+.URL "http://www.benibela.de" "www.benibela.de"
+
+Download link: 
+.URL "http://sourceforge.net/projects/videlibri/files/Xidel/" "sourceforge.net/projects/videlibri/files/Xidel/"
+
+You can test it online on webpage: 
+.URL "http://videlibri.sourceforge.net/cgi-bin/xidelcgi" "http://videlibri.sourceforge.net/cgi-bin/xidelcgi"
+or directly by sending a request to the cgi service like
+.URL "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?data=<html><title>foobar</title></html>&extract=//title&raw=true" "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?data=<html><title>foobar</title></html>&extract=//title&raw=true"
+.SH "SEE ALSO"
+.BR wget (1),
+.BR curl (1)
