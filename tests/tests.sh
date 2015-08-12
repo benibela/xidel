@@ -66,11 +66,16 @@ echo '<test>123<x/>foo<abc>bar</abc>def<x/></test>' | tests/test.sh stdin1 - -e 
 echo //abc2 | tests/test.sh stdin2 '<test>123<x/>foo<abc2>bar2!</abc2>def<x/></test>' -e -
 
 #multipage template
-tests/test.sh multipage --extract '<action><page url="tests/a.xml"><template><title>{.}</title></template></page></action>' --extract-kind=multipage
-tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage
+tests/test.sh multipage --extract '<action><page url="tests/a.xml"><template><title>{.}</title></template></page></action>' --extract-kind=multipage #deprecated
+tests/test.sh multipage --extract '<action><page url="tests/a.xml"/><pattern><title>{.}</title></pattern></action>' --extract-kind=multipage
+tests/test.sh multipage --extract '<action><page url="tests/a.xml"/><pattern href="tests/patterntit.xml"/></action>' --extract-kind=multipage
+tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"><template><title>{.}</title></template></page></loop></action>' --extract-kind=multipage #deprecated
+tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"/><pattern><title>{.}</title></pattern></loop></action>' --extract-kind=multipage
+tests/test.sh multipage2  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"/><pattern href="tests/patterntit.xml"/></loop></action>' --extract-kind=multipage
 tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{extract(., "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
 tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"><template><html>{extract($raw, "[A-Z]+")}</html></template></page></action>' --extract-kind=multipage
-
+tests/test.sh multipage3 --extract '<action><page url="tests/a.xml"/><pattern><html>{extract($raw, "[A-Z]+")}</html></pattern></action>' --extract-kind=multipage
+tests/test.sh multipage4  --extract '<action><loop var="page" list='"'"'("tests/a.xml", "b.xml")'"'"'><page url="{$page}"/><pattern href="tests/patterntit.xml"/><pattern href="tests/patterntit.xml"/><pattern href="tests/patterntit.xml"/></loop></action>' --extract-kind=multipage
 
 tests/test.sh multipageVariable  --extract-kind=multipage --extract '<action><variable name="test">1+2+3</variable></action>' --xpath '$test' ##?? change to print all variables
 tests/test.sh multipageChoose   --extract-kind=multipage --extract '<action><choose><when test="1=2"><variable name="result">"a"</variable></when><when test="2=2"><variable name="result">"b"</variable></when><when test="3=2"><variable name="result">"c"</variable></when></choose></action>' --xpath '$result'
