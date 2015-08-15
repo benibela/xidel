@@ -92,6 +92,22 @@ tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s>re
 tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s test="true()">result:=123</s></action>' --xpath 'get("result")'
 tests/test.sh multipageShortF  --extract-kind=multipage --extract '<action><s test="false()">result:=123</s></action>' --xpath 'get("result")'
 
+tests/test.sh multipageTry  --extract-kind=multipage --extract '<action> 
+  <try><s>int("f")</s><catch errors="err:FORG0001"><s>x:=1</s></catch></try> 
+  <try><s>int("f")</s><catch errors="x y z err:FORG0001"><s>x:=$x+1</s></catch></try> 
+  <try><s>int("f")</s><catch errors=""/><catch errors="*:FORG0001"><s>x:=$x+1</s></catch></try> 
+  <try><s>int("f")</s><catch errors="pxp:FORG0001"/><catch errors="*"><s>x:=$x+1</s></catch></try> 
+  <try><s>int("f")</s><catch errors="foo bar"/><catch errors="*:*"><s>x:=$x+1</s></catch></try> 
+  <try><s>int("f")</s><catch errors="FORG0001"/><catch errors="err:*"><s>x:=$x+1</s></catch></try> 
+  <try><s>int("f")</s><catch><s>x:=$x+1</s></catch></try> 
+  <try><s>int("f")</s><catch errors="*:FORG0001"><s>x:=$x+1</s></catch></try>  </action>'  --xpath '$x'
+tests/test.sh multipageTryHttp --extract-kind=multipage --extract '<action> 
+    <try><page url="http://example.org/invalid"/><catch errors="http"><s>x:=1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http300"/><catch errors="http404"><s>x:=$x+1</s></catch><catch errors="http404"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http3xx"/><catch errors="http4xx"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http44x"/><catch errors="httpxxx"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="err:*"/><catch errors="pxp:*"><s>x:=$x+1</s></catch></try> 
+</action>'  --xpath '$x'
 
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
