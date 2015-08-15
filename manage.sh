@@ -1,7 +1,8 @@
 #/bin/bash
 
 
-source ../../../manageUtils.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/../../../manageUtils.sh
 
 function getVersion(){
   MINOR_VERSION=`grep -i minorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
@@ -73,9 +74,10 @@ release)
 hg)     pushhg;;
 
 mirror) 
+        pushhg
         SF_PROJECT= 
         mirroredProject xidel
-        syncHg _hg.filemap
+        syncHg $BASE/_hg.filemap
         ;;
 
 src)
