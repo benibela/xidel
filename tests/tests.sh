@@ -104,8 +104,10 @@ tests/test.sh multipageTry  --extract-kind=multipage --extract '<action>
 tests/test.sh multipageTryHttp --extract-kind=multipage --extract '<action> 
     <try><page url="http://example.org/invalid"/><catch errors="http"><s>x:=1</s></catch></try> 
     <try><page url="http://example.org/invalid"/><catch errors="http300"/><catch errors="http404"><s>x:=$x+1</s></catch><catch errors="http404"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http3xx"/><catch errors="http4xx"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http44x"/><catch errors="httpxxx"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http:300"/><catch errors="http:404"><s>x:=$x+1</s></catch><catch errors="http:404"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http:3*"/><catch errors="http:4*"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http:3xx"/><catch errors="http:4xx"><s>x:=$x+1</s></catch></try> 
+    <try><page url="http://example.org/invalid"/><catch errors="http:44*"/><catch errors="http:*"><s>x:=$x+1</s></catch></try> 
     <try><page url="http://example.org/invalid"/><catch errors="err:*"/><catch errors="pxp:*"><s>x:=$x+1</s></catch></try> 
 </action>'  --xpath '$x'
 
