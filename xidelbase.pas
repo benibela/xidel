@@ -2835,6 +2835,12 @@ begin
   end;
 end;
 
+procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
+begin
+  if not info.isUndefined then writeln(stderr, info.toJoinedString() + ': '+value.toJoinedString())
+  else writeln(stderr, value.toJoinedString());
+end;
+
 procedure blockFileAccessFunctions; forward;
 
 procedure perform;
@@ -3065,6 +3071,7 @@ begin
   xpathparser := htmlparser.QueryEngine;
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
   xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
+  xpathparser.OnTrace := TXQTraceEvent(procedureToMethod(TProcedure(@traceCall)));
   if xqueryDefaultCollation <> '' then xpathparser.StaticContext.collation := TXQueryEngine.getCollation(xqueryDefaultCollation, '');
 
   if not mycmdline.readFlag('allow-repetitions') then
