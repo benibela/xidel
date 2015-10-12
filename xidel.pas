@@ -5,7 +5,9 @@ program xidel;
 uses //heaptrc,
      simpleinternet, internetaccess, multipagetemplate, bbutils,
      xidelbase,
-     rcmdline, utf8tools  //<< if you don't have this command line parser unit, you can download it from www.benibela.de
+     rcmdline, //<< if you don't have this command line parser unit, you can download it from www.benibela.de
+     utf8tools,
+     xquery_module_file
      ;
 
 
@@ -37,6 +39,8 @@ end;
 //{$R *.res}
 
 begin
+  registerModuleFile;
+
   if Paramcount = 0 then begin
     writeln(stderr, 'Xidel XQuery/XPath/CSS/JSONiq engine and webscraper');
     writeln(stderr, 'Use --help for a list of available command line parameters.');

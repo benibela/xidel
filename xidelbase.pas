@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom, LazUTF8,
+  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom, LazUTF8, xquery_module_file,
   rcmdline
   ;
 
@@ -2694,11 +2694,10 @@ begin
   else if name = 'xmlns' then begin
     temps:=trim(value);
     i := pos('=', temps);
-    if i = 0 then htmlparser.QueryEngine.StaticContext.defaultElementTypeNamespace := TNamespace.create(temps, '')
+    if i = 0 then xpathparser.StaticContext.defaultElementTypeNamespace := TNamespace.create(temps, '')
     else begin
-      if htmlparser.QueryEngine.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
       specialized := strSplitGet('=', temps);
-      htmlparser.QueryEngine.StaticContext.namespaces.add(TNamespace.create(temps, specialized));
+      xpathparser.StaticContext.namespaces.add(TNamespace.create(temps, specialized));
     end;
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
@@ -3072,6 +3071,8 @@ begin
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
   xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
   xpathparser.OnTrace := TXQTraceEvent(procedureToMethod(TProcedure(@traceCall)));
+  if htmlparser.QueryEngine.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
+  xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
   if xqueryDefaultCollation <> '' then xpathparser.StaticContext.collation := TXQueryEngine.getCollation(xqueryDefaultCollation, '');
 
   if not mycmdline.readFlag('allow-repetitions') then
