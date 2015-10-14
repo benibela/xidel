@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="https://webopac.slub-dresden.de -e //title"/>
+        <CommandLineParams Value="--xquery 'declare function foo() { &lt;output:serialization-parameters xmlns:output=&quot;http://www.w3.org/2010/xslt-xquery-serialization&quot;/> }; foo()' --xml"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
