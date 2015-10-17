@@ -2478,6 +2478,12 @@ begin
   end;
   if cgimode then flush(StdOut)
   else flush(stderr);
+  if e is EXQException then begin
+    sayln('Possible backtrace:');
+    for i := 0 to ExceptFrameCount-1 do begin
+      sayln(BackTraceStrFunc(ExceptFrames[i]) + ': ' + EXQException.searchClosestFunction(ExceptFrames[i]));
+    end;
+  end;
 end;
 
 type
