@@ -2416,6 +2416,10 @@ procedure displayError(e: Exception; printPartialMatches: boolean = false);
     else write(stderr, s);
   end;
 
+const ParsingError  = '[<- error occurs before here]';
+var
+  message: String;
+  p: LongInt;
 begin
   case outputFormat of
     ofJsonWrapped: begin
@@ -2449,7 +2453,21 @@ begin
     end;
     else begin
       sayln( 'Error:');
-      sayln( e.Message);
+      message := e.Message;
+      if not cgimode then begin
+        if  strBeginsWith(message, 'err:') or strBeginsWith(message, 'pxp:') then begin
+          p := strIndexOf(message, [#13,#10]);
+          say(#27'[1;31m' + copy(message,1,p-1) + #27'[0m');
+          delete(message, 1, p);
+        end;
+        while Length(message) > 0 do begin
+          p := strIndexOf(message, ParsingError);
+          if p <= 0 then break;
+          say(copy(message, 1, p - 1) + #27'[1;31m' + ParsingError + #27'[0m');
+          delete(message, 1, p + length(ParsingError) - 1);
+        end;
+      end;
+      sayln( message );
       if printPartialMatches then begin
         sayln('');
         sayln( 'Partial matches:');
