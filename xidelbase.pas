@@ -2983,6 +2983,13 @@ begin
   SetLength(contextStack, 1);
   contextStack[0] := baseContext;
 
+  xpathparser := htmlparser.QueryEngine;
+  if xpathparser.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
+  xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
+  xpathparser.OnParseDoc:= @htmlparser.parseDoc;
+  xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
+  xpathparser.OnTrace := TXQTraceEvent(procedureToMethod(TProcedure(@traceCall)));
+
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
 
   TCommandLineReaderBreaker(mycmdLine).parseUTF8();
@@ -3091,12 +3098,6 @@ begin
     multipage := TTemplateReaderBreaker.create();
     multipage.parser:=htmlparser;
   end;
-  xpathparser := htmlparser.QueryEngine;
-  xpathparser.OnParseDoc:= @htmlparser.parseDoc;
-  xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
-  xpathparser.OnTrace := TXQTraceEvent(procedureToMethod(TProcedure(@traceCall)));
-  if htmlparser.QueryEngine.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
-  xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
   if xqueryDefaultCollation <> '' then xpathparser.StaticContext.collation := TXQueryEngine.getCollation(xqueryDefaultCollation, '');
 
   if not mycmdline.readFlag('allow-repetitions') then
