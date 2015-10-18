@@ -2860,8 +2860,8 @@ end;
 
 procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
 begin
-  if not info.isUndefined then writeln(stderr, info.toJoinedString() + ': '+value.toJoinedString())
-  else writeln(stderr, value.toJoinedString());
+  if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
+  writeln(stderr, value.debugAsStringWithTypeAnnotation());
 end;
 
 procedure blockFileAccessFunctions; forward;
