@@ -1640,6 +1640,7 @@ var next, res: TFollowToList;
       followKind := guessExtractionKind(follow);
 
       if followKind = ekTemplate then begin //assume my template
+        htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
         htmlparser.parseTemplate(follow); //todo reuse existing parser
         htmlparser.parseHTML(data); //todo: optimize
         for i:=0 to htmlparser.variableChangeLog.count-1 do
@@ -1649,6 +1650,7 @@ var next, res: TFollowToList;
       end else begin
         //assume xpath like
         xpathparser.StaticContext. BaseUri := data.baseUri;
+        xpathparser.ParsingOptions.StringEntities:=xqseDefault;
         if followQueryCache = nil then
           case followKind of
             ekXQuery1: followQueryCache := xpathparser.parseXQuery1(follow, xpathparser.StaticContext);
