@@ -460,8 +460,6 @@ TExtraction = class(TDataProcessing)
 
  constructor create;
 
- procedure setExtractKind(v: string);
-
  procedure readOptions(reader: TOptionReaderWrapper); override;
 
  procedure setVariables(v: string);
@@ -505,6 +503,7 @@ TProcessingContext = class(TDataProcessing)
   actions: array of TDataProcessing;     //actions e.g. a download target
 
   follow: string;
+  followKind: TExtractionKind;
   followQueryCache: IXQuery;
   followExclude, followInclude: TStringArray;
   followTo: TProcessingContext;
@@ -1236,6 +1235,7 @@ begin
         temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
         temp.parent := parent;
         temp.follow := parent.follow; //need to copy follow and follow-to, so it follows to the new data
+        temp.followKind := parent.followKind;
         temp.followTo := parent.followTo;
         temp.nextSibling := parent.nextSibling;
         temp.mergeWithObject(dest as TXQValueObject);
@@ -1313,20 +1313,21 @@ begin
   printVariables:=[pvCondensedLog];
 end;
 
-procedure TExtraction.setExtractKind(v: string);
+function extractKindFromString(v: string): TExtractionKind;
 begin
-  if extract = '' then exit;
-  if striEqual(v, 'auto') then extractKind := ekAuto
-  else if striEqual(v, 'xpath') then extractKind:=ekXPath3
-  else if striEqual(v, 'xquery') then extractKind:=ekXQuery3
-  else if striEqual(v, 'xpath2') then extractKind:=ekXPath2
-  else if striEqual(v, 'xquery1') then extractKind:=ekXQuery1
-  else if striEqual(v, 'xpath3') then extractKind:=ekXPath3
-  else if striEqual(v, 'xquery3') then extractKind:=ekXQuery3
-  else if striEqual(v, 'css') then extractKind:=ekCSS
-  else if striEqual(v, 'template') then extractKind:=ekTemplate
-  else if striEqual(v, 'multipage') then extractKind:=ekMultipage
-  else raise EXidelException.Create('Unknown kind for the extract expression: '+v);
+  case v of
+    'auto': result := ekAuto;
+    'xpath': result :=ekXPath3;
+    'xquery': result :=ekXQuery3;
+    'xpath2': result :=ekXPath2;
+    'xquery1': result :=ekXQuery1;
+    'xpath3': result :=ekXPath3;
+    'xquery3': result :=ekXQuery3;
+    'css': result :=ekCSS;
+    'template': result :=ekTemplate;
+    'multipage': result :=ekMultipage;
+    else raise EXidelException.Create('Unknown kind for the extract expression: '+v);
+  end;
 end;
 
 procedure TExtraction.readOptions(reader: TOptionReaderWrapper);
@@ -1337,7 +1338,7 @@ begin
   extract:=trim(extract);
   if reader.read('extract-exclude', tempstr) then extractExclude := strSplit(tempstr, ',', false);
   if reader.read('extract-include', tempstr) then extractInclude := strSplit(tempstr, ',', false);
-  if reader.read('extract-kind', tempstr) then setExtractKind(tempstr);
+  if reader.read('extract-kind', tempstr) then if extract <> '' then extractKind := extractKindFromString(tempstr);
 
   if reader.read('template-file', tempstr)  then begin
     extract := strLoadFromFileChecked(tempstr);
@@ -1410,6 +1411,7 @@ begin
     if follow = '-' then follow :=strReadFromStdin;
   end;} //handled in variableRead
   reader.read('follow', follow);
+  if reader.read('follow-kind', tempstr) then followKind := extractKindFromString(tempstr);
   reader.read('follow-exclude', tempstr); followExclude := strSplit(tempstr, ',', false);
   reader.read('follow-include', tempstr); followInclude := strSplit(tempstr, ',', false);
   reader.read('follow-level', followMaxLevel);
@@ -1554,6 +1556,7 @@ begin
     TProcessingContext(result).nextSibling := nextSibling.clone(TProcessingContext(result)) as TProcessingContext;
   end;
 
+  TProcessingContext(result).followKind := followKind;
   TProcessingContext(result).follow := follow;
   if followTo <> nil then
     if followTo = self then TProcessingContext(result).followTo := TProcessingContext(result)
@@ -1637,7 +1640,8 @@ var next, res: TFollowToList;
 
       htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
 
-      followKind := guessExtractionKind(follow);
+      followKind := self.followKind;
+      if followKind = ekAuto then followKind := guessExtractionKind(follow);
 
       if followKind = ekTemplate then begin //assume my template
         htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
@@ -2914,6 +2918,7 @@ begin
                                             'If it is an object, its url property and its other properties can override command line arguments',
                                             'Otherwise, the string value is used as url.']));
   mycmdline.addAbbreviation('f');
+  mycmdline.declareString('follow-kind', 'How the follow expression is evaluated. Like extract-kind');
   mycmdLine.declareString('follow-exclude', 'Comma separated list of variables ignored in a follow template. (black list)');
   mycmdLine.declareString('follow-include', 'Comma separated list of variables used in a follow template. (white list)');
   mycmdLine.declareFile('follow-file', 'File containing a follow expression (for longer expressions)');
@@ -3013,6 +3018,7 @@ begin
   if (currentContext.parent <> nil) and (length(currentContext.actions) = 0) and (length(currentContext.dataSources) = 0) then begin
     //this allows a trailing follow to recurse
     currentContext.follow := currentContext.parent.follow;
+    currentContext.followKind := currentContext.parent.followKind;
     currentContext.followExclude := currentContext.parent.followExclude;
     currentContext.followInclude := currentContext.parent.followInclude;
     currentContext.followTo := currentContext;
