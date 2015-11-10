@@ -4,7 +4,7 @@ dir=/tmp/xidel/file/test
 mkdir -p tests/output/file
 ARGS=--strict-type-checking
 
-tests/test.sh file/init $ARGS --xquery "(file:delete('$dir', true()), file:create-dir('$dir'), file:write-text('$dir/utf8', 'aäöü'), file:write-text('$dir/latin1', 'aäöü', 'latin1'))"
+tests/test.sh file/init $ARGS --xquery "(if (file:exists('$dir')) then file:delete('$dir', true()) else (), file:create-dir('$dir'), file:write-text('$dir/utf8', 'aäöü'), file:write-text('$dir/latin1', 'aäöü', 'latin1'))"
 tests/test.sh file/exists $ARGS --xquery "file:exists('$dir'), file:exists('$dir/utf8')"
 tests/test.sh file/is-dir $ARGS --xquery "file:is-dir('$dir'), file:is-dir('$dir/utf8')"
 tests/test.sh file/is-file $ARGS --xquery "file:is-file('$dir'), file:is-file('$dir/utf8')"
@@ -40,7 +40,7 @@ tests/test.sh file/name $ARGS --xquery  "file:name('$dir/utf8')"
 tests/test.sh file/parent $ARGS --xquery  "file:parent('$dir/utf8')"
 #children tested above
 #tests/test.sh file/parent1 $ARGS --xquery  "file:parent('$dir')"
-tests/test.sh file/path-to-native $ARGS --xquery "('$dir', ('$dir', '$dir/////xyt', '$dir/./.././../foo') ! file:path-to-native(.))"
+tests/test.sh file/path-to-native $ARGS  --xquery "('$dir', ('$dir', '$dir/././latin1', '$dir/../test/../test/utf8' ) ! file:path-to-native(.))"
 tests/test.sh file/path-to-uri -e "('$dir', ('$dir', '$dir/////xyt', '$dir/./.././../foo') ! file:path-to-uri(.))"
 tests/test.sh file/separators $ARGS --xquery 'file:dir-separator(), file:line-separator(), file:path-separator()'
 export TEMP=/tmp
