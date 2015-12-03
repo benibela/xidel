@@ -1,5 +1,7 @@
 <actions>
-  <!-- call it with xidel --template-file reddit-robobutler.xml -->
+  <!-- call it with 
+     xidel --template-file reddit-robobutler.xml 
+  -->
   <action>  
     <s> if (empty(get("user", ()))) then $user := (trace((), "Username: "), read()) else () </s>
     <s> if (empty(get("passwd", ()))) then $passwd := (trace((), "Password: "), read()) else () </s>
