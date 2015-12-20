@@ -12,17 +12,20 @@
     ()</s>
 
 
-    <page url="https://ssl.reddit.com/api/login">
+    <page url="https://www.reddit.com/api/login">
       <post name="user" value="{$user}"/>
       <post name="passwd" value="{$passwd}"/>
       <post name="api_type" value="json"/>
     </page>    
     
-    <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
+    <page url="https://www.reddit.com/api/me.json">
+      <template><t:s>modhash := jn:parse-json($raw)//modhash</t:s></template>
+    </page>
         
     <loop test="true()">
-    <s> $url := "https://www.reddit.com/message/unread.json",
-        letters := json($url)/data/children/data </s>	
+      <page url="https://www.reddit.com/message/unread.json">
+        <template><t:s>letters := jn:parse-json($raw)/data/children/data</t:s></template>
+      </page>
 <!--    <s>letters := ("/u/butler bring soda")</s>-->
     <!--<loop var="rep" list="1 to 10">-->
     <loop var="letter" list="$letters">
