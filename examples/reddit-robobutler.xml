@@ -5,13 +5,7 @@
   <action>  
     <s> if (empty(get("user", ()))) then $user := (trace((), "Username: "), read()) else () </s>
     <s> if (empty(get("passwd", ()))) then $passwd := (trace((), "Password: "), read()) else () </s>
-
-    <s>declare variable $rand-seed := seconds-from-time(current-time()) mod 7;
-       declare function rand-text($list) { let $i := floor((random()+$rand-seed)*count($list)) mod count($list) + 1 return $list[$i] };
-       declare function is-plural($word) { if (ends-with($word, "s")) then true() else false() };
-    ()</s>
-
-
+ 
     <page url="https://www.reddit.com/api/login">
       <post name="user" value="{$user}"/>
       <post name="passwd" value="{$passwd}"/>
@@ -29,7 +23,9 @@
 <!--    <s>letters := ("/u/butler bring soda")</s>-->
     <!--<loop var="rep" list="1 to 10">-->
     <loop var="letter" list="$letters">
-      <s> 
+      <s> declare variable $rand-seed := seconds-from-time(current-time()) mod 7;
+             declare function rand-text($list) { let $i := floor((random()+$rand-seed)*count($list)) mod count($list) + 1 return $list[$i] };
+             declare function is-plural($word) { if (ends-with($word, "s")) then true() else false() };
          trace($letter/body, "letter: "), 
          $bring := extract($letter/body, "(bring|get)\s*(me)?\s*(my|the|an?)?\s*([^,.:;!?\n]+)",4),
          $response := if ($bring) then "[*" ||
