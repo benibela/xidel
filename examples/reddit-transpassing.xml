@@ -10,7 +10,11 @@
         case "female" return +1
         default return error(QName("xxx"), "unknown gender: " || $gender)
     }; ()</s>
-    <s> keys := doc("reddit-transpassing.keys.xml")/keys </s>    
+    <s> keys := doc("reddit-transpassing.keys.xml")/keys,
+        CACHEDIR := "transpassing/cache/"</s>    
+    
+    <s> file:create-dir($CACHEDIR || "skybiometry"), file:create-dir($CACHEDIR || "oxfort")</s>
+
  
     <call action="detect"/>
   </action>
@@ -72,26 +76,49 @@
   
   <action id="detect">
     <s> genders := (), ages := (), multi-faces := false() </s>
-    <call action="oxfort"/>
-    <call action="skybiometry"/>
+    <s> api := "oxfort" </s> <call action="detect-cached"/>
+    <s> api := "skybiometry" </s> <call action="detect-cached"/>
     <s>trace($genders, "genders: "), trace($ages, "ages: ")</s>
+    <!-- %certain-age  
+    (I (see|recognize you as) a|You (seem|appear) to be a|You (look|appear) like a) 19 years (old|young) (female|male|man|woman|boy|girl|)
+    
+    (between) 10 to 30 years old 
+    
+   (Probably | Tending towards | Likely | More) male. Not sure | Hard to say 
+    -->
+    <s>
+    </s>
   </action>
   
+  <action id="detect-cached"> 
+    <s>cache-file := $CACHEDIR || $api || "/" || uri-encode($imgurl)</s>
+    <if test="file:exists($cache-file)">
+      <s>$out := jn:parse-json(file:read-text($cache-file))</s>
+    </if>
+    <else>
+      <call action="{$api}"/>
+      <s>file:write-text($cache-file, serialize-json($out))</s>
+    </else>
+    <s>
+    $genders := ($genders, $out("genders")),
+    $ages := ($ages, $out("ages")),
+    $multi-faces := $multi-faces or $out("multi-faces")
+    </s>
+  </action>
+
   <action id="skybiometry"> 
     <page url="http://api.skybiometry.com/fc/faces/detect.json?api_key={$keys/skybiometry/key}&api_secret={$keys/skybiometry/secret}&urls={uri-encode($imgurl)}&detector=aggressive&attributes=gender,age"/>
     <s>let $attributes := json($raw).photos().tags().attributes
-	       return (
-	         $genders := ($genders, ($attributes).gender ! { 
+	       return $out := {
+  	       "genders": ($attributes).gender ! { 
 	           "value": local:gender-to-number((.).value),
-	           "confidence": (.).confidence div 100,
-	           "api": "sky" }),	          
-	         $ages := ($ages, ($attributes).age_est ! {
+	           "confidence": (.).confidence div 100 },	          
+	         "ages": ($attributes).age_est ! {
 	           "value": (.).value,
-	            "confidence": (.).confidence div 100,
-	            "api": "sky"}), 
-           if (count($attributes) > 1) then $multi-faces := true() else () 
-         )
-    
+	            "confidence": (.).confidence div 100
+	          }, 
+	         "multi-faces": count($attributes) > 1 
+         }    
     </s>
   </action>
  
@@ -104,19 +131,17 @@
       <post>{{ "url": "{($imgurl)}" }}</post>
     </page>
     <s>let $attributes := json(trace($raw, "result"))().faceAttributes
-	       return (
-	         $genders := ($genders, ($attributes).gender ! { 
+	       return $out := {
+	         "genders": ($attributes).gender ! { 
 		           "value": local:gender-to-number(.), 
-		           "confidence": 0.5,
-		           "api": "oxfort" 
-	           } ),
-	         $ages := ($ages, ($attributes).age ! {
+		           "confidence": 0.5
+	           } ,
+	         "ages": ($attributes).age ! {
 	             "value": round(.) , 
-	             "confidence": 0.5,
-	             "api": "oxfort"
-	             }), 
-           if (count($attributes) > 1) then $multi-faces := true() else () 
-         )
+	             "confidence": 0.5
+	             }, 
+           "multi-faces": count($attributes) > 1 
+         }
     
     </s>
   </action>
