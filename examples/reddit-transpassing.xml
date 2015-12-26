@@ -16,6 +16,11 @@
         case 1 return $v
         default return head($v) * local:product(tail($v))
     };
+    declare function local:json-to-sequence($v) {
+      typeswitch ($v) 
+        case array() return $v()
+        default return $v
+    };
     declare variable $rand-seed := seconds-from-time(current-time()) mod 7;
     declare function local:random-to($count) {
       floor((random()+$rand-seed)*$count) mod $count
@@ -187,7 +192,13 @@
          {{male|man{?$max-age gt 15}|boy{?$min-age lt 20}}{?$gender lt 0}|
                {female|woman{?$max-age gt 15}|girl{?$min-age lt 20}}{?$gender gt 0}}
                
-        {{?$gender-queer and abs($gender) le 0.3}. {Or not|Can never be sure.|}|}
+        {{?$gender-queer and abs($gender) le 0.3}. {Or not.|{You can|Can} never be {certain|sure}.|}|}
+        
+        {{?not($multi-faces)} | 
+          {?$multi-faces} 
+          {But|Though|However} there are {multiple|many} faces {in the picture.|visible.|.} 
+          {That {is|makes it} {quite|very|a little bit|} {confusing|strange|unusual|chaotic}.|} 
+          {Which {one|face|of them} should I {pick|choose|look at|examine|analyze}?|} } 
       "));
       trace(serialize-json($talkings),$line-ending|| " talkings"),
       ()
@@ -216,13 +227,15 @@
     
     <s> ("skybiometry", "oxfort", "reddit", "raw") ! file:create-dir($CACHEDIR || .)</s>
 
-    <page url="https://www.reddit.com/api/login">
-      <post name="user" value="{$keys/reddit/user}"/>
-      <post name="passwd" value="{$keys/reddit/passwd}"/>
-      <post name="api_type" value="json"/>
-    </page>    
-    <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
-
+    <if test="empty(get('debug-post', ()))">   
+      <page url="https://www.reddit.com/api/login">
+        <post name="user" value="{$keys/reddit/user}"/>
+        <post name="passwd" value="{$keys/reddit/passwd}"/>
+        <post name="api_type" value="json"/>
+      </page>    
+      <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
+    </if>
+    
     <loop var="linkpost" 
           list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=4')/data/children/data">
     
@@ -232,8 +245,8 @@
            else if (contains($url, "imgur.com") and not(contains($url, "/a/"))) then $url
            else ()
       </s>
-      <if test="exists($imgurl) and not(file:exists($post-cache-file)) ">
-        <s> if (not(matches($imgurl, "[.](jpe?g|png)"))) then $imgurl := $imgurl || ".jpg" else () </s>
+      <if test="exists($imgurl) and ( not(file:exists($post-cache-file)) or get('debug-post') = $linkpost('name') ) ">
+        <s> if (not(matches(trace($imgurl, "image"), "[.](jpe?g|png)"))) then $imgurl := $imgurl || ".jpg" else () </s>
         <call action="detect"/>
         <s>(: Gives us $age and $genders, combine for talking  :) 
            $age-values := $ages ! .("value"), 
@@ -255,16 +268,18 @@
                         , "message")
         </s>
         
-        <page test="$message" url="https://www.reddit.com/api/comment.json">
-          <header name="X-Modhash" value="{$modhash}"/>
-          <post name="api_type" value="json"/>
-          <post name="text" value="{$message}"/>
-          <post name="thing_id" value="{$linkpost('name')}"/>
-        </page>
-        
-        <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
-           file:write-text($post-cache-file || ".message", $message)
-        </s>
+        <if test="empty(get('debug-post', ()))">        
+          <page test="$message" url="https://www.reddit.com/api/comment.json">
+            <header name="X-Modhash" value="{$modhash}"/>
+            <post name="api_type" value="json"/>
+            <post name="text" value="{$message}"/>
+            <post name="thing_id" value="{$linkpost('name')}"/>
+          </page>
+          
+          <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
+             file:write-text($post-cache-file || ".message", $message)
+          </s>
+        </if>
       </if>
     </loop>
   </action>
@@ -328,8 +343,8 @@
       <s>file:write-text($cache-file, serialize-json($out))</s>
     </else>
     <s>
-    $genders := ($genders, $out("genders") ! { "value": number(.("value")), "confidence": .("confidence"), "api": $api }),
-    $ages := ($ages, $out("ages") ! { "value": number(.("value")), "confidence": .("confidence"), "api": $api }),
+    $genders := ($genders, local:json-to-sequence($out("genders")) ! { "value": number(.("value")), "confidence": .("confidence"), "api": $api }),
+    $ages := ($ages, local:json-to-sequence($out("ages")) ! { "value": number(.("value")), "confidence": .("confidence"), "api": $api }),
     $multi-faces := $multi-faces or $out("multi-faces")
     </s>
   </action>
