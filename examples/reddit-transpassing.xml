@@ -29,17 +29,21 @@
         * {"concat": (a,b,c,...)} -> *a || *b || *c ...
         * {"condition": "test", "concat": value}  *value, if test or () otherwise
     :)
-    (: Generates the talking database from an expression like ((Get|Bring) the ((a|b) x|c)) :)
+    (: Generates the talking database from an expression like {{Get|Bring} the {{a|b} x|c}} :)
+    declare function local:create-talkings($pattern){
+      let $safepattern := replace($pattern, "[{][?]([^}]+)[}]", "⦃$1⦄" )
+      return local:merge-objects(local:extract-conditions(local:split-talkings($safepattern)))
+    };
     declare function local:split-talkings($pattern){
       local:split-talkings-rec($pattern, 0)
     };  
     declare function local:split-talkings-rec($pattern, $deep){
-      if (not(contains($pattern, "("))) then 
+      if (not(contains($pattern, "{"))) then 
         let $options := tokenize($pattern, "[|]") 
         return if (count($options) > 1) then [$options] else $options
       else 
         let $marker := "##" || $deep,
-            $splitted := extract($pattern, "(.*)[(]([^()]+)[)](.*)", (1,2,3)),
+            $splitted := extract($pattern, "(.*)[{]([^{}]+)[}](.*)", (1,2,3)),
             $inner := local:split-talkings-rec($splitted[2], $deep),
             $outer := local:split-talkings-rec($splitted[1] || $marker || $splitted[3], $deep + 1)
         return local:apply-marker($outer, $marker, $inner)
@@ -66,16 +70,19 @@
           case array() return [ $v() ! local:apply-marker(., $marker, $inner) ]
           default return error(QName("xxx"), "unexpected 2: " || $v)
     };
-    (: Moves conditions {$x}  from the strings to the condition properties :)
+    (: Moves conditions  ⦃$x⦄   from the strings to the condition properties :)
     declare function local:extract-conditions($v) {
       $v ! typeswitch(.) 
          case xs:string return
-           if (not(contains(., "{"))) then .
-           else let $split := extract(., "([^{]*)[{]([^{}]+)[}](.*)", (1,2,3)),
-                    $rest := local:extract-conditions($split[3])
+           if (not(contains(., "⦃"))) then .
+           else let $split1 := substring-before(., "⦃"), $split1b := substring-after(., "⦃"),
+                    $split2 := substring-before($split1b, "⦄"), 
+                    $split3 := substring-after($split1b, "⦄"),
+           (:extract(., "([^⦃]*)⦃([^⦃⦄]+)⦄(.*)", (1,2,3)),:)
+                    $rest := local:extract-conditions($split3)
            return if ($rest instance of xs:string) then
-                {"condition": $split[2], "concat":  $split[1]|| $rest  }
-           else {"condition": $split[2], "concat": ($split[1],  $rest) }
+                {"condition": $split2, "concat":  $split1|| $rest  }
+           else {"condition": $split2, "concat": ($split1,  $rest) }
          case object() return {"concat": one-or-more(.("concat")) ! local:extract-conditions(.)}
          case array() return [ .() ! local:extract-conditions(.) ]
          default return error(QName("xxx"), "unexpected 2: " || $v)
@@ -166,15 +173,15 @@
     
     (:  variables: $age in years, $min-age, $max-age, $age-range in years, 
                    $gender, $gender-queer,  :)
-    declare variable $talkings := local:merge-objects(local:extract-conditions(local:split-talkings(normalize-space(
-      "((I (see|classify you as) a|You (seem|appear) to be a|You (look|appear) like a) 
-         ({$age-range le 10}$age years (old|young{$min-age le 30})|
-               {$age-range ge 10}$min-age to $max-age years (old|young{$min-age le 30})
-         ) 
-         ((male|man{$max-age gt 15}|boy{$min-age lt 20}){$gender lt 0}|
-               (female|woman{$max-age gt 15}|girl{$min-age lt 20}){$gender gt 0})
-       ) 
-      "))));
+    declare variable $talkings := local:create-talkings(normalize-space(
+      "{{I {see|classify you as} a|You {seem|appear} to be a|You {look|appear} like a} 
+         {{?$age-range le 10}$age years {old|young{?$min-age le 30}}|
+               {?$age-range ge 10}$min-age to $max-age years {old|young{?$min-age le 30}}
+         } 
+         {{male|man{?$max-age gt 15}|boy{?$min-age lt 20}}{?$gender lt 0}|
+               {female|woman{?$max-age gt 15}|girl{?$min-age lt 20}}{?$gender gt 0}}
+       } 
+      "));
       trace(serialize-json($talkings),$line-ending|| " talkings"),
       ()
     </s>
@@ -364,31 +371,32 @@
   </action>-->
   
   <action id="tests">
-      trace(serialize-json(local:split-talkings("foobar")),$line-ending|| " talkings2"),
-      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
-      trace(serialize-json(local:split-talkings("(x)")),$line-ending|| " talkings2"),
-      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
-      trace(serialize-json(),$line-ending|| " talkings2"),
-      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
-      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
-    <s> for $test in ( 
+     <s>
+      testtrue := true(),
+      testfalse := false(),
+      for $test in ( 
 		  ["foobar", "foobar", 1],
 		  ["foo|bar", ["foo", "bar"], 2],
-		  ["(x)", "x", 1],
-		  ["((x))", "x", 1],
-		  ["a(b)c", {"concat": ["a", "b", "c"]}, 1],
-		  ["a(b)c(e)f", {"concat": ["a", "b", "c", "e", "f"]}, 1],
-		  ["a(b)c(e|f|g)h", {"concat": ["a", "b", "c", ["e", "f", "g"], "h"]}, 3],
-		  ["a((b))c", {"concat": ["a", "b", "c"]}, 1], 
-		  ["a(b|c)d(e|f)|x", [{"concat": ["a", ["b", "c"], "d", ["e", "f"]]}, "x"], 5] 
+		  ["{x}", "x", 1],
+		  ["{{x}}", "x", 1],
+		  ["a{b}c", {"concat": ["a", "b", "c"]}, 1],
+		  ["a{b}c{e}f", {"concat": ["a", "b", "c", "e", "f"]}, 1],
+		  ["a{b}c{e|f|g}h", {"concat": ["a", "b", "c", ["e", "f", "g"], "h"]}, 3],
+		  ["a{{b}}c", {"concat": ["a", "b", "c"]}, 1], 
+		  ["a{b|c}d{e|f}|x", [{"concat": ["a", ["b", "c"], "d", ["e", "f"]]}, "x"], 5],
+		  ["a{?$testtrue}", {"concat": "a"}, 1] ,
+		  ["b{?$testfalse}|c", ["c"], 1] 
 		  ) 
-		  let $talk := local:split-talkings($test(1))
+		  let $talk := local:filter-truths(local:create-talkings($test(1)))
   return
     if (serialize-json($talk) ne serialize-json($test(2))) then
       error(QName("xxx"), "test fail: " || $test(1) || " got " || serialize-json($talk))
     else if (local:count-talkings($talk) ne $test(3)) then
       error(QName("xxx"), "count test fail: " || $test(1) || " got " || local:count-talkings($talk))
     else ("ok")
+    
+    
+    
     </s>
   </action>
 </actions>
