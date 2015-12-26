@@ -260,11 +260,12 @@
            $gender-queer := exists($gender-values[. lt 0]) and exists($gender-values[. gt 0]) (: APIs do not agree :),
            
            $message := trace(
-                          replace(replace(replace(
+                          replace(replace(replace(replace(
                              local:choose-random-talking(local:filter-truths($talkings)),
                              "\$age", $age),
                              "\$min-age", $min-age),
-                             "\$max-age", $max-age)
+                             "\$max-age", $max-age),
+                             " +[.]", ".")
                         , "message")
         </s>
         
