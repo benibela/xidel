@@ -1,4 +1,9 @@
 <keys>
+  <reddit>
+    <user></user>
+    <passwd></passwd>
+    <subreddit>transpassing</subreddit>
+  </reddit>
   <mashape></mashape>
   <skybiometry>
     <key></key>

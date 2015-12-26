@@ -174,17 +174,25 @@
     (:  variables: $age in years, $min-age, $max-age, $age-range in years, 
                    $gender, $gender-queer,  :)
     declare variable $talkings := local:create-talkings(normalize-space(
-      "{{I {see|classify you as} a|You {seem|appear} to be a|You {look|appear} like a} 
+      "{{?not($gender-queer)}{I {see|classify you as} a|You {seem|appear} to be a|You {look|appear} like a} 
+       
+       |{?$gender-queer} {Hard too say|You {look|appear} {quite} queer|Complicated|Difficult}.
+       
+         {Tending towards a|{?abs($gender) > 0.6 }{You are most|Most} likely a|Perhaps a|You {might|could} be a}
+        
+       } 
          {{?$age-range le 10}$age years {old|young{?$min-age le 30}}|
-               {?$age-range ge 10}$min-age to $max-age years {old|young{?$min-age le 30}}
-         } 
+               {?$age-range ge 10}$min-age to $max-age years {old|young{?$min-age le 30}}}
+
          {{male|man{?$max-age gt 15}|boy{?$min-age lt 20}}{?$gender lt 0}|
                {female|woman{?$max-age gt 15}|girl{?$min-age lt 20}}{?$gender gt 0}}
-       } 
+               
+        {{?$gender-queer and abs($gender) le 0.3}. {Or not|Can never be sure.|}|}
       "));
       trace(serialize-json($talkings),$line-ending|| " talkings"),
       ()
     </s>
+    <call action="tests"/>
 
    <!--<s>age := 60, gender := -1, 
       $curtalkings := local:filter-truths($talkings),
@@ -206,49 +214,63 @@
     </s>
         
     
-    <s> file:create-dir($CACHEDIR || "skybiometry"), file:create-dir($CACHEDIR || "oxfort")</s>
+    <s> ("skybiometry", "oxfort", "reddit", "raw") ! file:create-dir($CACHEDIR || .)</s>
 
-    <call action="tests"/>
- 
- 
-    <call action="detect"/>
-    <s>(: Gives us $age and $genders, combine for talking  :) 
-       $age-values := $ages ! .("value"), 
-       $age := local:average-with-confidence($ages),
-       $min-age := min($age-values),
-       $max-age := max($age-values),
-       $age-range := $max-age - $min-age + 1,
-
-       $gender-values := $genders ! .("value"), 
-       $gender := local:average-with-confidence($genders),
-       $gender-queer := exists($gender-values[. lt 0]) and exists($gender-values[. gt 0]) (: APIs do not agree :),
-       
-       let $message := replace(replace(replace(
-                         local:choose-random-talking(local:filter-truths($talkings)),
-                         "\$age", $age),
-                         "\$min-age", $min-age),
-                         "\$max-age", $max-age)
-       
-       return (:trace( local:enumerate-talkings(local:filter-truths($talkings)) !(.,$line-ending) , "talkings"):)
-       trace( $message, "message")
-       
-    </s>
-  </action>
-  
-  <action>
-    
-    <s> if (empty(get("user", ()))) then $user := (trace((), "Username: "), read()) else () </s>
-    <s> if (empty(get("passwd", ()))) then $passwd := (trace((), "Password: "), read()) else () </s>
- 
     <page url="https://www.reddit.com/api/login">
-      <post name="user" value="{$user}"/>
-      <post name="passwd" value="{$passwd}"/>
+      <post name="user" value="{$keys/reddit/user}"/>
+      <post name="passwd" value="{$keys/reddit/passwd}"/>
       <post name="api_type" value="json"/>
     </page>    
+    <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
+
+    <loop var="linkpost" 
+          list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=4')/data/children/data">
     
-    <page url="https://www.reddit.com/api/me.json">
-      <template><t:s>modhash := jn:parse-json($raw)//modhash</t:s></template>
-    </page>
+      <s>post-cache-file := $CACHEDIR || "reddit/" || uri-encode(trace($linkpost("name"), "name")),
+         imgurl := let $url := $linkpost("url") return
+           if (matches($url, "[.](jpe?g|png)")) then $url
+           else if (contains($url, "imgur.com") and not(contains($url, "/a/"))) then $url
+           else ()
+      </s>
+      <if test="exists($imgurl) and not(file:exists($post-cache-file)) ">
+        <s> if (not(matches($imgurl, "[.](jpe?g|png)"))) then $imgurl := $imgurl || ".jpg" else () </s>
+        <call action="detect"/>
+        <s>(: Gives us $age and $genders, combine for talking  :) 
+           $age-values := $ages ! .("value"), 
+           $age := local:average-with-confidence($ages),
+           $min-age := min($age-values),
+           $max-age := max($age-values),
+           $age-range := $max-age - $min-age + 1,
+    
+           $gender-values := $genders ! .("value"), 
+           $gender := local:average-with-confidence($genders),
+           $gender-queer := exists($gender-values[. lt 0]) and exists($gender-values[. gt 0]) (: APIs do not agree :),
+           
+           $message := trace(
+                          replace(replace(replace(
+                             local:choose-random-talking(local:filter-truths($talkings)),
+                             "\$age", $age),
+                             "\$min-age", $min-age),
+                             "\$max-age", $max-age)
+                        , "message")
+        </s>
+        
+        <page test="$message" url="https://www.reddit.com/api/comment.json">
+          <header name="X-Modhash" value="{$modhash}"/>
+          <post name="api_type" value="json"/>
+          <post name="text" value="{$message}"/>
+          <post name="thing_id" value="{$linkpost('name')}"/>
+        </page>
+        
+        <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
+           file:write-text($post-cache-file || ".message", $message)
+        </s>
+      </if>
+    </loop>
+  </action>
+  
+  <action>    
+    
         
     <loop test="true()">
       <page url="https://www.reddit.com/message/unread.json">
