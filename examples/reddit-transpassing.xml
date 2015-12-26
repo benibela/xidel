@@ -1,0 +1,141 @@
+<actions>
+  <!-- call it with 
+     xidel --template-file reddit-transpassing.xml 
+  put your API keys in reddit-transpassing.keys.xml
+  -->
+  <action>  
+    <s> declare function local:gender-to-number($gender) {
+      switch ($gender) 
+        case "male" return -1
+        case "female" return +1
+        default return error(QName("xxx"), "unknown gender: " || $gender)
+    }; ()</s>
+    <s> keys := doc("reddit-transpassing.keys.xml")/keys </s>    
+ 
+    <call action="detect"/>
+  </action>
+  
+  <action>
+    
+    <s> if (empty(get("user", ()))) then $user := (trace((), "Username: "), read()) else () </s>
+    <s> if (empty(get("passwd", ()))) then $passwd := (trace((), "Password: "), read()) else () </s>
+ 
+    <page url="https://www.reddit.com/api/login">
+      <post name="user" value="{$user}"/>
+      <post name="passwd" value="{$passwd}"/>
+      <post name="api_type" value="json"/>
+    </page>    
+    
+    <page url="https://www.reddit.com/api/me.json">
+      <template><t:s>modhash := jn:parse-json($raw)//modhash</t:s></template>
+    </page>
+        
+    <loop test="true()">
+      <page url="https://www.reddit.com/message/unread.json">
+        <template><t:s>letters := jn:parse-json($raw)/data/children/data</t:s></template>
+      </page>
+<!--    <s>letters := ("/u/butler bring soda")</s>-->
+    <!--<loop var="rep" list="1 to 10">-->
+    <loop var="letter" list="$letters">
+      <s> declare variable $rand-seed := seconds-from-time(current-time()) mod 7;
+             declare function rand-text($list) { let $i := floor((random()+$rand-seed)*count($list)) mod count($list) + 1 return $list[$i] };
+             declare function is-plural($word) { if (ends-with($word, "s")) then true() else false() };
+         trace($letter/body, "letter: "), 
+         $bring := extract($letter/body, "(bring|get)\s*(me)?\s*(my|the|an?)?\s*([^,.:;!?\n]+)",4),
+         $response := if ($bring) then "[*" ||
+           replace(rand-text(("Enjoy your %!",
+             if (is-plural($bring)) then ("Here are your %!")
+             else ("Here is your %!")
+           )), "%", $bring) || "*](/robobutler-in)"
+         else (),
+         trace($response,"===> response")        
+      </s>
+      
+      <page test="$response" url="https://www.reddit.com/api/comment.json">
+        <header name="X-Modhash" value="{$modhash}"/>
+        <post name="api_type" value="json"/>
+        <post name="text" value="{$response}"/>
+        <post name="thing_id" value="{$letter/name}"/>
+      </page>
+      
+    </loop>
+    
+    <page test="exists($letters)" url="https://www.reddit.com/api/read_message">
+      <header name="X-Modhash" value="{$modhash}"/>
+      <post name="id" value="{join($letters/name, ',')}"/>
+    </page>
+    
+    <s>sleep(1000*60*5)</s>
+    </loop>
+    
+  </action>
+  
+  <action id="detect">
+    <s> genders := (), ages := (), multi-faces := false() </s>
+    <call action="oxfort"/>
+    <call action="skybiometry"/>
+    <s>trace($genders, "genders: "), trace($ages, "ages: ")</s>
+  </action>
+  
+  <action id="skybiometry"> 
+    <page url="http://api.skybiometry.com/fc/faces/detect.json?api_key={$keys/skybiometry/key}&api_secret={$keys/skybiometry/secret}&urls={uri-encode($imgurl)}&detector=aggressive&attributes=gender,age"/>
+    <s>let $attributes := json($raw).photos().tags().attributes
+	       return (
+	         $genders := ($genders, ($attributes).gender ! { 
+	           "value": local:gender-to-number((.).value),
+	           "confidence": (.).confidence div 100,
+	           "api": "sky" }),	          
+	         $ages := ($ages, ($attributes).age_est ! {
+	           "value": (.).value,
+	            "confidence": (.).confidence div 100,
+	            "api": "sky"}), 
+           if (count($attributes) > 1) then $multi-faces := true() else () 
+         )
+    
+    </s>
+  </action>
+ 
+  <action id="oxfort"> 
+    <page url="https://api.projectoxford.ai/face/v1.0/detect?returnFaceAttributes=age,gender">
+      <header name="Ocp-Apim-Subscription-Key" value="{$keys/oxfort}"/>
+      <header>Content-Type: application/json; charset=utf-8</header>
+      <header>Accept: application/json</header>
+      <method>POST</method>
+      <post>{{ "url": "{($imgurl)}" }}</post>
+    </page>
+    <s>let $attributes := json(trace($raw, "result"))().faceAttributes
+	       return (
+	         $genders := ($genders, ($attributes).gender ! { 
+		           "value": local:gender-to-number(.), 
+		           "confidence": 0.5,
+		           "api": "oxfort" 
+	           } ),
+	         $ages := ($ages, ($attributes).age ! {
+	             "value": round(.) , 
+	             "confidence": 0.5,
+	             "api": "oxfort"
+	             }), 
+           if (count($attributes) > 1) then $multi-faces := true() else () 
+         )
+    
+    </s>
+  </action>
+ 
+  
+<!--  <action id="lambda">  does not gender, despite saying so in the example
+    <page url="https://lambda-face-recognition.p.mashape.com/detect">
+      <header name="X-Mashape-Key" value="{trace($keys/mashape, 'key')}"/>
+      <header name="Accept" value="application/json"/>
+      <post name="urls" value="{$imgurl}"/>
+    </page>
+    <s>trace($raw, "abc") </s>
+  </action>
+-->
+   <!-- 
+  <action id="face++">fails to open imgur links 
+    <page url="https://faceplusplus-faceplusplus.p.mashape.com/detection/detect?attribute=gender%2Cage&url={uri-encode($imgurl)}">
+      <header name="X-Mashape-Key" value="{trace($keys/mashape, 'key')}"/>
+      <header name="Accept" value="application/json"/>
+    </page>
+  </action>-->
+</actions>
