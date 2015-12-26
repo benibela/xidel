@@ -4,17 +4,181 @@
   put your API keys in reddit-transpassing.keys.xml
   -->
   <action>  
+    <s> keys := doc("reddit-transpassing.keys.xml")/keys,
+        CACHEDIR := "transpassing/cache/"</s>    
     <s> declare function local:gender-to-number($gender) {
       switch ($gender) 
         case "male" return -1
         case "female" return +1
         default return error(QName("xxx"), "unknown gender: " || $gender)
-    }; ()</s>
-    <s> keys := doc("reddit-transpassing.keys.xml")/keys,
-        CACHEDIR := "transpassing/cache/"</s>    
+    };  
+    declare function local:assert($cond, $message) {
+      if ($cond) then () else error(QName("xxx"), $message)
+    };
+    (:
+      This bot uses a "talking database" of possible phrases
+      
+      The talking database is stored in a minimized form as JSON object:
+        * "string" -> string
+        * ["a", "b", "c"] -> randomly choosen a, b, or c
+        * {"concat": (a,b,c,...)} -> *a || *b || *c ...
+        * {"condition": "test", "concat": value}  *value, if test or () otherwise
+    :)
+    (: Generates the talking database from an expression like ((Get|Bring) the ((a|b) x|c)) :)
+    declare function local:split-talkings($pattern){
+      local:split-talkings-rec($pattern, 0)
+    };  
+    declare function local:split-talkings-rec($pattern, $deep){
+      if (not(contains($pattern, "("))) then 
+        let $options := tokenize($pattern, "[|]") 
+        return if (count($options) > 1) then [$options] else $options
+      else 
+        let $marker := "##" || $deep,
+            $splitted := extract($pattern, "(.*)[(]([^()]+)[)](.*)", (1,2,3)),
+            $inner := local:split-talkings-rec($splitted[2], $deep),
+            $outer := local:split-talkings-rec($splitted[1] || $marker || $splitted[3], $deep + 1)
+        return local:apply-marker($outer, $marker, $inner)
+    };
+    declare function local:apply-marker($v, $marker, $inner){
+      (: Replaces every $marker in a string of $v with $inner
+        trace( $marker || " => " || serialize-json($inner) || " in " || serialize-json($v) , "apply")[0],
+       :)
+      
+       if (count($v) > 1) then $v ! local:apply-marker(., $marker, $inner)
+       else typeswitch($v) 
+         case xs:string return
+           if (not(contains($v, $marker))) then $v
+           else let $concat := tail (tokenize($v, $marker) ! ( $inner, . ) ) [.] 
+           return if (count($concat) > 1) then {"concat": $concat} else $concat
+         case object() return 
+           let $concat := one-or-more($v("concat")) ! local:apply-marker(., $marker, $inner) !
+              (typeswitch(.) 
+                 case xs:string return .
+                 case object() return one-or-more(.("concat"))
+                 case array() return .
+                 default return error(QName("xxx"), "unexpected: " || .) ) [.]
+           return if (count($concat) > 1) then {"concat": $concat} else $concat
+          case array() return [ $v() ! local:apply-marker(., $marker, $inner) ]
+          default return error(QName("xxx"), "unexpected 2: " || $v)
+    };
+    (: Moves conditions {$x}  from the strings to the condition properties :)
+    declare function local:extract-conditions($v) {
+      $v ! typeswitch(.) 
+         case xs:string return
+           if (not(contains(., "{"))) then .
+           else let $split := extract(., "([^{]*)[{]([^{}]+)[}](.*)", (1,2,3)),
+                    $rest := local:extract-conditions($split[3])
+           return if ($rest instance of xs:string) then
+                {"condition": $split[2], "concat":  $split[1]|| $rest  }
+           else {"condition": $split[2], "concat": ($split[1],  $rest) }
+         case object() return {"concat": one-or-more(.("concat")) ! local:extract-conditions(.)}
+         case array() return [ .() ! local:extract-conditions(.) ]
+         default return error(QName("xxx"), "unexpected 2: " || $v)
+    };
+    declare function local:merge-objects($v) {
+      (: merges {"condition": A, "concat": B, { "condition": C, "concat": D } } to
+                {"condition": A, C, "concat": B, D } 
+       :)
+      $v ! typeswitch(.) 
+         case xs:string return .
+         case object() return 
+           if (empty(.("concat"))) then .
+           else let $concat := .("concat") ! local:merge-objects(.),
+                    $objects := $concat [. instance of object()],
+                    $conditions := (.("condition"), $objects("condition")),
+                    $concats := if (empty($objects)) then $concat else $concat ! 
+                      (if (. instance of object()) then .("concat") else .)
+           return {|
+             if (exists($concats)) then { "concat": $concats } else (),
+             if (exists($conditions)) then { "condition": $conditions } else ()
+           |}
+         case array() return [ .() ! local:merge-objects(.) ]
+         default return error(QName("xxx"), "unexpected in merge: " || $v)
+    };
+    (: Removes all entries from the talking database that have a not satisfied condition  :)
+    declare function local:filter-truths($v){
+      $v ! typeswitch(.) 
+         case xs:string return .
+         case object() return 
+           . [ every $condition in .("condition") satisfies eval($condition) ] !
+           ( if (exists(.("concat"))) then {"concat": .("concat") ! local:filter-truths(.) } else () )
+         case array() return [ .() ! local:filter-truths(.) ]
+         default return error(QName("xxx"), "unexpected in merge: " || $v)
+    };
+    declare function local:product($v) {
+      switch (count($v)) 
+        case 0 return 1
+        case 1 return $v
+        default return head($v) * local:product(tail($v))
+    };
+    (: Counts how many entries the talking database contains :)
+    declare function local:count-talkings($v){
+      exactly-one($v) ! typeswitch(.) 
+         case xs:string return 1
+         case object() return local:product( .("concat") ! local:count-talkings(.) )
+         case array() return sum ( .() ! local:count-talkings(.) )
+         default return error(QName("xxx"), "unexpected in merge: " || $v)
+    };
+    declare function local:choose-talking-from-object-concats($concats, $i){
+      switch (count($concats))
+        case 0 return ""
+        case 1 return local:choose-talking($concats, $i)
+        default return let $f := local:count-talkings(head($concats)) return
+          local:choose-talking( head($concats), ($i mod $f) ) 
+          || local:choose-talking-from-object-concats(tail($concats), $i idiv $f)
+    };
+    declare function local:choose-talking-from-alternatives($list, $i){
+      switch (count($list))
+        case 0 return ""
+        case 1 return local:choose-talking($list, $i)
+        default return let $c := local:count-talkings(head($list)) return
+          if ($c > $i) then local:choose-talking(head($list), $i)
+          else local:choose-talking-from-alternatives(tail($list), $i - $c)
+    };
+    (: Chooses the $i-th entry in the talking database :)
+    declare function local:choose-talking($v, $i){
+      exactly-one($v) ! typeswitch(.) 
+         case xs:string return if ($i eq 0) then . else ""
+         case object() return local:choose-talking-from-object-concats(.("concat"), $i)
+         case array() return local:choose-talking-from-alternatives(.(), $i)
+         default return error(QName("xxx"), "unexpected in merge: " || $v)
+    };
+    
+    
+    declare variable $talkings := local:merge-objects(local:extract-conditions(local:split-talkings(normalize-space(
+      "(I (see|recognize you as) a|You (seem|appear) to be a|You (look|appear) like a) 
+         $age years (old|young{$age le 30}) 
+         ((male|man{$age gt 16}|boy{$age lt 25}){$gender lt 0}|
+               (female|woman{$age gt 16}|girl{$age lt 25}){$gender gt 0})
+      "))));
+      trace(serialize-json($talkings),$line-ending|| " talkings"),
+      ()
+    </s>
+
+    <s>age := 60, gender := -1, 
+      $curtalkings := local:filter-truths($talkings),
+      trace(serialize-json($curtalkings),$line-ending|| " talkings"),
+      trace(local:count-talkings($curtalkings), "count"),
+      trace(local:choose-talking($curtalkings, 0), "firsr"),
+      for $i in (0 to local:count-talkings($curtalkings)) return
+        trace(local:choose-talking($curtalkings, $i), $i||"-th"),
+      ()
+    </s>        
+    <!-- %certain-age  
+    
+    
+    (between) 10 to 30 years old 
+    
+   (Probably | Tending towards | Likely | More) male. Not sure | Hard to say 
+    -->
+    <s>
+    </s>
+        
     
     <s> file:create-dir($CACHEDIR || "skybiometry"), file:create-dir($CACHEDIR || "oxfort")</s>
 
+    <call action="tests"/>
+ 
  
     <call action="detect"/>
   </action>
@@ -79,16 +243,7 @@
     <s> api := "oxfort" </s> <call action="detect-cached"/>
     <s> api := "skybiometry" </s> <call action="detect-cached"/>
     <s>trace($genders, "genders: "), trace($ages, "ages: ")</s>
-    <!-- %certain-age  
-    (I (see|recognize you as) a|You (seem|appear) to be a|You (look|appear) like a) 19 years (old|young) (female|male|man|woman|boy|girl|)
-    
-    (between) 10 to 30 years old 
-    
-   (Probably | Tending towards | Likely | More) male. Not sure | Hard to say 
-    -->
-    <s>
-    </s>
-  </action>
+  </action>  
   
   <action id="detect-cached"> 
     <s>cache-file := $CACHEDIR || $api || "/" || uri-encode($imgurl)</s>
@@ -163,4 +318,33 @@
       <header name="Accept" value="application/json"/>
     </page>
   </action>-->
+  
+  <action id="tests">
+      trace(serialize-json(local:split-talkings("foobar")),$line-ending|| " talkings2"),
+      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
+      trace(serialize-json(local:split-talkings("(x)")),$line-ending|| " talkings2"),
+      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
+      trace(serialize-json(),$line-ending|| " talkings2"),
+      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
+      trace(serialize-json(local:split-talkings("")),$line-ending|| " talkings2"),
+    <s> for $test in ( 
+		  ["foobar", "foobar", 1],
+		  ["foo|bar", ["foo", "bar"], 2],
+		  ["(x)", "x", 1],
+		  ["((x))", "x", 1],
+		  ["a(b)c", {"concat": ["a", "b", "c"]}, 1],
+		  ["a(b)c(e)f", {"concat": ["a", "b", "c", "e", "f"]}, 1],
+		  ["a(b)c(e|f|g)h", {"concat": ["a", "b", "c", ["e", "f", "g"], "h"]}, 3],
+		  ["a((b))c", {"concat": ["a", "b", "c"]}, 1], 
+		  ["a(b|c)d(e|f)|x", [{"concat": ["a", ["b", "c"], "d", ["e", "f"]]}, "x"], 5] 
+		  ) 
+		  let $talk := local:split-talkings($test(1))
+  return
+    if (serialize-json($talk) ne serialize-json($test(2))) then
+      error(QName("xxx"), "test fail: " || $test(1) || " got " || serialize-json($talk))
+    else if (local:count-talkings($talk) ne $test(3)) then
+      error(QName("xxx"), "count test fail: " || $test(1) || " got " || local:count-talkings($talk))
+    else ("ok")
+    </s>
+  </action>
 </actions>
