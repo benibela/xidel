@@ -36,7 +36,7 @@
     :)
     (: Generates the talking database from an expression like {{Get|Bring} the {{a|b} x|c}} :)
     declare function local:create-talkings($pattern){
-      let $safepattern := replace($pattern, "[{][?]([^}]+)[}]", "⦃$1⦄" )
+      let $safepattern := replace(normalize-space($pattern), "[{][?]([^}]+)[}]", "⦃$1⦄" )
       return local:merge-objects(local:extract-conditions(local:split-talkings($safepattern)))
     };
     declare function local:split-talkings($pattern){
@@ -175,10 +175,43 @@
       return if ($confidence le 0) then 0
       else sum ( $seq ! (  .("value") * .("confidence") ) ) div $confidence
     };
-    
+    declare function local:set-globals($pic){
+      $ages := $pic("ages"),
+      $genders := $pic("genders"),
+      $multi-faces := $pic("multi-faces"),
+      
+      $age-values := $ages ! .("value"), 
+      $age := local:average-with-confidence($ages),
+      $min-age := min($age-values),
+      $max-age := max($age-values),
+      $age-range := $max-age - $min-age + 1,
+      
+      $gender-values := $genders ! .("value"), 
+      $gender := local:average-with-confidence($genders),
+      $gender-queer := exists($gender-values[. lt 0]) and exists($gender-values[. gt 0]) (: APIs do not agree :)
+    };
+    declare function local:phrase($talk){
+      replace(
+         local:choose-random-talking(local:filter-truths($talk)),
+         " +[.]", ".")
+    };
+    declare function local:phrase-age($talk){
+      local:replaces(
+         local:choose-random-talking(local:filter-truths($talk)),
+         ("\$age", $age,
+         "\$min-age", $min-age,
+         "\$max-age", $max-age,
+         " +[.]", "."))
+    };
+    (:  variables: $age in years :)
+      declare variable $talkings-age-raw := "$age years {old|young{?$age le 25}}";
+    (:  variables: $min-age, $max-age, $gender :)
+      declare variable $talkings-gender-raw := "
+        {{male|man{?$max-age gt 15}|boy{?$min-age lt 20}}{?$gender lt 0}|
+         {female|woman{?$max-age gt 15}|girl{?$min-age lt 20}}{?$gender gt 0}}";
     (:  variables: $age in years, $min-age, $max-age, $age-range in years, 
                    $gender, $gender-queer,  :)
-    declare variable $talkings := local:create-talkings(normalize-space(
+    declare variable $talkings := local:create-talkings(
       "{{?not($gender-queer)}{I {see|classify you as} a|You {seem|appear} to be a|You {look|appear} like a} 
        
        |{?$gender-queer} {Hard too say|You {look|appear} {quite} queer|Complicated|Difficult}.
@@ -189,8 +222,7 @@
          {{?$age-range le 10}$age years {old|young{?$min-age le 30}}|
                {?$age-range ge 10}$min-age to $max-age years {old|young{?$min-age le 30}}}
 
-         {{male|man{?$max-age gt 15}|boy{?$min-age lt 20}}{?$gender lt 0}|
-               {female|woman{?$max-age gt 15}|girl{?$min-age lt 20}}{?$gender gt 0}}
+         " || $talkings-gender-raw || "
                
         {{?$gender-queer and abs($gender) le 0.3}. {Or not.|{You can|Can} never be {certain|sure}.|}|}
         
@@ -199,11 +231,29 @@
           {But|Though|However} there are {multiple|many} faces {in the picture.|visible.|.} 
           {That {is|makes it} {quite|very|a little bit|} {confusing|strange|unusual|chaotic}.|} 
           {Which {one|face|of them} should I {pick|choose|look at|examine|analyze}?|} } 
-      "));
+      ");
+      declare variable $talkings-age := local:create-talkings($talkings-age-raw);
+      declare variable $talkings-gender := local:create-talkings($talkings-gender-raw);      
+      declare variable $talkings-certainty := local:create-talkings(
+        " { ( $certainty {certainty|probability|} ) |
+            ( {p = |probability: |certainty: |confidence: } $certainty ) 
+        } ");
+      declare variable $talkings-no-help := local:create-talkings("{Sadly |||}I do not know {how {to {get better|improve your|help your} {passing|passing|blending}}}");
+      declare variable $talkings-full-disclosure := local:create-talkings("
+        I can tell you more precise {{what|who} I am {seeing} in your|how I {gender|see} your} {picture|photo|face}: 
+      ");
+      declare variable $talkings-no-clue:= local:create-talkings("
+        What do you mean?|I have no idea what {you mean|that means}.|
+          {I {did|could} not understand|I failed to {parse|understand}} {that|what you mean|what you are saying|your reply}.
+      ");
+      declare variable $talkings-bot := local:create-talkings("
+        {But|}I {identify|consider myself|identify myself} as {human|trans-redditor}.
+      ");
       trace(serialize-json($talkings),$line-ending|| " talkings"),
       ()
     </s>
     <call action="tests"/>
+ 
 
    <!--<s>age := 60, gender := -1, 
       $curtalkings := local:filter-truths($talkings),
@@ -236,8 +286,89 @@
       <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
     </if>
     
+    <s>letters := json('https://www.reddit.com/message/unread.json')/data/children/data</s>
+    <loop var="letter" list="$letters">
+      <s>trace($letter, "letter"),
+         context := json(resolve-uri((let $context := $letter("context") return
+           if (contains($context, "?")) then replace($context, "[?]", ".json?") else concat($context, ".json"))
+         ,"http://reddit.com")),
+         parentid :=  trace($letter("parent_id"), "parent"), (:fullname:)
+         grandparentid := ($context//children)()[trace(concat(.("kind"), "_", .("data")("id")), "id") eq $parentid ]("data")("parent_id"),
+         post-cache-file := trace($CACHEDIR || "reddit/" || uri-encode($grandparentid), "cache"),
+         
+         $letterbody := trace($letter/body, "letter body: ")
+      </s>
+      
+      <if test="file:exists($post-cache-file)">
+        <!-- if that exists it is a post-->
+        <s>linkpost := jn:parse-json(file:read-text($post-cache-file ))</s>
+        <call action="detect-linkpost"/>
+        <s>answer := if (matches($letterbody, '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')) then 
+          local:phrase($talkings-no-help) else ""
+        </s>
+        
+        <if test="matches($letterbody, '[?]') ">
+          <s> $answer := $answer 
+                         || (if ($answer ne "") then $line-ending || $line-ending 
+                             else local:phrase($talkings-no-clue)) || " "
+                         || local:phrase($talkings-full-disclosure) </s>
+          <loop var="picture" list="$faces">
+            <s>local:set-globals($picture),
+               $answer := $answer || " " || join(let $apis := distinct-values( $picture//api ),
+                   $phrase-certainty := function($v){
+                     if (empty($v)) then ""
+                     else replace(
+                         local:choose-random-talking(local:filter-truths($talkings-certainty)),
+                         "\$certainty", $v)
+                     
+                   } 
+               for $api in $apis
+               let $lages := local:json-to-sequence($picture("ages"))[.("api") eq $api],
+                   $lgenders := local:json-to-sequence($picture("genders"))[.("api") eq $api]
+               return (
+                  join( for $i in 1 to max((count($lages), count($lgenders))) 
+                    let $a := $lages[$i], $g := $lgenders[$i], 
+                        $aconf := $lages[$i].confidence * 100, $gconf := $lgenders[$i].confidence * 100
+                  return (
+                   (if ($a) then (
+                      ($age := $a("value"))[0],
+                      local:phrase-age($talkings-age)) else "") 
+                   || " "
+                   || (if ($g) then (
+                       ($gender := $g("value"))[0],
+                       local:phrase($talkings-gender) ) else "")
+                   || " " 
+                   || (if ($aconf != $gconf) then  $phrase-certainty(x"{$aconf}%, {$gconf}%")
+                      else if ( exists(($aconf, $gconf)) ) then $phrase-certainty(x"{$aconf}%")
+                      else "")
+                  ), ", ") || " ("||$api||")"
+               ), ", "),
+               trace($answer, $line-ending || "fd")
+            </s>
+          
+          </loop>
+        </if>
+        
+        <if test="$answer != ''">
+          <page url="https://www.reddit.com/api/comment.json">
+            <header name="X-Modhash" value="{$modhash}"/>
+            <post name="api_type" value="json"/>
+            <post name="text" value="{$answer}"/>
+            <post name="thing_id" value="{$letter/name}"/>
+          </page>
+        </if>
+      </if>
+    </loop>
+    <page test="exists($letters)" url="https://www.reddit.com/api/read_message">
+      <header name="X-Modhash" value="{$modhash}"/>
+      <post name="id" value="{join($letters/name, ',')}"/>
+    </page>        
+    <!--    <s>letters := ("/u/butler bring soda")</s>-->
+    
+    <s>xxx()</s>
+    
     <loop var="linkpost" 
-          list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=4')/data/children/data">
+          list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=6')/data/children/data">
     
       <s>post-cache-file := $CACHEDIR || "reddit/" || uri-encode(trace($linkpost("name"), "name")),
          imgurl := let $url := $linkpost("url") return
@@ -247,25 +378,12 @@
       </s>
       <if test="exists($imgurl) and ( not(file:exists($post-cache-file)) or get('debug-post') = $linkpost('name') ) ">
         <s> if (not(matches(trace($imgurl, "image"), "[.](jpe?g|png)"))) then $imgurl := $imgurl || ".jpg" else () </s>
-        <call action="detect"/>
+        <call action="detect-linkpost"/>
         <s>(: Gives us $age and $genders, combine for talking  :) 
-           $age-values := $ages ! .("value"), 
-           $age := local:average-with-confidence($ages),
-           $min-age := min($age-values),
-           $max-age := max($age-values),
-           $age-range := $max-age - $min-age + 1,
-    
-           $gender-values := $genders ! .("value"), 
-           $gender := local:average-with-confidence($genders),
-           $gender-queer := exists($gender-values[. lt 0]) and exists($gender-values[. gt 0]) (: APIs do not agree :),
+           local:set-globals($faces[1])
            
            $message := trace(
-                          replace(replace(replace(replace(
-                             local:choose-random-talking(local:filter-truths($talkings)),
-                             "\$age", $age),
-                             "\$min-age", $min-age),
-                             "\$max-age", $max-age),
-                             " +[.]", ".")
+                          local:phrase-age($talkings)
                         , "message")
         </s>
         
@@ -308,25 +426,50 @@
          trace($response,"===> response")        
       </s>
       
-      <page test="$response" url="https://www.reddit.com/api/comment.json">
-        <header name="X-Modhash" value="{$modhash}"/>
-        <post name="api_type" value="json"/>
-        <post name="text" value="{$response}"/>
-        <post name="thing_id" value="{$letter/name}"/>
-      </page>
       
     </loop>
-    
-    <page test="exists($letters)" url="https://www.reddit.com/api/read_message">
-      <header name="X-Modhash" value="{$modhash}"/>
-      <post name="id" value="{join($letters/name, ',')}"/>
-    </page>
     
     <s>sleep(1000*60*5)</s>
     </loop>
     
   </action>
   
+  <action id="detect-linkpost">
+    <s>post-cache-file := $CACHEDIR || "reddit/" || uri-encode($linkpost("name")),
+       $url := $linkpost("url")</s>
+    <if test="file:exists($post-cache-file || '.detections')">
+       <s>faces := jn:parse-json(file:read-text($post-cache-file || '.detections'))</s>
+    </if>
+    <else>
+      <choose>
+        <when test="contains($url, 'imgur.com') and matches($url, '/a/|/gallery/')">
+          <s>imgurls := ()</s>
+        </when>
+        <when test="matches($url, '[.](jpe?g|png)')">
+          <s>imgurls := $url</s>
+        </when>
+        <when test="contains($url, 'imgur.com')">
+          <s>$imgurls := $url || ".jpg"</s>
+        </when>
+        <otherwise>
+          <s>imgurls := ()</s>
+        </otherwise>
+      </choose>
+      
+      <s>faces := ()</s>
+      <loop var="url" list="$imgurls">
+        <s>imgurl := $url</s>
+        <call action="detect"/>
+        <s>faces := ($faces, {
+          "url": $url, 
+          "ages": $ages, 
+          "genders": $genders, 
+          "multi-faces": $multi-faces } )</s>
+      </loop>
+      <s>file:write-text($post-cache-file || '.detections', serialize-json($faces))</s>
+    </else>
+  </action>
+
   <action id="detect">
     <s> genders := (), ages := (), multi-faces := false() </s>
     <s> api := "oxfort" </s> <call action="detect-cached"/>
