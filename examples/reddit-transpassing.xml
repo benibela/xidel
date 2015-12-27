@@ -182,6 +182,9 @@
       return if ($confidence le 0) then 0
       else sum ( $seq ! (  .("value") * .("confidence") ) ) div $confidence
     };
+    declare function local:quote($s) {
+      $paragraph || ">" || $s || $paragraph
+    };
     declare function local:set-globals($pic){
       $ages := $pic("ages"),
       $genders := $pic("genders"),
@@ -254,8 +257,28 @@
           {I {did|could} not understand|I failed to {parse|understand}} {that|what you mean|what you are saying|your reply}.
       ");
       declare variable $talkings-bot := local:create-talkings("
-        {But|}I {identify|consider myself|identify myself} as {human|trans-redditor}.
+        {But|Well, |}{I {identify|consider myself|identify myself} as {human|trans-redditor|trans-human}|
+         I prefer {trans-redditor|trans-human}|
+         I have bot-dysphoria. {Please do|do} not call me that
+        }.
       ");
+      declare variable $talkings-you-are-welcome := local:create-talkings("
+        {You are|You're|Youre} {|very} welcome | Just doing my job 
+        | Great that you {enjoyed|liked} it. | Happy to {|be of} help
+        | It's my pleasure to {help you|be of help}
+      ");
+      declare variable $talkings-oxfort-and-sky := local:create-talkings("
+        {Oxfort and Skybiometry|Skybiometry and Oxfort} are face {recognization|detection|biometry|} {API|api}s
+      ");
+      declare variable $talkings-oxfort := local:create-talkings("
+        Oxfort is Microsoft's face {recognization|detection|biometry|} api|
+        It {is|means|stands for} Microsoft's Oxfort. {A|Some kind of} face {recognization|detection|biometry|} API
+      ");
+      declare variable $talkings-sky := local:create-talkings("
+        Skybiometry is a cloud based face {recognization|detection|biometry|} api|
+        Skybiometry {is|means|stands for} a face {recognization|detection|biometry|} API
+      ");
+      declare variable $paragraph := $line-ending || $line-ending;
       trace(serialize-json($talkings),$line-ending|| " talkings"),
       ()
     </s>
@@ -303,20 +326,37 @@
          grandparentid := ($context//children)()[trace(concat(.("kind"), "_", .("data")("id")), "id") eq $parentid ]("data")("parent_id"),
          post-cache-file := trace($CACHEDIR || "reddit/" || uri-encode($grandparentid), "cache"),
          
-         $letterbody := trace($letter/body, "letter body: ")
+         $sentences := extract(trace($letter/body, "letter body: "), "[^.:;!?]+([.:;!?()-]+|$)", 0, "*") ! (" " || normalize-space(.) || " ")
+      </s>
+      
+      <s>answer := let $thankyou := ($sentences[matches(., "thanks|thank you| ty ")])[1],
+                       $oxfort := ($sentences[matches(., "(what|which).*oxfort.*[?]")])[1],
+                       $sky := ($sentences[matches(., "(what|which).*sky.*[?]")])[1]
+                       $bot := ($sentences[matches(., " bot |not human|automated")])[1] 
+                    return 
+                      (if (exists($thankyou)) then local:quote($thankyou) || local:phrase($talkings-you-are-welcome) else "") ||
+                      (if (exists($bot)) then local:quote($bot) || local:phrase($talkings-bot) else "") ||                      
+                      (if (exists($oxfort) and $oxfort = $sky) then 
+                        local:quote($oxfort) || local:phrase($talkings-oxfort-and-sky) 
+                      else (
+                        (if (exists($oxfort)) then local:quote($oxfort) || local:phrase($talkings-oxfort) else "") ||
+                        (if (exists($sky)) then local:quote($sky) || local:phrase($talkings-sky) else "") 
+                      ))
       </s>
       
       <if test="file:exists($post-cache-file)">
         <!-- if that exists it is a post-->
         <s>linkpost := jn:parse-json(file:read-text($post-cache-file ))</s>
         <call action="detect-linkpost"/>
-        <s>answer := if (matches($letterbody, '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')) then 
-          local:phrase($talkings-no-help) else ""
+        <s>answer := $answer || (
+          let  $moreinfo := $sentences[matches(., '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')][1]
+          return if (exists($moreinfo)) then local:quote($thankyou) || local:phrase($talkings-no-help) else ""
+          )
         </s>
         
-        <if test="matches($letterbody, '[?]') ">
+        <if test="exists( $sentences[contains(., '?')] ) ">
           <s> $answer := $answer 
-                         || (if ($answer ne "") then $line-ending || $line-ending 
+                         || (if ($answer ne "") then $paragraph
                              else local:phrase($talkings-no-clue)) || " "
                          || local:phrase($talkings-full-disclosure) </s>
           <loop var="picture" list="$faces">
@@ -350,20 +390,20 @@
                       else "")
                   ), ", ") || " ("||$api||")"
                ), ", "),
-               trace($answer, $line-ending || "fd")
             </s>
           
           </loop>
         </if>
         
-        <if test="$answer != ''">
-          <page url="https://www.reddit.com/api/comment.json">
-            <header name="X-Modhash" value="{$modhash}"/>
-            <post name="api_type" value="json"/>
-            <post name="text" value="{$answer}"/>
-            <post name="thing_id" value="{$letter/name}"/>
-          </page>
-        </if>
+      </if>
+      <s>trace($answer, $line-ending || "fd")</s>
+      <if test="$answer != ''">
+        <page url="https://www.reddit.com/api/comment.json">
+          <header name="X-Modhash" value="{$modhash}"/>
+          <post name="api_type" value="json"/>
+          <post name="text" value="{$answer}"/>
+          <post name="thing_id" value="{$letter/name}"/>
+        </page>
       </if>
     </loop>
     <page test="exists($letters)" url="https://www.reddit.com/api/read_message">
