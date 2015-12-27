@@ -178,9 +178,10 @@
             default return error(QName("xxx"), "unknown gender: " || $gender)
         };  
     declare function local:average-with-confidence($seq) {
-      let $confidence := sum ( $seq ! .("confidence") )
+      let $fallback-confidence := 0.5,
+          $confidence := sum ( $seq ! (.("confidence"), $fallback-confidence)[1] )
       return if ($confidence le 0) then 0
-      else sum ( $seq ! (  .("value") * .("confidence") ) ) div $confidence
+      else sum ( $seq ! (  .("value") * (.("confidence"), $fallback-confidence) ) ) div $confidence
     };
     declare function local:quote($s) {
       $paragraph || ">" || $s || $paragraph
@@ -316,7 +317,7 @@
       <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
     </if>
     
-    <s>letters := json('https://www.reddit.com/message/unread.json')/data/children/data</s>
+    <s>letters := ()(: json('https://www.reddit.com/message/unread.json')/data/children/data:)</s>
     <loop var="letter" list="$letters">
       <s>trace($letter, "letter"),
          context := json(resolve-uri((let $context := $letter("context") return
@@ -412,39 +413,36 @@
     </page>        
     <!--    <s>letters := ("/u/butler bring soda")</s>-->
     
-    <s>xxx()</s>
+ 
     
-    <loop var="linkpost" 
+    <loop var="lp" 
           list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=6')/data/children/data">
-    
-      <s>post-cache-file := $CACHEDIR || "reddit/" || uri-encode(trace($linkpost("name"), "name")),
-         imgurl := let $url := $linkpost("url") return
-           if (matches($url, "[.](jpe?g|png)")) then $url
-           else if (contains($url, "imgur.com") and not(contains($url, "/a/"))) then $url
-           else ()
+      <s>linkpost := $lp,
+         post-cache-file := $CACHEDIR || "reddit/" || uri-encode(trace($linkpost("name"), "name"))
       </s>
-      <if test="exists($imgurl) and ( not(file:exists($post-cache-file)) or get('debug-post') = $linkpost('name') ) ">
-        <s> if (not(matches(trace($imgurl, "image"), "[.](jpe?g|png)"))) then $imgurl := $imgurl || ".jpg" else () </s>
+      <if test="not(file:exists($post-cache-file)) or get('debug-post') = $linkpost('name')  ">
         <call action="detect-linkpost"/>
-        <s>(: Gives us $age and $genders, combine for talking  :) 
-           local:set-globals($faces[1])
-           
-           $message := trace(
-                          local:phrase-age($talkings)
-                        , "message")
-        </s>
-        
-        <if test="empty(get('debug-post', ()))">        
-          <page test="$message" url="https://www.reddit.com/api/comment.json">
-            <header name="X-Modhash" value="{$modhash}"/>
-            <post name="api_type" value="json"/>
-            <post name="text" value="{$message}"/>
-            <post name="thing_id" value="{$linkpost('name')}"/>
-          </page>
-          
-          <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
-             file:write-text($post-cache-file || ".message", $message)
+        <if test="$faces ">
+          <s>(: Gives us $age and $genders, combine for talking  :) 
+             local:set-globals($faces[1]),
+             
+             $message := trace(
+                            local:phrase-age($talkings)
+                          , "message")
           </s>
+          
+          <if test="empty(get('debug-post', ()))">        
+            <page test="$message" url="https://www.reddit.com/api/comment.json">
+              <header name="X-Modhash" value="{$modhash}"/>
+              <post name="api_type" value="json"/>
+              <post name="text" value="{$message}"/>
+              <post name="thing_id" value="{$linkpost('name')}"/>
+            </page>
+            
+            <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
+               file:write-text($post-cache-file || ".message", $message)
+            </s>
+          </if>
         </if>
       </if>
     </loop>
@@ -485,7 +483,7 @@
     <s>post-cache-file := $CACHEDIR || "reddit/" || uri-encode($linkpost("name")),
        $url := $linkpost("url")</s>
     <if test="file:exists($post-cache-file || '.detections')">
-       <s>faces := jn:parse-json(file:read-text($post-cache-file || '.detections'))</s>
+       <s>faces := trace(local:json-to-sequence(jn:parse-json(file:read-text($post-cache-file || '.detections'))), "faces")</s>
     </if>
     <else>
       <choose>
@@ -504,11 +502,11 @@
       </choose>
       
       <s>faces := ()</s>
-      <loop var="url" list="$imgurls">
-        <s>imgurl := $url</s>
+      <loop var="local-url" list="$imgurls">
+        <s>imgurl := $local-url</s>
         <call action="detect"/>
         <s>faces := ($faces, {
-          "url": $url, 
+          "url": $local-url, 
           "ages": $ages, 
           "genders": $genders, 
           "multi-faces": $multi-faces } )</s>
@@ -519,63 +517,69 @@
 
   <action id="detect">
     <s> genders := (), ages := (), multi-faces := false() </s>
-    <s> api := "oxfort" </s> <call action="detect-cached"/>
-    <s> api := "skybiometry" </s> <call action="detect-cached"/>
+    <s> api := "oxfort" </s> <call action="{$api}"/>
+    <s> api := "skybiometry" </s> <call action="{$api}"/>
     <s>trace($genders, "genders: "), trace($ages, "ages: ")</s>
   </action>  
-  
-  <action id="detect-cached"> 
-    <s>cache-file := $CACHEDIR || $api || "/" || uri-encode($imgurl)</s>
-    <if test="file:exists($cache-file)">
-      <s>$out := jn:parse-json(file:read-text($cache-file))</s>
-    </if>
-    <else>
-      <call action="{$api}"/>
-      <s>file:write-text($cache-file, serialize-json($out))</s>
-    </else>
-    <s>
-    $genders := ($genders, local:json-to-sequence($out("genders")) ! { "value": number(.("value")), "confidence": .("confidence"), "api": $api }),
-    $ages := ($ages, local:json-to-sequence($out("ages")) ! { "value": number(.("value")), "confidence": .("confidence"), "api": $api }),
-    $multi-faces := $multi-faces or $out("multi-faces")
-    </s>
+    
+  <action id="cache-load">
+    <s>cache-file := $CACHEDIR || $api || "/" || uri-encode($imgurl),
+       cached := file:exists($cache-file),
+       if ($cached) then $response := jn:parse-json(file:read-text($cache-file)) else ()
+    </s>    
+  </action>
+  <action id="cache-save">
+    <s> if (not($cached)) then (
+      response := jn:parse-json($raw),
+      file:write-text($cache-file, serialize-json($response))
+    ) else () </s>
   </action>
 
   <action id="skybiometry"> 
-    <page url="http://api.skybiometry.com/fc/faces/detect.json?api_key={$keys/skybiometry/key}&api_secret={$keys/skybiometry/secret}&urls={uri-encode($imgurl)}&detector=aggressive&attributes=gender,age"/>
-    <s>let $attributes := json($raw).photos().tags().attributes
-	       return $out := {
-  	       "genders": ($attributes).gender ! { 
-	           "value": local:gender-to-number((.).value),
-	           "confidence": (.).confidence div 100 },	          
-	         "ages": ($attributes).age_est ! {
-	           "value": (.).value,
-	            "confidence": (.).confidence div 100
-	          }, 
-	         "multi-faces": count($attributes) > 1 
-         }    
+    <call action="cache-load"/>
+    <page test="not($cached)"  url="http://api.skybiometry.com/fc/faces/detect.json?api_key={$keys/skybiometry/key}&api_secret={$keys/skybiometry/secret}&urls={uri-encode($imgurl)}&detector=aggressive&attributes=gender,age"/>
+    <call action="cache-save"/>
+
+    <s>let $attributes := ($response).photos().tags().attributes
+         return (
+           $genders[] := ($attributes).gender ! { 
+             "value": local:gender-to-number((.).value),
+             "confidence": (.).confidence div 100,
+             "api": $api
+             },
+           $ages[] := ($attributes).age_est ! {
+             "value": number((.).value),
+              "confidence": (.).confidence div 100,
+              "api": $api
+            }, 
+           $multi-faces := $multi-faces or (count($attributes) > 1)
+         )
     </s>
   </action>
  
   <action id="oxfort"> 
-    <page url="https://api.projectoxford.ai/face/v1.0/detect?returnFaceAttributes=age,gender">
+    <call action="cache-load"/>
+    <page test="not($cached)" url="https://api.projectoxford.ai/face/v1.0/detect?returnFaceAttributes=age,gender">
       <header name="Ocp-Apim-Subscription-Key" value="{$keys/oxfort}"/>
       <header>Content-Type: application/json; charset=utf-8</header>
       <header>Accept: application/json</header>
       <method>POST</method>
       <post>{{ "url": "{($imgurl)}" }}</post>
     </page>
-    <s>let $attributes := json(trace($raw, "result"))().faceAttributes
-	       return $out := {
-	         "genders": ($attributes).gender ! { 
-		           "value": local:gender-to-number(.), 
-		           "confidence": 0.5
-	           } ,
-	         "ages": ($attributes).age ! {
-	             "value": round(.) , 
-	             "confidence": 0.5
-	             }, 
-           "multi-faces": count($attributes) > 1 
-         }
+    <call action="cache-save"/>
+    
+    <s>let $attributes := ($response)().faceAttributes
+         return (
+           $genders[] := ($attributes).gender ! {
+               "value": local:gender-to-number(.),
+   	           "api": $api
+             } ,
+           $ages[] := ($attributes).age ! {
+               "value": round(.),
+   	           "api": $api 
+               }, 
+           $multi-faces := $multi-faces or (count($attributes) > 1)
+         )
     
     </s>
   </action>
@@ -621,9 +625,14 @@
       error(QName("xxx"), "test fail: " || $test(1) || " got " || serialize-json($talk))
     else if (local:count-talkings($talk) ne $test(3)) then
       error(QName("xxx"), "count test fail: " || $test(1) || " got " || local:count-talkings($talk))
-    else ("ok")
+    else ("ok"),
     
-    
+    local:assert(count(local:json-to-sequence(jn:null())) = 0, "null"),
+    local:assert(count(local:json-to-sequence([1,2,3])) = 3, "array"),
+    local:assert(count(local:json-to-sequence({"a": [1,2,3,4]}).a) = 4, "array"),
+    local:assert(count(local:json-to-sequence([{"a": [1,2,3,4]}]).a) = 4, "obj"),
+    local:assert(count(local:json-to-sequence([[[{"a": [1,2,3,4]}]]]).a) = 4, "array2"),
+    local:assert(count(local:json-to-sequence([[{"x": [{"a": [1,2]}]}]]).x.a) = 2, "array3")
     
     </s>
   </action>
