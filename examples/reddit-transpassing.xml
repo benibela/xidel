@@ -25,6 +25,13 @@
     declare function local:random-to($count) {
       floor((random()+$rand-seed)*$count) mod $count
     };
+    declare function local:replaces-rec($sentence, $replaces, $i) {
+      if ($i >= count($replaces)) then $sentence
+      else local:replaces-rec(replace($sentence, $replaces[$i], $replaces[$i+1]), $replaces, $i + 2)
+    };
+    declare function local:replaces($sentence, $replaces) {
+      local:replaces-rec($sentence, $replaces, 1)
+    };
     (:
       This bot uses a "talking database" of possible phrases
       
