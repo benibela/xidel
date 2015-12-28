@@ -380,162 +380,137 @@
       <s>modhash := json("https://www.reddit.com/api/me.json")//modhash</s>
     </if>
     
-    <s>letters := json('https://www.reddit.com/message/unread.json')/data/children/data</s>
-    <loop var="letter" list="$letters">
-      <s>trace($letter, "letter"),
-         context := json(resolve-uri((let $context := $letter("context") return
-           if (contains($context, "?")) then replace($context, "[?]", ".json?") else concat($context, ".json"))
-         ,"http://reddit.com")),
-         parentid :=  trace($letter("parent_id"), "parent"), (:fullname:)
-         grandparentid := ($context//children)()[trace(concat(.("kind"), "_", .("data")("id")), "id") eq $parentid ]("data")("parent_id"),
-         post-cache-file := trace($CACHEDIR || "reddit/" || uri-encode($grandparentid), "cache"),
-         
-         $sentences := extract(trace($letter/body, "letter body: "), "[^.:;!?]+([.:;!?()-]+|$)", 0, "*") ! (" " || normalize-space(.) || " ")
-      </s>
-      
-      <s>answer := let $thankyou := ($sentences[matches(., "thanks|thank you| ty ")])[1],
-                       $oxfort := ($sentences[matches(., "(what|which).*oxfort.*[?]")])[1],
-                       $sky := ($sentences[matches(., "(what|which).*sky.*[?]")])[1]
-                       $bot := ($sentences[matches(., " bot |not human|automated")])[1] 
-                    return 
-                      (if (exists($thankyou)) then local:quote($thankyou) || local:phrase($talkings-you-are-welcome) else "") ||
-                      (if (exists($bot)) then local:quote($bot) || local:phrase($talkings-bot) else "") ||                      
-                      (if (exists($oxfort) and $oxfort = $sky) then 
-                        local:quote($oxfort) || local:phrase($talkings-oxfort-and-sky) 
-                      else (
-                        (if (exists($oxfort)) then local:quote($oxfort) || local:phrase($talkings-oxfort) else "") ||
-                        (if (exists($sky)) then local:quote($sky) || local:phrase($talkings-sky) else "") 
-                      ))
-      </s>
-      
-      <if test="file:exists($post-cache-file)">
-        <!-- if that exists it is a post-->
-        <s>linkpost := jn:parse-json(file:read-text($post-cache-file ))</s>
-        <call action="detect-linkpost"/>
-        <s>answer := $answer || (
-          let  $moreinfo := $sentences[matches(., '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')][1]
-          return if (exists($moreinfo)) then local:quote($thankyou) || local:phrase($talkings-no-help) else ""
-          )
+    <loop test="true()">
+      <s>letters := json('https://www.reddit.com/message/unread.json')/data/children/data</s>
+      <loop var="letter" list="$letters">
+        <s>trace($letter, "letter"),
+           context := json(resolve-uri((let $context := $letter("context") return
+             if (contains($context, "?")) then replace($context, "[?]", ".json?") else concat($context, ".json"))
+           ,"http://reddit.com")),
+           parentid :=  trace($letter("parent_id"), "parent"), (:fullname:)
+           grandparentid := ($context//children)()[trace(concat(.("kind"), "_", .("data")("id")), "id") eq $parentid ]("data")("parent_id"),
+           post-cache-file := trace($CACHEDIR || "reddit/" || uri-encode($grandparentid), "cache"),
+           
+           $sentences := extract(trace($letter/body, "letter body: "), "[^.:;!?]+([.:;!?()-]+|$)", 0, "*") ! (" " || normalize-space(.) || " ")
         </s>
         
-        <if test="exists( $sentences[contains(., '?') and not (matches(., ' bot |not human|automated'))  ) ">
-          <s> $answer := $answer 
-                         || (if ($answer ne "") then $paragraph
-                             else local:phrase($talkings-no-clue)) || " "
-                         || local:phrase($talkings-full-disclosure) </s>
-          <if test="count($faces) le 2">
-            <loop var="picture" list="$faces">
-              <s>local:set-globals($picture),
-                 $answer := $answer || " " || join(
-                   let $apis := distinct-values( $picture//api ),
-                   for $api in $apis
-                   return local:full-disclosure-single-api($picture, $api)
-                  || " ("||$api||")"
-                 ), ", "),
-              </s>
-            
-            </loop>
-          </if>
-          <else>
-            $answer := $answer ||  local:full-disclosure-table($faces)
-          </else>
-        </if>
+        <s>answer := let $thankyou := ($sentences[matches(., "thanks|thank you| ty ")])[1],
+                         $oxfort := ($sentences[matches(., "(what|which).*oxfort.*[?]")])[1],
+                         $sky := ($sentences[matches(., "(what|which).*sky.*[?]")])[1]
+                         $bot := ($sentences[matches(., " bot |not human|automated")])[1] 
+                      return 
+                        (if (exists($thankyou)) then local:quote($thankyou) || local:phrase($talkings-you-are-welcome) else "") ||
+                        (if (exists($bot)) then local:quote($bot) || local:phrase($talkings-bot) else "") ||                      
+                        (if (exists($oxfort) and $oxfort = $sky) then 
+                          local:quote($oxfort) || local:phrase($talkings-oxfort-and-sky) 
+                        else (
+                          (if (exists($oxfort)) then local:quote($oxfort) || local:phrase($talkings-oxfort) else "") ||
+                          (if (exists($sky)) then local:quote($sky) || local:phrase($talkings-sky) else "") 
+                        ))
+        </s>
         
-      </if>
-      <s>trace($answer, $line-ending || "fd")</s>
-      <if test="$active and ($answer != '')">
-        <page url="https://www.reddit.com/api/comment.json">
-          <header name="X-Modhash" value="{$modhash}"/>
-          <post name="api_type" value="json"/>
-          <post name="text" value="{$answer}"/>
-          <post name="thing_id" value="{$letter/name}"/>
-        </page>
-      </if>
-    </loop>
-    <page test="$active and exists($letters)" url="https://www.reddit.com/api/read_message">
-      <header name="X-Modhash" value="{$modhash}"/>
-      <post name="id" value="{join($letters/name, ',')}"/>
-    </page>        
-    <!--    <s>letters := ("/u/butler bring soda")</s>-->
-    
- 
-    
-    <loop var="lp" 
-          list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=15')/data/children/data">
-      <s>linkpost := $lp,
-         post-cache-file := $CACHEDIR || "reddit/" || uri-encode(trace($linkpost("name"), "name"))
-      </s>
-      <if test="not(file:exists($post-cache-file)) or get('debug-post') = $linkpost('name')  ">
-        <call action="detect-linkpost"/>
-        <if test="count($faces) > 0 ">
-          <s>(: Gives us $age and $genders, combine for talking  :) 
- 
-             if (count($faces) eq 1 ) then (
-               local:set-globals($faces),
-               $message := local:phrase-age($talkings)
-             ) else (
-               local:set-globals( {"ages": $faces("ages"), "genders": $faces("genders"), "multi-faces": exists($faces("multi-faces")[.]) } ),
-               $message := local:phrase-age($talkings-gallery) || 
-                 if (count(distinct-values($faces("genders")("value"))) != 1 ) then
-               $paragraph ||
-                 local:phrase-age($talkings-gallery2) || join (
-                 for $face in $faces return (
-                   local:set-globals($face)[0], local:phrase-age($talkings-gallery-image)
-                 ), ", ") else ""
-             ),
- 
-
-             trace($message, "final message: ")
+        <if test="file:exists($post-cache-file)">
+          <!-- if that exists it is a post-->
+          <s>linkpost := jn:parse-json(file:read-text($post-cache-file ))</s>
+          <call action="detect-linkpost"/>
+          <s>answer := $answer || (
+            let  $moreinfo := $sentences[matches(., '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')][1]
+            return if (exists($moreinfo)) then local:quote($thankyou) || local:phrase($talkings-no-help) else ""
+            )
           </s>
           
-          <if test="$active"> 
-            <page test="$message" url="https://www.reddit.com/api/comment.json">
-              <header name="X-Modhash" value="{$modhash}"/>
-              <post name="api_type" value="json"/>
-              <post name="text" value="{$message}"/>
-              <post name="thing_id" value="{$linkpost('name')}"/>
-            </page>
-            
-            <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
-               file:write-text($post-cache-file || ".message", $message)
+          <if test="exists( $sentences[contains(., '?') and not (matches(., ' bot |not human|automated'))  ) ">
+            <s> $answer := $answer 
+                           || (if ($answer ne "") then $paragraph
+                               else local:phrase($talkings-no-clue)) || " "
+                           || local:phrase($talkings-full-disclosure) </s>
+            <if test="count($faces) le 2">
+              <loop var="picture" list="$faces">
+                <s>local:set-globals($picture),
+                   $answer := $answer || " " || join(
+                     let $apis := distinct-values( $picture//api ),
+                     for $api in $apis
+                     return local:full-disclosure-single-api($picture, $api)
+                    || " ("||$api||")"
+                   ), ", "),
+                </s>
+              
+              </loop>
+            </if>
+            <else>
+              $answer := $answer ||  local:full-disclosure-table($faces)
+            </else>
+          </if>
+          
+        </if>
+        <s>trace($answer, $line-ending || "fd")</s>
+        <if test="$active and ($answer != '')">
+          <page url="https://www.reddit.com/api/comment.json">
+            <header name="X-Modhash" value="{$modhash}"/>
+            <post name="api_type" value="json"/>
+            <post name="text" value="{$answer}"/>
+            <post name="thing_id" value="{$letter/name}"/>
+          </page>
+        </if>
+      </loop>
+      <page test="$active and exists($letters)" url="https://www.reddit.com/api/read_message">
+        <header name="X-Modhash" value="{$modhash}"/>
+        <post name="id" value="{join($letters/name, ',')}"/>
+      </page>        
+      <!--    <s>letters := ("/u/butler bring soda")</s>-->
+      
+   
+      
+      <loop var="lp" 
+            list="json(x'https://www.reddit.com/r/{$keys/reddit/subreddit}/.json?limit=15')/data/children/data">
+        <s>linkpost := $lp,
+           post-cache-file := $CACHEDIR || "reddit/" || uri-encode(trace($linkpost("name"), "name"))
+        </s>
+        <if test="not(file:exists($post-cache-file)) or get('debug-post') = $linkpost('name')  ">
+          <call action="detect-linkpost"/>
+          <if test="count($faces) > 0 ">
+            <s>(: Gives us $age and $genders, combine for talking  :) 
+   
+               if (count($faces) eq 1 ) then (
+                 local:set-globals($faces),
+                 $message := local:phrase-age($talkings)
+               ) else (
+                 local:set-globals( {"ages": $faces("ages"), "genders": $faces("genders"), "multi-faces": exists($faces("multi-faces")[.]) } ),
+                 $message := local:phrase-age($talkings-gallery) || 
+                   if (count(distinct-values($faces("genders")("value"))) != 1 ) then
+                 $paragraph ||
+                   local:phrase-age($talkings-gallery2) || join (
+                   for $face in $faces return (
+                     local:set-globals($face)[0], local:phrase-age($talkings-gallery-image)
+                   ), ", ") else ""
+               ),
+   
+  
+               trace($message, "final message: ")
             </s>
+            
+            <if test="$active"> 
+              <page test="$message" url="https://www.reddit.com/api/comment.json">
+                <header name="X-Modhash" value="{$modhash}"/>
+                <post name="api_type" value="json"/>
+                <post name="text" value="{$message}"/>
+                <post name="thing_id" value="{$linkpost('name')}"/>
+              </page>
+              
+              <s>file:write-text($post-cache-file, serialize-json($linkpost)), 
+                 file:write-text($post-cache-file || ".message", $message)
+              </s>
+            </if>
           </if>
         </if>
-      </if>
+      </loop>
+      <s>sleep(trace(1000*60*5, "sleeping"))</s>
     </loop>
+    
+
   </action>
   
-  <action>    
-    
-        
-    <loop test="true()">
-      <page url="https://www.reddit.com/message/unread.json">
-        <template><t:s>letters := jn:parse-json($raw)/data/children/data</t:s></template>
-      </page>
-<!--    <s>letters := ("/u/butler bring soda")</s>-->
-    <!--<loop var="rep" list="1 to 10">-->
-    <loop var="letter" list="$letters">
-      <s> 
-             declare function is-plural($word) { if (ends-with($word, "s")) then true() else false() };
-         trace($letter/body, "letter: "), 
-         $bring := extract($letter/body, "(bring|get)\s*(me)?\s*(my|the|an?)?\s*([^,.:;!?\n]+)",4),
-         $response := if ($bring) then "[*" ||
-           replace(rand-text(("Enjoy your %!",
-             if (is-plural($bring)) then ("Here are your %!")
-             else ("Here is your %!")
-           )), "%", $bring) || "*](/robobutler-in)"
-         else (),
-         trace($response,"===> response")        
-      </s>
-      
-      
-    </loop>
-    
-    <s>sleep(1000*60*5)</s>
-    </loop>
-    
-  </action>
-  
+ 
   <action id="detect-linkpost">
     <s>post-cache-file := $CACHEDIR || "reddit/" || uri-encode($linkpost("name")),
        $url := $linkpost("url")</s>
