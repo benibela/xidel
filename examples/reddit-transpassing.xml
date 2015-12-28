@@ -216,6 +216,44 @@
          "\$max-age", $max-age,
          " +[.]", "."))
     };
+    declare function local:phrase-certainty($v){
+      if (empty($v)) then ""
+      else replace(
+         local:choose-random-talking(local:filter-truths($talkings-certainty)),
+       "\$certainty", $v)
+    };
+    declare function local:full-disclosure-table($faces){
+      let $apis := distinct-values($faces//api)
+      return 
+        $paragraph || "Image|" || join($apis, "|") || $line-ending
+        || join( (0 to count($apis)) ! ":--", "|") || $line-ending
+        ||  
+        join( for $local-picture in $faces return (
+          x"[image]({$local-picture("url")}) | { join( $apis ! local:full-disclosure-single-api($local-picture, .), "|")}"
+          )
+        , $line-ending)  
+    };
+    declare function local:full-disclosure-single-api($picture, $api){
+    let $lages := local:json-to-sequence($picture("ages"))[.("api") eq $api],
+         $lgenders := local:json-to-sequence($picture("genders"))[.("api") eq $api]
+     return 
+        join( for $i in 1 to max((count($lages), count($lgenders))) 
+          let $a := $lages[$i], $g := $lgenders[$i], 
+              $aconf := $lages[$i].confidence * 100, $gconf := $lgenders[$i].confidence * 100
+        return (
+         (if ($a) then (
+            ($age := $a("value"))[0],
+            local:phrase-age($talkings-age)) else "") 
+         || " "
+         || (if ($g) then (
+             ($gender := $g("value"))[0],
+             local:phrase($talkings-gender) ) else "")
+         || " " 
+         || (if ($aconf != $gconf) then  local:phrase-certainty(x"{$aconf}%, {$gconf}%")
+            else if ( exists(($aconf, $gconf)) ) then local:phrase-certainty(x"{$aconf}%")
+            else "")
+       ), ", ")
+    };
     (:  variables: $age in years :)
       declare variable $talkings-age-raw := "$age years {old|young{?$age le 25}}";
     (:  variables: $min-age, $max-age, $gender :)
@@ -247,7 +285,7 @@
         " || $talkings-multi-faces-raw || "
       ");
       declare variable $talkings-gallery := local:create-talkings("
-        {Ah|So you {have|got}} {a gallery|an album|many images}. 
+        {Ah|Nice} {a gallery|an album|many images|a lot of images}. 
         {{My o|The o|O}verall impression is a|
          Altogether {I {see|classify you as} a|you {seem|appear} to be a| you {look|appear} like a} 
         }
@@ -307,6 +345,7 @@
       trace(serialize-json($talkings),$line-ending|| " talkings"),
       ()
     </s>
+    <s>$active := empty(get('debug-post', ()))</s>
     <call action="tests"/>
  
 
@@ -379,50 +418,32 @@
           )
         </s>
         
-        <if test="exists( $sentences[contains(., '?')] ) ">
+        <if test="exists( $sentences[contains(., '?') and not (matches(., ' bot |not human|automated'))  ) ">
           <s> $answer := $answer 
                          || (if ($answer ne "") then $paragraph
                              else local:phrase($talkings-no-clue)) || " "
                          || local:phrase($talkings-full-disclosure) </s>
-          <loop var="picture" list="$faces">
-            <s>local:set-globals($picture),
-               $answer := $answer || " " || join(let $apis := distinct-values( $picture//api ),
-                   $phrase-certainty := function($v){
-                     if (empty($v)) then ""
-                     else replace(
-                         local:choose-random-talking(local:filter-truths($talkings-certainty)),
-                         "\$certainty", $v)
-                     
-                   } 
-               for $api in $apis
-               let $lages := local:json-to-sequence($picture("ages"))[.("api") eq $api],
-                   $lgenders := local:json-to-sequence($picture("genders"))[.("api") eq $api]
-               return (
-                  join( for $i in 1 to max((count($lages), count($lgenders))) 
-                    let $a := $lages[$i], $g := $lgenders[$i], 
-                        $aconf := $lages[$i].confidence * 100, $gconf := $lgenders[$i].confidence * 100
-                  return (
-                   (if ($a) then (
-                      ($age := $a("value"))[0],
-                      local:phrase-age($talkings-age)) else "") 
-                   || " "
-                   || (if ($g) then (
-                       ($gender := $g("value"))[0],
-                       local:phrase($talkings-gender) ) else "")
-                   || " " 
-                   || (if ($aconf != $gconf) then  $phrase-certainty(x"{$aconf}%, {$gconf}%")
-                      else if ( exists(($aconf, $gconf)) ) then $phrase-certainty(x"{$aconf}%")
-                      else "")
-                  ), ", ") || " ("||$api||")"
-               ), ", "),
-            </s>
-          
-          </loop>
+          <if test="count($faces) le 2">
+            <loop var="picture" list="$faces">
+              <s>local:set-globals($picture),
+                 $answer := $answer || " " || join(
+                   let $apis := distinct-values( $picture//api ),
+                   for $api in $apis
+                   return local:full-disclosure-single-api($picture, $api)
+                  || " ("||$api||")"
+                 ), ", "),
+              </s>
+            
+            </loop>
+          </if>
+          <else>
+            $answer := $answer ||  local:full-disclosure-table($faces)
+          </else>
         </if>
         
       </if>
       <s>trace($answer, $line-ending || "fd")</s>
-      <if test="$answer != ''">
+      <if test="$active and ($answer != '')">
         <page url="https://www.reddit.com/api/comment.json">
           <header name="X-Modhash" value="{$modhash}"/>
           <post name="api_type" value="json"/>
@@ -431,7 +452,7 @@
         </page>
       </if>
     </loop>
-    <page test="exists($letters)" url="https://www.reddit.com/api/read_message">
+    <page test="$active and exists($letters)" url="https://www.reddit.com/api/read_message">
       <header name="X-Modhash" value="{$modhash}"/>
       <post name="id" value="{join($letters/name, ',')}"/>
     </page>        
@@ -448,6 +469,7 @@
         <call action="detect-linkpost"/>
         <if test="count($faces) > 0 ">
           <s>(: Gives us $age and $genders, combine for talking  :) 
+ 
              if (count($faces) eq 1 ) then (
                local:set-globals($faces),
                $message := local:phrase-age($talkings)
@@ -461,11 +483,12 @@
                    local:set-globals($face)[0], local:phrase-age($talkings-gallery-image)
                  ), ", ") else ""
              ),
-             
+ 
+
              trace($message, "final message: ")
           </s>
           
-          <if test="false() and empty(get('debug-post', ()))">        
+          <if test="$active"> 
             <page test="$message" url="https://www.reddit.com/api/comment.json">
               <header name="X-Modhash" value="{$modhash}"/>
               <post name="api_type" value="json"/>
