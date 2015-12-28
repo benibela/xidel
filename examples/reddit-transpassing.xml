@@ -394,9 +394,9 @@
            $sentences := extract(trace($letter/body, "letter body: "), "[^.:;!?]+([.:;!?()-]+|$)", 0, "*") ! (" " || normalize-space(.) || " ")
         </s>
         
-        <s>answer := let $thankyou := ($sentences[matches(., "thanks|thank you| ty ")])[1],
+        <s>answer := let $thankyou := ($sentences[matches(., "thanks|thank you| ty | thx")])[1],
                          $oxfort := ($sentences[matches(., "(what|which).*oxfort.*[?]")])[1],
-                         $sky := ($sentences[matches(., "(what|which).*sky.*[?]")])[1]
+                         $sky := ($sentences[matches(., "(what|which).*sky.*[?]")])[1],
                          $bot := ($sentences[matches(., " bot |not human|automated")])[1] 
                       return 
                         (if (exists($thankyou)) then local:quote($thankyou) || local:phrase($talkings-you-are-welcome) else "") ||
@@ -412,36 +412,36 @@
         <if test="file:exists($post-cache-file)">
           <!-- if that exists it is a post-->
           <s>linkpost := jn:parse-json(file:read-text($post-cache-file ))</s>
-          <call action="detect-linkpost"/>
-          <s>answer := $answer || (
-            let  $moreinfo := $sentences[matches(., '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')][1]
-            return if (exists($moreinfo)) then local:quote($thankyou) || local:phrase($talkings-no-help) else ""
-            )
-          </s>
-          
-          <if test="exists( $sentences[contains(., '?') and not (matches(., ' bot |not human|automated'))  ) ">
-            <s> $answer := $answer 
-                           || (if ($answer ne "") then $paragraph
-                               else local:phrase($talkings-no-clue)) || " "
-                           || local:phrase($talkings-full-disclosure) </s>
-            <if test="count($faces) le 2">
-              <loop var="picture" list="$faces">
-                <s>local:set-globals($picture),
-                   $answer := $answer || " " || join(
-                     let $apis := distinct-values( $picture//api ),
-                     for $api in $apis
-                     return local:full-disclosure-single-api($picture, $api)
-                    || " ("||$api||")"
-                   ), ", "),
-                </s>
-              
-              </loop>
+          <if test="$linkpost('author') eq $letter('author')">
+            <call action="detect-linkpost"/>
+            <s>answer := $answer || (
+              let  $moreinfo := $sentences[matches(., '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')][1]
+              return if (exists($moreinfo)) then local:quote($thankyou) || local:phrase($talkings-no-help) else ""
+              )
+            </s>
+            
+            <if test="exists( $sentences[contains(., '?') and not (matches(., ' bot |not human|automated'))  ]) ">
+              <s> $answer := $answer 
+                             || (if ($answer ne "") then $paragraph
+                                 else local:phrase($talkings-no-clue)) || " "
+                             || local:phrase($talkings-full-disclosure) </s>
+              <if test="count($faces) le 2">
+                <loop var="picture" list="$faces">
+                  <s>local:set-globals($picture),
+                     $answer := $answer || " " || join(
+                       let $apis := distinct-values( $picture//api )
+                       for $api in $apis
+                       return (local:full-disclosure-single-api($picture, $api) || " ("||$api||")")
+                     , ", ")
+                  </s>
+                
+                </loop>
+              </if>
+              <else>
+                $answer := $answer ||  local:full-disclosure-table($faces)
+              </else>
             </if>
-            <else>
-              $answer := $answer ||  local:full-disclosure-table($faces)
-            </else>
           </if>
-          
         </if>
         <s>trace($answer, $line-ending || "fd")</s>
         <if test="$active and ($answer != '')">
