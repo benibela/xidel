@@ -442,12 +442,13 @@ xml-strict:     The input will be parsed as strict xml.
 json:           The input will be parsed as json and stored in . and the $json variable.
                 It can be changed by assigning to $json(..)(..).. := 
                 
-XPath/JSONiq also provides functions to load data explicitly within expressions:
+XPath/JSONiq/Xidel also provide functions to load data explicitly within expressions:
 
-fn:doc                          Load an html/xml document from an url
-fn:unparsed-text                Load a text document from an url
-fn:parse-xml                    Parse an xml document from a string
-pxp:json or jn:json-doc         Load a JSON file
+fn:doc                          Loads an HTML/XML document from an url
+fn:unparsed-text                Loads a text document from an url
+fn:parse-xml                    Parses an XML document from a string
+fn:parse-html                   Parses an HTML document from a string
+pxp:json or jn:json-doc         Loads a JSON file
 
 
 =========================================== Output formats =============================================
