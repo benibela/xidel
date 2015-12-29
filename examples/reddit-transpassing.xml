@@ -16,6 +16,9 @@
         case 1 return $v
         default return head($v) * local:product(tail($v))
     };
+    declare function local:matches($input, $query){
+      matches($input, replace($query, "\\b", "([.:;!?() ]|$|^)"))
+    };
     declare function local:json-to-sequence($v) {
       typeswitch ($v) 
         case array() return $v() ! local:json-to-sequence(.)
@@ -394,10 +397,10 @@
            $sentences := extract(trace($letter/body, "letter body: "), "[^.:;!?]+([.:;!?()-]+|$)", 0, "*") ! (" " || normalize-space(.) || " ")
         </s>
         
-        <s>answer := let $thankyou := ($sentences[matches(., "thanks|thank you| ty | thx")])[1],
-                         $oxfort := ($sentences[matches(., "(what|which).*oxfort.*[?]")])[1],
-                         $sky := ($sentences[matches(., "(what|which).*sky.*[?]")])[1],
-                         $bot := ($sentences[matches(., " bot |not human|automated")])[1] 
+        <s>answer := let $thankyou := ($sentences[local:matches(., "thanks|thank you|\bty\b|\bthx")])[1],
+                         $oxfort := ($sentences[local:matches(., "(what|which).*oxfort.*[?]")])[1],
+                         $sky := ($sentences[local:matches(., "(what|which).*sky.*[?]")])[1],
+                         $bot := ($sentences[local:matches(., "\bbot\b|not human|automated")])[1] 
                       return 
                         (if (exists($thankyou)) then local:quote($thankyou) || local:phrase($talkings-you-are-welcome) else "") ||
                         (if (exists($bot)) then local:quote($bot) || local:phrase($talkings-bot) else "") ||                      
@@ -415,12 +418,12 @@
           <if test="$linkpost('author') eq $letter('author')">
             <call action="detect-linkpost"/>
             <s>answer := $answer || (
-              let  $moreinfo := $sentences[matches(., '(what|why|improve|feature|wrong|stand out|problem |help).*[?]')][1]
+              let  $moreinfo := $sentences[local:matches(., '(what|why|improve|feature|wrong|stand out|problem\b|help).*[?]')][1]
               return if (exists($moreinfo)) then local:quote($thankyou) || local:phrase($talkings-no-help) else ""
               )
             </s>
             
-            <if test="exists( $sentences[contains(., '?') and not (matches(., ' bot |not human|automated'))  ]) ">
+            <if test="exists( $sentences[contains(., '?') and not (local:matches(., '\bbot\b|not human|automated'))  ]) ">
               <s> $answer := $answer 
                              || (if ($answer ne "") then $paragraph
                                  else local:phrase($talkings-no-clue)) || " "
