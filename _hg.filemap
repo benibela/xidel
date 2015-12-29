@@ -1,0 +1,3 @@
+include programs/internet/xidel
+rename programs/internet/xidel .
+exclude programs/internet/xidel/examples/reddit-passing.xml
