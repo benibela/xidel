@@ -1324,7 +1324,8 @@ begin
     'xpath3': result :=ekXPath3;
     'xquery3': result :=ekXQuery3;
     'css': result :=ekCSS;
-    'template': result :=ekTemplate;
+    'template', 'pattern', 'html-pattern': result :=ekPatternHTML;
+    'xml-pattern': result := ekPatternXML;
     'multipage': result :=ekMultipage;
     else raise EXidelException.Create('Unknown kind for the extract expression: '+v);
   end;
@@ -1643,7 +1644,9 @@ var next, res: TFollowToList;
       followKind := self.followKind;
       if followKind = ekAuto then followKind := guessExtractionKind(follow);
 
-      if followKind = ekTemplate then begin //assume my template
+      if followKind in [ekPatternHTML, ekPatternXML] then begin
+        if followKind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
+        else htmlparser.TemplateParser.parsingModel := pmStrict;
         htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
         htmlparser.parseTemplate(follow); //todo reuse existing parser
         htmlparser.parseHTML(data); //todo: optimize
@@ -2090,11 +2093,11 @@ begin
   else htmlparser.OutputEncoding := eUTF8;
 
   case extractKind of
-    ekTemplate: begin
+    ekPatternHTML, ekPatternXML: begin
       htmlparser.UnnamedVariableName:=defaultName;
       htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
-      htmlparser.TemplateParser.repairMissingEndTags:=false;
-      htmlparser.TemplateParser.repairMissingStartTags:=false;
+      if extractKind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
+      else htmlparser.TemplateParser.parsingModel := pmStrict;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
       htmlparser.parseHTML(data); //todo: full url is abs?
       pageProcessed(nil,htmlparser);
@@ -3099,7 +3102,8 @@ begin
   if outputFormat in [ofJsonWrapped, ofXMLWrapped] then needRawWrapper;
 
 
-  htmlparser.TemplateParser.parsingModel:=pmHTML;
+  htmlparser.TemplateParser.repairMissingEndTags:=false;
+  htmlparser.TemplateParser.repairMissingStartTags:=false;
 
   htmlparser.KeepPreviousVariables:=kpvKeepValues;
   if allowInternetAccess then begin
