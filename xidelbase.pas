@@ -25,8 +25,8 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom, LazUTF8, xquery_module_file,
-  rcmdline
+  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom, LazUTF8, xquery_module_file, xquery_module_math,
+  rcmdline,math
   ;
 
 var cgimode: boolean = false;
@@ -1716,6 +1716,7 @@ begin
     while next.Count > 0 do begin
       if curRecursionLevel <= followMaxLevel then begin
         subProcess(next.First.retrieve(self, curRecursionLevel), next.first.nextAction);
+      ClearExceptions(false);
         if wait > 0.001 then Sleep(trunc(wait * 1000));
       end;
       next.Delete(0);
@@ -2884,6 +2885,7 @@ begin
   ThousandSeparator:=#0;
   ShortDateFormat:='YYYY-MM-DD';
   LongDateFormat:='YYYY-MM-DD';
+  registerModuleMath;
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
   htmlparser:=THtmlTemplateParserBreaker.create;
