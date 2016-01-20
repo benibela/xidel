@@ -1716,7 +1716,6 @@ begin
     while next.Count > 0 do begin
       if curRecursionLevel <= followMaxLevel then begin
         subProcess(next.First.retrieve(self, curRecursionLevel), next.first.nextAction);
-      ClearExceptions(false);
         if wait > 0.001 then Sleep(trunc(wait * 1000));
       end;
       next.Delete(0);
