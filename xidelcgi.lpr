@@ -63,7 +63,8 @@ begin
     ekAuto: exit('auto');
     ekXPath2: exit('xpath2');
     ekXPath3: exit('xpath3');
-    ekTemplate: exit('template');
+    ekPatternHTML: exit('html-pattern');
+    ekPatternXML: exit('xml-pattern');
     ekCSS: exit('css');
     ekXQuery1: exit('xquery1');
     ekXQuery3: exit('xquery3');
