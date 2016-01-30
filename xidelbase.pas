@@ -2082,8 +2082,10 @@ var
 begin
   //set flags when first processed
   if isStdin(extract) then extract:=strReadFromStdin;
-  if extractKind = ekAuto then extractKind := guessExtractionKind(extract);
-
+  if extractKind = ekAuto then begin
+    if extract = '' then extract := '()';
+    extractKind := guessExtractionKind(extract);
+  end;
 
   //parent.printStatus(strFromPtr(self) + data.rawdata + ' :: ' + extract);
   currentFollowList := nil;
