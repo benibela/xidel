@@ -2415,6 +2415,108 @@ begin
 end;
 
 
+
+procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
+begin
+  if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
+  writeln(stderr, value.debugAsStringWithTypeAnnotation());
+end;
+
+type TXQTracer = class
+  log: array of record
+    t: TXQTerm;
+    args: TXQVArray;
+  end;
+  lastContext: TXQEvaluationContext;
+  varLog: TXQVariableChangeLog;
+  logLength: integer;
+  all, backtrace, context, contextVariables: boolean;
+  procedure globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; entering: boolean; const args: TXQVArray);
+  procedure printStderr(term: TXQTerm; const args: TXQVArray);
+  procedure printBacktrace;
+  procedure printLastContext;
+  destructor Destroy; override;
+end;
+
+var tracer: TXQTracer;
+
+procedure TXQTracer.globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; entering: boolean; const args: TXQVArray);
+begin
+  if backtrace then begin;
+    if entering then begin
+      if logLength > high(log) then SetLength(log, max(logLength + 8, length(log) * 2));
+      log[logLength].t := term;
+      log[logLength].args := args;
+      inc(logLength);
+    end else begin
+      while (logLength > 0) and (log[logLength - 1].t <> term) do dec(logLength);
+      if (logLength > 0) and (log[logLength - 1].t = term) then dec(logLength);
+    end;
+  end;
+  if entering then begin
+    if all and entering then printStderr(term, args);
+    if self.context and entering then begin
+      lastContext := acontext;
+      if contextVariables then
+        if acontext.temporaryVariables = nil then varlog.clear
+        else varLog.assign(acontext.temporaryVariables);
+      if all then printLastContext;
+    end;
+  end;
+end;
+
+procedure TXQTracer.printStderr(term: TXQTerm; const args: TXQVArray);
+var i: integer;
+begin
+  if term is TXQTermNamedFunction then begin
+    if TXQTermNamedFunction(term).name <> nil then write(stderr, TXQTermNamedFunction(term).name.ToString)
+    else write(stderr, 'unknown function');
+  end else if term is TXQTermBinaryOp then begin
+    if TXQTermBinaryOp(term).op <> nil then write(stderr, 'operator ', TXQTermBinaryOp(term).op.name)
+    else write(stderr, 'unknown operator');
+  end else if term is TXQTermDynamicFunctionCall then write('anonymous function')
+  else if term is TXQTermTryCatch then write('try/catch')
+  else write('unknown event');
+  write(stderr, '(');
+  for i := 0 to high(args) do
+    if i = 0 then write(args[i].debugAsStringWithTypeAnnotation())
+    else write(', ', args[i].debugAsStringWithTypeAnnotation());
+  writeln(stderr, ')');
+end;
+
+procedure TXQTracer.printBacktrace;
+var i: integer;
+begin
+  for i := 0 to logLength - 1 do
+    printStderr(log[i].t, log[i].args);
+end;
+
+procedure TXQTracer.printLastContext;
+var
+  vars: TXQVariableChangeLog;
+begin
+  writeln(stderr, 'Dynamic context: ');
+  if lastContext.RootElement <> nil then writeln(stderr, '  root node: ', lastContext.ParentElement.toString());
+  if lastContext.ParentElement <> nil then writeln(stderr, '  parent node: ', lastContext.ParentElement.toString());
+  if lastContext.SeqValue <> nil then writeln(stderr, '  context item (.): ', lastContext.SeqValue.debugAsStringWithTypeAnnotation());
+  writeln(stderr, '  position()/last(): ', lastContext.SeqIndex, ' / ', lastContext.SeqLength);
+  vars := lastContext.temporaryVariables;
+  if contextVariables then vars := varLog;
+  if (vars <> nil) and (vars.count > 0) then begin
+    writeln(stderr, '  Local variables: ');
+    for i := 0 to vars.count - 1 do
+      writeln(stderr, '    ', vars.getName(i), ' = ', vars.get(i).debugAsStringWithTypeAnnotation());
+  end;
+  WriteLn(stderr, '');
+end;
+
+destructor TXQTracer.Destroy;
+begin
+  varLog.Free;
+  inherited Destroy;
+end;
+
+
 procedure displayError(e: Exception; printPartialMatches: boolean = false);
   procedure sayln(s: string);
   begin
@@ -2489,10 +2591,17 @@ begin
   end;
   if cgimode then flush(StdOut)
   else flush(stderr);
-  if e is EXQException then begin
-    sayln('Possible backtrace:');
-    for i := 0 to ExceptFrameCount-1 do begin
-      sayln(BackTraceStrFunc(ExceptFrames[i]) + ': ' + EXQException.searchClosestFunction(ExceptFrames[i]));
+  if e is EXQEvaluationException then begin
+    if (tracer = nil) or not tracer.backtrace then begin
+      sayln('Possible backtrace:');
+      for i := 0 to ExceptFrameCount-1 do begin
+        sayln(BackTraceStrFunc(ExceptFrames[i]) + ': ' + EXQException.searchClosestFunction(ExceptFrames[i]));
+      end;
+      sayln(LineEnding + 'Call xidel with --trace-stack to get an actual backtrace')
+    end;
+    if (tracer <> nil) then begin
+      if tracer.backtrace then tracer.printBacktrace;
+      if tracer.context then tracer.printLastContext;
     end;
   end;
 end;
@@ -2869,11 +2978,7 @@ begin
   end;
 end;
 
-procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
-begin
-  if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
-  writeln(stderr, value.debugAsStringWithTypeAnnotation());
-end;
+
 
 procedure blockFileAccessFunctions; forward;
 
@@ -2971,7 +3076,14 @@ begin
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
+
+
+  mycmdLine.beginDeclarationCategory('Debug options:');
   mycmdline.declareFlag('debug-arguments', 'Shows how the command line arguments were parsed');
+  mycmdline.declareFlag('trace', 'Traces the evaluation of all queries');
+  mycmdline.declareFlag('trace-stack', 'Traces the evaluation to print a backtrace in case of errors');
+  mycmdline.declareFlag('trace-context', 'Like trace-stack, but for the context');
+  mycmdline.declareFlag('trace-context-variables', 'Like trace-stack, but for the context variables');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -3098,6 +3210,15 @@ begin
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
 
+  if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') or mycmdline.readFlag('trace-context-variables') then begin
+    tracer := TXQTracer.Create;
+    tracer.all := mycmdline.readFlag('trace');
+    tracer.backtrace := mycmdline.readFlag('trace-stack');
+    tracer.context := mycmdline.readFlag('trace-context') or mycmdline.readFlag('trace-context-variables');
+    tracer.contextVariables := mycmdline.readFlag('trace-context-variables');
+    if tracer.contextVariables then tracer.varLog := TXQVariableChangeLog.create();
+    XQOnGlobalDebugTracing := @tracer.globalTracing;
+  end;
 
   if assigned(onPreOutput) then onPreOutput(guessExtractionKind(mycmdline.readString('extract')));
 
@@ -3121,7 +3242,7 @@ begin
     baseContext.process(nil).free;
     baseContext.Free;
   except
-    on e: EXMLReadError do begin
+    on e: ETreeParseException do begin
       displayError(e);
       ExitCode:=1;
      // if not cgimode then raise;
@@ -3173,6 +3294,7 @@ begin
   else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
 
   mycmdLine.free;
+  tracer.free;
 end;
 
 

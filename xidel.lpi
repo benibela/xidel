@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--xquery 'declare function foo() { &lt;output:serialization-parameters xmlns:output=&quot;http://www.w3.org/2010/xslt-xquery-serialization&quot;/> }; foo()' --xml"/>
+        <CommandLineParams Value="-e 'math:pow(-2.5, 3333)'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
@@ -107,8 +107,6 @@
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
       <Checks>
-        <RangeChecks Value="True"/>
-        <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
     </CodeGeneration>
