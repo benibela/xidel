@@ -195,7 +195,7 @@ However, in the default mode, there are the following important extensions:
     jn:*, libjn:* The standard JSONiq and JSONlib functions
     json("str.")  Parses a string as json, or downloads json from an url.(only use with trusted input)
     serialize-json(value) 
-                  Converts a value to JSON
+                  Serializes a value as JSON, i.e. converts the value to JSON and converts that to a string
     extract("string","regex"[,<match>,[<flags>]])
                   This applies the regex "regex" to "string" and returns only the matching part. 
                   If the <match> argument is used, only the <match>-th submatch will be returned.
@@ -538,3 +538,4 @@ These options can be used to modify HTTP requests:
    You can use ;type=... and ;filename=... to set the Content-Type and filename of the data.
 
    See also the documentation of the XPath function pxp:form for creating multipart requests in -f.
+
