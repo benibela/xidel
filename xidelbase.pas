@@ -517,7 +517,7 @@ TProcessingContext = class(TDataProcessing)
   printReceivedHeaders: boolean;
   errorHandling: string;
 
-  quiet, printPostData: boolean;
+  silent, printPostData: boolean;
 
   ignoreNamespace: boolean;
   compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityNoExtendedJson, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
@@ -1382,7 +1382,7 @@ end;
 
 procedure TProcessingContext.printStatus(s: string);
 begin
-  if not quiet then writeln(stderr, s);
+  if not silent then writeln(stderr, s);
 end;
 
 procedure TProcessingContext.readOptions(reader: TOptionReaderWrapper);
@@ -1403,7 +1403,7 @@ begin
 
   if reader.read('output-encoding', tempstr) then setOutputEncoding(tempstr); //allows object returned by extract to change the output-encoding
 
-  reader.read('quiet', quiet);
+  reader.read('silent', silent);
   reader.read('verbose', printPostData);
 
   {if cmdLine.readString('follow-file') <> '' then follow := strLoadFromFileChecked(cmdLine.readString('follow-file'))
@@ -1515,7 +1515,7 @@ begin
   printReceivedHeaders:=other.printReceivedHeaders;
   errorHandling:=errorHandling;
 
-  quiet := other.quiet;
+  silent := other.silent;
   printPostData := other.printPostData;
 
   compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
@@ -3058,7 +3058,7 @@ begin
 
   mycmdLine.beginDeclarationCategory('Output options:');
 
-  mycmdLine.declareFlag('quiet','Do not print status information to stderr', 's');
+  mycmdLine.declareFlag('silent','Do not print status information to stderr', 's');
   mycmdline.declareFlag('verbose', 'Print more status information');
   mycmdLine.declareString('default-variable-name', 'Variable name for values read in the template without explicitely given variable name', 'result');
   mycmdLine.declareString('print-variables', joined(['Which of the separate variable lists are printed', 'Comma separated list of:', '  log: Prints every variable value', '  final: Prints only the final value of a variable, if there are multiple assignments to it', '  condensed-log: Like log, but removes assignments to object properties(default)']), 'condensed-log');
@@ -3102,7 +3102,7 @@ begin
 
   mycmdLine.declareFlag('version','Print version number ('+getVersionString+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
-  mycmdLine.declareFlag('outdated-q','-q is outdated. Use -s', 'q');
+  mycmdLine.declareFlag('quiet','-quiet,-q is outdated. Use --silent,-s', 'q');
 
   currentContext := TProcessingContext.Create;
   baseContext := currentContext;
@@ -3129,8 +3129,8 @@ begin
     baseContext.free;
     exit;
   end;
-  if mycmdline.readFlag('outdated-q') then begin
-    writeln(stderr, '-q has been replaced by -s');
+  if mycmdline.readFlag('quiet') then begin
+    writeln(stderr, '-quiet,-q is outdated. Use --silent,-s');
     exit;
   end;
 
