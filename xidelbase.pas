@@ -3058,7 +3058,7 @@ begin
 
   mycmdLine.beginDeclarationCategory('Output options:');
 
-  mycmdLine.declareFlag('quiet','Do not print status information to stderr', 'q');
+  mycmdLine.declareFlag('quiet','Do not print status information to stderr', 's');
   mycmdline.declareFlag('verbose', 'Print more status information');
   mycmdLine.declareString('default-variable-name', 'Variable name for values read in the template without explicitely given variable name', 'result');
   mycmdLine.declareString('print-variables', joined(['Which of the separate variable lists are printed', 'Comma separated list of:', '  log: Prints every variable value', '  final: Prints only the final value of a variable, if there are multiple assignments to it', '  condensed-log: Like log, but removes assignments to object properties(default)']), 'condensed-log');
@@ -3102,6 +3102,7 @@ begin
 
   mycmdLine.declareFlag('version','Print version number ('+getVersionString+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
+  mycmdLine.declareFlag('outdated-q','-q is outdated. Use -s', 'q');
 
   currentContext := TProcessingContext.Create;
   baseContext := currentContext;
@@ -3126,6 +3127,10 @@ begin
   if mycmdline.readFlag('usage') then begin
     printUsage;
     baseContext.free;
+    exit;
+  end;
+  if mycmdline.readFlag('outdated-q') then begin
+    writeln(stderr, '-q has been replaced by -s');
     exit;
   end;
 
