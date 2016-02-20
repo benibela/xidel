@@ -459,6 +459,7 @@ type
     function read(const name: string; out value: boolean): boolean; virtual; abstract;
     function read(const name: string; out value: Extended): boolean; virtual; abstract;
     function read(const name: string; out value: IXQValue): boolean; virtual;
+    function read(const name: string; out inputformat: TInputFormat): boolean; virtual;
   end;
 
   { TOptionReaderFromCommandLine }
@@ -709,6 +710,7 @@ TProcessingContext = class(TDataProcessing)
   followExclude, followInclude: TStringArray;
   followTo: TProcessingContext;
   followMaxLevel: integer;
+  followInputFormat: TInputFormat;
 
   nextSibling: TProcessingContext;
 
@@ -764,6 +766,22 @@ type EInvalidArgument = Exception;
 function TOptionReaderWrapper.read(const name: string; out value: IXQValue): boolean;
 begin
   result := false;
+end;
+
+function TOptionReaderWrapper.read(const name: string; out inputformat: TInputFormat): boolean;
+var
+  temp: String;
+begin
+  result := read('input-format', temp);
+  if result then
+    case temp of
+      'auto': inputFormat:=ifAuto;
+      'xml': inputFormat:=ifXML;
+      'html': inputFormat:=ifHTML;
+      'xml-strict': inputFormat:=ifXMLStrict;
+      'json': inputFormat := ifJSON
+      else raise EXidelException.Create('Invalid input-format: '+temp);
+    end;
 end;
 
 { TDataObject }
@@ -1336,18 +1354,10 @@ begin
   //empty
 end;
 
+
 procedure TFollowTo.readOptions(reader: TOptionReaderWrapper);
-var ifs: string;
 begin
-  if reader.read('input-format', ifs) then
-    case ifs of
-      'auto': inputFormat:=ifAuto;
-      'xml': inputFormat:=ifXML;
-      'html': inputFormat:=ifHTML;
-      'xml-strict': inputFormat:=ifXMLStrict;
-      'json': inputFormat := ifJSON
-      else raise EXidelException.Create('Invalid input-format: '+ifs);
-    end;
+  reader.read('input-format', inputFormat);
 end;
 
 procedure TFollowTo.assign(other: TFollowTo);
@@ -1432,10 +1442,12 @@ var x: IXQValue;
     keys: TStringList;
     isPureDataSource: Boolean;
     i: Integer;
+    oldCount: Integer;
 
 begin
   if dest.kind <> pvkSequence then
     dest := xpathparser.evaluateXPath2('pxp:resolve-html(., $url)', dest);
+  oldCount := count;
   case dest.kind of
     pvkUndefined: exit;
     pvkObject: begin
@@ -1471,12 +1483,18 @@ begin
         temp.Free;
       end;
     end;
-    pvkSequence:
+    pvkSequence: begin
       for x in dest do
         merge(x, basedata, parent);
+      exit;
+    end;
     pvkNode: raise EXidelException.Create('Assert failure: Expected resolved url for following, but got raw '+dest.debugAsStringWithTypeAnnotation());
     else addBasicUrl(dest.toString, basedata.baseUri);
   end;
+
+  //copy additional info
+  for i := oldCount to count - 1 do
+    TFollowTo(items[i]).inputFormat := parent.followInputFormat;
 end;
 
 function TFollowToList.containsEqual(ft: TFollowTo): boolean;
@@ -1642,6 +1660,7 @@ begin
   reader.read('follow-exclude', tempstr); followExclude := strSplit(tempstr, ',', false);
   reader.read('follow-include', tempstr); followInclude := strSplit(tempstr, ',', false);
   reader.read('follow-level', followMaxLevel);
+  reader.read('input-format', followInputFormat);
 
   reader.read('no-json', compatibilityNoJSON);
   reader.read('no-json-literals', compatibilityNoJSONliterals);
@@ -1784,6 +1803,7 @@ begin
   end;
 
   TProcessingContext(result).followKind := followKind;
+  TProcessingContext(result).followInputFormat := followInputFormat;
   TProcessingContext(result).follow := follow;
   if followTo <> nil then
     if followTo = self then TProcessingContext(result).followTo := TProcessingContext(result)
