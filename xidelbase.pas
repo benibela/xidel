@@ -3607,12 +3607,14 @@ begin
   fn.findComplexFunction('doc', 1).func:=@xqFunctionBlocked;
   fn.findComplexFunction('doc-available', 1).func:=@xqFunctionBlocked;
 
-  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
+  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
   pxp.findComplexFunction('json', 1).func:=@xqFunctionJSONSafe;
 
   jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
   jn.findComplexFunction('json-doc', 1).func:=@xqFunctionBlocked;
 end;
+
+
 
 var pxp: TXQNativeModule;
 
@@ -3620,7 +3622,7 @@ var pxp: TXQNativeModule;
 
 
 initialization
-  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensions);
+  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
   pxp.registerFunction('read', @xqfRead, ['() as xs:untypedAtomic']);
 end.
