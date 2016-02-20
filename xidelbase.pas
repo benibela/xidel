@@ -1836,23 +1836,10 @@ var next, res: TFollowToList;
     function makeHeaders: ixqvalue;
     var
       headers: TStringList;
-      obj: TXQValueObject;
-      h: String;
-      i: Integer;
-      name: RawByteString;
-      j: SizeInt;
     begin
       headers := data.headers;
       if headers = nil then exit(xqvalue());
-      obj := TXQValueObject.create();
-      for i := 0 to headers.count - 1 do begin
-        h := trim(headers[i]);
-        if h = '' then continue;
-        j := pos(':', h);
-        if j = 0 then obj.values.add('', h)
-        else obj.values.add(lowercase(copy(h, 1, j-1)), xqvalue(trim(strCopyFrom(h,j+1))));
-      end;
-      result := obj;
+      result := xqvalue(headers);
     end;
 
   var
