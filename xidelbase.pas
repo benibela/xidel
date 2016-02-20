@@ -2517,17 +2517,36 @@ begin
   inherited Destroy;
 end;
 
+type TMyConsoleColors = (ccNormal, ccRedBold);
+var lastConsoleColor: TMyConsoleColors = ccNormal;
 
 procedure displayError(e: Exception; printPartialMatches: boolean = false);
-  procedure sayln(s: string);
-  begin
-    if cgimode then writeln(s)
-    else writeln(stderr, s);
-  end;
-  procedure say(s: string);
+  procedure say(s: string; color: TMyConsoleColors = ccNormal);
   begin
     if cgimode then write(s)
-    else write(stderr, s);
+    else begin
+      if color <> lastConsoleColor then begin
+        Flush(stderr);
+        {$ifdef unix}
+        case color of
+          ccNormal: write(stderr, #27'[0m');
+          ccRedBold: write(stderr, #27'[1;31m');
+        end;
+        {$endif}
+        {$ifdef windows}
+        case color of
+          ccNormal: SetConsoleTextAttribute(StdErrorHandle, FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE);
+          ccRedBold: SetConsoleTextAttribute(StdErrorHandle, FOREGROUND_RED or FOREGROUND_INTENSITY);
+        end;
+        {$endif}
+        lastConsoleColor := color;
+      end;
+      write(stderr, s);
+    end;
+  end;
+  procedure sayln(s: string; color: TMyConsoleColors = ccNormal);
+  begin
+    say(s+LineEnding, color);
   end;
 
 const ParsingError  = '[<- error occurs before here]';
@@ -2571,13 +2590,14 @@ begin
       if not cgimode then begin
         if  strBeginsWith(message, 'err:') or strBeginsWith(message, 'pxp:') then begin
           p := strIndexOf(message, [#13,#10]);
-          say(#27'[1;31m' + copy(message,1,p-1) + #27'[0m');
+          say(copy(message,1,p-1), ccRedBold);
           delete(message, 1, p);
         end;
         while Length(message) > 0 do begin
           p := strIndexOf(message, ParsingError);
           if p <= 0 then break;
-          say(copy(message, 1, p - 1) + #27'[1;31m' + ParsingError + #27'[0m');
+          say(copy(message, 1, p - 1));
+          say(ParsingError, ccRedBold);
           delete(message, 1, p + length(ParsingError) - 1);
         end;
       end;
