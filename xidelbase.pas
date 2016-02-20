@@ -54,16 +54,25 @@ procedure perform;
 
 implementation
 
-uses process, strutils, bigdecimalmath, xquery_json, xquery_utf8;
+uses process, strutils, bigdecimalmath, xquery_json, xquery_utf8 {$ifdef unix},termio{$endif};
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
+     TColorOptions = (cAuto, cNever, cAlways, cJSON, cXML);
+     TMyConsoleColors = (ccNormal, ccRedBold, ccGreenBold, ccBlueBold, ccPurpleBold, ccYellowBold, ccCyanBold,
+                                   ccRed, ccGreen, ccBlue, ccPurple, ccYellow
+      );
 var //output options
     outputFormat: TOutputFormat;
     outputEncoding: TEncoding = eUTF8;  //default to utf-8
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
+    colorizing: TColorOptions;
+
+    lastConsoleColor: TMyConsoleColors = ccNormal;
+    isStderrTTY: boolean = false;
+    isStdoutTTY: boolean = false;
 
     internet: TInternetAccess;
 
@@ -111,6 +120,40 @@ var htmlparser:THtmlTemplateParserBreaker;
     multipagetemp: TMultiPageTemplate;
     currentRoot: TTreeNode;
 
+procedure setTerminalColor(err: boolean; color: TMyConsoleColors);
+{$ifdef unix}
+const colorCodes: array[TMyConsoleColors] of string = (
+   #27'[0m', #27'[1;31m', #27'[1;32m', #27'[1;34m', #27'[1;35m', #27'[1;33m', #27'[1;36m',
+             #27'[0;31m', #27'[0;32m', #27'[0;34m', #27'[0;35m', #27'[0;33m'
+   );
+var
+  f: TextFile;
+{$endif}
+{$ifdef windows}
+const colorCodes: array[TMyConsoleColors] of integer = (
+   FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE,
+     FOREGROUND_RED or FOREGROUND_INTENSITY, FOREGROUND_GREEN or FOREGROUND_INTENSITY, FOREGROUND_BLUE or FOREGROUND_INTENSITY, FOREGROUND_RED or FOREGROUND_BLUE or FOREGROUND_INTENSITY, FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_INTENSITY, FOREGROUND_BLUE or FOREGROUND_GREEN or FOREGROUND_INTENSITY,
+     FOREGROUND_RED, FOREGROUND_GREEN, FOREGROUND_BLUE, FOREGROUND_RED or FOREGROUND_BLUE, FOREGROUND_RED or FOREGROUND_GREEN
+   );
+var handle: Integer;
+{$endif}
+begin
+  if err and not isStderrTTY then exit;
+  if not err and not isStdoutTTY then exit;
+  if color <> lastConsoleColor then begin
+    if err then Flush(stderr) else flush(StdOut);
+    {$ifdef unix}
+    if err then f := stderr else f := stdout;
+    write(f, colorCodes[color]);
+    {$endif}
+    {$ifdef windows}
+    if err then handle := StdErrorHandle else handle := StdOutputHandle;
+    SetConsoleTextAttribute(handle, colorCodes[color]);
+    {$endif}
+    lastConsoleColor := color;
+  end;
+end;
+
 procedure w(const s: string);
 {$ifdef win32}
 var
@@ -137,20 +180,172 @@ begin
   w(LineEnding);
 end;
 
+var stacklen: integer;
+    stack: TLongintArray;
+
+procedure wcolor(const s: string; color: TColorOptions);
+const JSON_COLOR_OBJECT_PAREN: TMyConsoleColors = ccYellowBold;
+      JSON_COLOR_OBJECT_KEY: TMyConsoleColors = ccPurpleBold;
+      JSON_COLOR_ARRAY_PAREN: TMyConsoleColors = ccGreenBold;
+{$ifdef windows}
+      JSON_COLOR_STRING: TMyConsoleColors = ccCyanBold; //green is ugly on windows
+{$else}
+      JSON_COLOR_STRING: TMyConsoleColors = ccGreen;
+{$endif}
+
+      JSON_STATE_ARRAY = 1;
+      JSON_STATE_OBJECTVALUE = 2;
+      JSON_STATE_OBJECTKEY = 3;
+
+      XML_COLOR_COMMENT: TMyConsoleColors = ccBlue;
+      XML_COLOR_TAG: TMyConsoleColors = ccYellowBold;
+      XML_COLOR_ATTRIB_NAME: TMyConsoleColors = ccPurpleBold;
+      XML_COLOR_ATTRIB_VALUE: TMyConsoleColors = ccGreenBold;
+
+
+var pos, lastpos: integer;
+
+  procedure colorChange(c: TMyConsoleColors);
+  begin
+    w(copy(s, lastpos, pos - lastpos));
+    setTerminalColor(false, c);
+    lastpos:=pos;
+  end;
+
+var    quote: Char;
+    scriptSpecialCase: Boolean;
+begin
+  case color of
+    cJSON: begin
+      if stacklen = 0 then arrayAddFast(stack, stacklen, 0);
+      pos := 1;
+      lastpos := 1;
+
+      while pos <= length(s) do begin
+        case s[pos] of
+          '{', '}': begin
+            if s[pos] = '{' then arrayAddFast(stack, stacklen, JSON_STATE_OBJECTKEY)
+            else if stacklen > 1 then dec(stacklen);
+            colorChange(JSON_COLOR_OBJECT_PAREN);
+            inc(pos);
+            colorChange(ccNormal);
+          end;
+          '[', ']': begin
+            if s[pos] = '[' then arrayAddFast(stack, stacklen, JSON_STATE_ARRAY)
+            else if stacklen > 1 then dec(stacklen);
+            colorChange(JSON_COLOR_ARRAY_PAREN);
+            inc(pos);
+            colorChange(ccNormal);
+          end;
+          ',', ':': begin
+            case stack[stacklen-1] of
+              JSON_STATE_OBJECTKEY, JSON_STATE_OBJECTVALUE: begin
+                colorChange(JSON_COLOR_OBJECT_PAREN);
+                if s[pos] = ',' then stack[stacklen-1] := JSON_STATE_OBJECTKEY
+                else stack[stacklen-1] := JSON_STATE_OBJECTVALUE;
+              end;
+              JSON_STATE_ARRAY: colorChange(JSON_COLOR_ARRAY_PAREN);
+            end;
+            inc(pos);
+            colorChange(ccNormal);
+          end;
+          '"': begin
+            case stack[stacklen-1] of
+              JSON_STATE_OBJECTKEY: colorChange(JSON_COLOR_OBJECT_KEY);
+              else colorChange(JSON_COLOR_STRING);
+            end;
+            inc(pos);
+            while (pos <= length(s)) and (s[pos] <> '"') do begin
+              if s[pos] = '\' then inc(pos);
+              inc(pos);
+            end;
+            inc(pos);
+          end
+          else inc(pos);
+        end;
+      end;
+      colorChange(ccNormal)
+    end;
+    cXML: begin
+      pos := 1;
+      lastpos := 1;
+      scriptSpecialCase := false;
+      while pos <= length(s) do begin
+        case s[pos] of
+          '<': if scriptSpecialCase and not striBeginsWith(@s[pos], '</script') then inc(pos)
+          else begin
+            colorChange(XML_COLOR_TAG);
+            if (pos + 1) <= length(s) then begin
+              case s[pos+1] of
+                '/', '?': inc(pos,2);
+                '!': if strBeginsWith(@s[pos], '<!--') then begin
+                  colorChange(XML_COLOR_COMMENT);
+                  inc(pos,3);
+                  while (pos + 3 <= length(s)) and ((s[pos] <> '-') or (s[pos+1] <> '-')or (s[pos+2] <> '>')) do inc(pos);
+                  inc(pos);
+                  continue;
+                end;
+              end;
+            end;
+            scriptSpecialCase := striBeginsWith(@s[pos], '<script');
+            while (pos <= length(s)) and not (s[pos] in ['>','/','?',#0..#32]) do inc(pos);
+            while (pos <= length(s)) do begin
+              case s[pos] of
+                '>','/','?': begin
+                  colorChange(XML_COLOR_TAG);
+                  if s[pos] <> '>' then inc(pos);
+                  break;
+                end;
+                 #0..#32: ;
+                 else begin
+                   colorChange(XML_COLOR_ATTRIB_NAME);
+                   while (pos <= length(s)) and not (s[pos] in ['=','/','>']) do inc(pos);
+                   colorChange(XML_COLOR_TAG);
+                   if s[pos] <> '=' then break;
+                   inc(pos);
+                   while (pos <= length(s)) and (s[pos] in [#0..#32]) do inc(pos);
+                   colorChange(XML_COLOR_ATTRIB_VALUE);
+                   if (pos <= length(s)) then
+                     case s[pos] of
+                       '''', '"': begin
+                         quote := s[pos];
+                         inc(pos);
+                         while (pos <= length(s)) and (s[pos] <> quote) do inc(pos);
+                         inc(pos);
+                       end;
+                       else while (pos <= length(s)) and not (s[pos] in [#0..#32]) do inc(pos);
+                     end;
+                   continue;
+                 end;
+              end;
+              inc(pos);
+            end;
+            inc(pos);
+            colorChange(ccNormal);
+          end;
+          else inc(pos);
+        end;
+      end;
+      colorChange(ccNormal)
+    end;
+    else w(s);
+  end;
+end;
+
 var firstItem: boolean = true;
 
-procedure writeItem(const s: string);
+procedure writeItem(const s: string; color: TColorOptions = cNever);
 begin
   if not firstItem then begin
     w(outputSeparator);
   end;
-  w(s);
+  wcolor(s, color);
   firstItem := false;
 end;
 
-procedure writeVarName(const s: string);
+procedure writeVarName(const s: string; color: TColorOptions = cNever);
 begin
-  writeItem(s);
+  writeItem(s, color);
   firstItem := true; //prevent another line break / separator
 end;
 
@@ -160,9 +355,9 @@ procedure writeBeginGroup;
 begin
   case outputFormat of
     ofXMLWrapped: begin
-      w('<e>');
+      wcolor('<e>', cXML);
     end;
-    ofJsonWrapped: if not firstGroup then wln(', ');
+    ofJsonWrapped: if not firstGroup then wcolor(', ' + LineEnding, cJSON);
   end;
   firstGroup := false;
 end;
@@ -170,7 +365,9 @@ end;
 procedure writeEndGroup;
 begin
   case outputFormat of
-    ofXMLWrapped: wln('</e>');
+    ofXMLWrapped: begin
+      wcolor('</e>' + LineEnding, cXML);
+    end;
   end;
 end;
 
@@ -712,6 +909,7 @@ var
   realPath: String;
   realFile: String;
   downloadTo: String;
+  color: TColorOptions;
 begin
   result := nil;
   if cgimode or not allowFileAccess then
@@ -752,7 +950,13 @@ begin
   //    .             save in current directory with name index.html
   //    -             print to stdout
   if downloadTo = '-' then begin
-    w(data.rawdata);
+    color := colorizing;
+    if color in [cAlways, cAuto] then
+      case data.inputFormat of
+        ifHTML, ifXML, ifXMLStrict: color := cXML;
+        ifJSON: color := cJSON;
+      end;
+    wcolor(data.rawdata, color);
     exit;
   end;
   if strEndsWith(downloadTo, '/.') then downloadTo := downloadTo + '/' + realFile
@@ -1828,7 +2032,8 @@ var hasRawWrapper: boolean = false;
 procedure needRawWrapper;
   procedure setHeaderFooter(const h, f: string);
   begin
-    w(h);
+    if outputFormat = ofJsonWrapped then wcolor(h, cJSON)
+    else wcolor(h, cXML);
     if outputSeparator = LineEnding then wln();
     if not mycmdline.existsProperty('output-footer') then outputFooter := f + LineEnding;
   end;
@@ -1945,6 +2150,19 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
     end;
   end;
 
+  procedure writeItemColor(const v: IXQValue);
+  var
+    color: TColorOptions;
+  begin
+    color := colorizing;
+    if (color in [cAuto,cAlways]) and (outputFormat = ofAdhoc) then
+      case value.get(1).kind of
+        pvkNode: if printedNodeFormat <> tnsText then color := cXML;
+        pvkArray,pvkObject: color := cJSON;
+      end;
+    writeItem(singletonToString(v), color)
+  end;
+
 var
   i: Integer;
   temp: TXQValueObject;
@@ -1965,14 +2183,11 @@ begin
           if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
           writeItem(escape('()'));
         end;
-        1: begin
-          //if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-          writeItem(singletonToString(value.get(1)))
-        end;
+        1: writeItemColor(value.get(1));
         else begin
           if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
           if not printTypeAnnotations then begin
-            for x in value do writeItem(singletonToString(x));
+            for x in value do writeItemColor(x);
           end else begin
             writeItem(escape('(') + singletonToString(value.get(1)) + escape(', '));
             for i := 2 to value.getSequenceCount - 1 do
@@ -1983,10 +2198,10 @@ begin
       end;
     end;
     ofJsonWrapped: begin
-      w(value.jsonSerialize(printedNodeFormat));
+      wcolor(value.jsonSerialize(printedNodeFormat), cJSON);
     end;
     ofXMLWrapped: begin
-      w(value.xmlSerialize(printedNodeFormat, 'seq', 'e', 'object'));
+      wcolor(value.xmlSerialize(printedNodeFormat, 'seq', 'e', 'object'), cXML);
     end;
   end;
 end;
@@ -2202,82 +2417,82 @@ begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then writeVarName('<'+vars.Names[i] + '>');
+           if showVar(vars.Names[i]) then writeVarName('<'+vars.Names[i] + '>', cXML);
            printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
-           if showVar(vars.Names[i]) then w('</'+vars.Names[i] + '>');
+           if showVar(vars.Names[i]) then wcolor('</'+vars.Names[i] + '>', cXML);
          end;
     end;
     ofRawHTML: begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then writeVarName('<span class="'+vars.Names[i] + '">');
+           if showVar(vars.Names[i]) then writeVarName('<span class="'+vars.Names[i] + '">', cXML);
            printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
-           if showVar(vars.Names[i]) then w('</span>');
+           if showVar(vars.Names[i]) then wcolor('</span>', cXML);
          end;
     end;
     ofJsonWrapped:
       if hideVariableNames then begin
-        w('[');
+        wcolor('[', cJSON);
         first := true;
         for i:=0 to vars.count-1 do begin
           if acceptName(vars.Names[i]) then begin
             if first then first := false
-            else wln(', ');
+            else wcolor(', ' + LineEnding, cJSON);
             printExtractedValue(vars.get(i), true);
           end;
         end;
-        wln(']');
+        wcolor(']' + LineEnding, cJSON);
       end else begin
         first := true;
-        writeItem('{');
+        writeItem('{', cJSON);
         setlength(tempUsed, vars.count);
         FillChar(tempUsed[0], sizeof(tempUsed[0])*length(tempUsed), 0);
         for i:=0 to vars.count-1 do begin
           if tempUsed[i] then continue;
           if acceptName(vars.Names[i]) then begin
-            if not first then wln(', ');
+            if not first then wcolor(', ' + LineEnding, cJSON);
             first := false;
-            writeVarName(jsonStrEscape(vars.Names[i]) + ': ');
+            writeVarName(jsonStrEscape(vars.Names[i]) + ': ', cJSON);
             values := vars.getAll(vars.Names[i]);
             if values.getSequenceCount = 1 then printExtractedValue(values, true)
             else begin
-              w('[');
+              wcolor('[', cJSON);
               printExtractedValue(values.get(1), true);
               for j:=2 to values.getSequenceCount do begin
-                w(', ');
+                wcolor(', ', cJSON);
                 printExtractedValue(values.get(j), true);
               end;
-              w(']');
+              wcolor(']', cJSON);
             end;
           end;
           for j := i + 1 to vars.count-1 do
             if vars.Names[i] = vars.Names[j] then tempUsed[j] := true;
         end;
-        w(LineEnding + '}');
+        wcolor(LineEnding + '}', cJSON);
     end;
     ofXMLWrapped: begin
       if hideVariableNames then begin
-        w('<seq>');
+        wcolor('<seq>', cXML);
         first := true;
         for i:=0 to vars.count-1 do begin
           if acceptName(vars.Names[i]) then begin
-            if first then begin first := false; w('<e>');end
-            else w('</e><e>');
+            if first then begin first := false; wcolor('<e>', cXML);end
+            else wcolor('</e><e>', cXML);
             printExtractedValue(vars.get(i), true);
           end;
         end;
-        if not first then w('</e>');
-        wln('</seq>');
+        if not first then wcolor('</e>', cXML);
+        wcolor('</seq>' + LineEnding, cXML);
       end else begin
-        w(LineEnding + '<object>' + LineEnding);
+        wcolor(LineEnding + '<object>' + LineEnding, cXML);
         for i:=0 to vars.count-1 do
            if acceptName(vars.Names[i])  then begin
-             w('<'+vars.Names[i] + '>');
+             wcolor('<'+vars.Names[i] + '>', cXML);
              printExtractedValue(vars.Values[i], true);
-             wln('</'+vars.Names[i] + '>');
+             wcolor('</'+vars.Names[i] + '>'+LineEnding, cXML);
            end;
-        wln('</object>');
+        wcolor('</object>'+LineEnding, cXML);
       end;
     end;
     ofBash, ofWindowsCmd:
@@ -2517,30 +2732,12 @@ begin
   inherited Destroy;
 end;
 
-type TMyConsoleColors = (ccNormal, ccRedBold);
-var lastConsoleColor: TMyConsoleColors = ccNormal;
-
 procedure displayError(e: Exception; printPartialMatches: boolean = false);
   procedure say(s: string; color: TMyConsoleColors = ccNormal);
   begin
     if cgimode then write(s)
     else begin
-      if color <> lastConsoleColor then begin
-        Flush(stderr);
-        {$ifdef unix}
-        case color of
-          ccNormal: write(stderr, #27'[0m');
-          ccRedBold: write(stderr, #27'[1;31m');
-        end;
-        {$endif}
-        {$ifdef windows}
-        case color of
-          ccNormal: SetConsoleTextAttribute(StdErrorHandle, FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE);
-          ccRedBold: SetConsoleTextAttribute(StdErrorHandle, FOREGROUND_RED or FOREGROUND_INTENSITY);
-        end;
-        {$endif}
-        lastConsoleColor := color;
-      end;
+      setTerminalColor(true, color);
       write(stderr, s);
     end;
   end;
@@ -3077,7 +3274,7 @@ begin
     mycmdLine.declareFlag('raw-url', 'Do not escape the url (preliminary)');
   end;
 
-  mycmdLine.beginDeclarationCategory('Output options:');
+  mycmdLine.beginDeclarationCategory('Output/Input options:');
 
   mycmdLine.declareFlag('silent','Do not print status information to stderr', 's');
   mycmdline.declareFlag('verbose', 'Print more status information');
@@ -3094,6 +3291,9 @@ begin
   mycmdLine.declareString('output-separator', 'Separator between multiple items (default: line break)', LineEnding);
   mycmdLine.declareString('output-header', '2nd header for the output. (e.g. <html>)', '');
   mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </html>)', '');
+  mycmdLine.declareString('color', 'Coloring option (never,always,json,xml)', ifthen(cgimode, 'never', 'auto'));
+
+
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
@@ -3235,6 +3435,39 @@ begin
     end
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
+  case mycmdline.readString('color') of
+    'auto': colorizing := cAuto;
+    'never': colorizing := cNever;
+    'always': colorizing := cAlways;
+    'json': colorizing := cJSON;
+    'xml': colorizing := cXML;
+    else raise EInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
+  end;
+  case colorizing of
+    cNever: ;
+    cAlways: begin
+      isStdoutTTY := true;
+      isStderrTTY := true;
+    end;
+    else begin
+      {$ifdef unix}
+      isStdoutTTY := IsATTY(stdout) <> 0;
+      isStderrTTY := IsATTY(StdErr) <> 0;
+      {$endif}
+      {$ifdef windows}
+      isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
+      isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
+      {$endif}
+    end;
+  end;
+  case colorizing of
+    cAuto, cAlways: begin
+      case outputFormat of
+        ofXMLWrapped, ofRawHTML, ofRawXML: colorizing := cXML;
+        ofJsonWrapped: colorizing := cJSON;
+      end;
+    end;
+  end;
 
   if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') or mycmdline.readFlag('trace-context-variables') then begin
     tracer := TXQTracer.Create;
@@ -3248,7 +3481,7 @@ begin
 
   if assigned(onPreOutput) then onPreOutput(guessExtractionKind(mycmdline.readString('extract')));
 
-  if outputHeader <> '' then w(outputHeader);
+  if outputHeader <> '' then wcolor(outputHeader, colorizing);
   if outputFormat in [ofJsonWrapped, ofXMLWrapped] then needRawWrapper;
 
 
@@ -3316,7 +3549,7 @@ begin
           writeItem('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
   end;
 
-  if outputfooter <> '' then w(outputFooter)
+  if outputfooter <> '' then wcolor(outputFooter, colorizing)
   else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
 
   mycmdLine.free;
