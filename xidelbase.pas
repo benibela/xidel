@@ -2282,7 +2282,8 @@ begin
     end;
     ofBash, ofWindowsCmd:
       for i:=0 to vars.count-1 do
-        printCmdlineVariable(vars.Names[i], vars.Values[i]);
+        if acceptName(vars.Names[i]) then
+          printCmdlineVariable(vars.Names[i], vars.Values[i]);
   end;
   writeEndGroup;
 end;
