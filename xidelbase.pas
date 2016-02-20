@@ -85,6 +85,7 @@ function rawData: string;
 function baseUri: string;
 function displayBaseUri: string;
 function contenttype: string;
+function headers: TStringList;
 function recursionLevel: integer;
 function inputFormat: TInputFormat;
 end;
@@ -502,14 +503,17 @@ private
   fcontenttype: string;
   frecursionLevel: integer;
   finputformat: TInputFormat;
+  fheaders: TStringList;
 public
   function rawData: string;
   function baseUri: string;
   function displayBaseUri: string;
   function contentType: string;
+  function headers: TStringList;
   function recursionLevel: integer;
   function inputFormat: TInputFormat;
   constructor create(somedata: string; aurl: string; acontenttype: string = '');
+  destructor Destroy; override;
   //property parsed:TTreeDocument read GetParsed;
 end;
 
@@ -784,6 +788,11 @@ begin
   result := fcontenttype;
 end;
 
+function TDataObject.headers: TStringList;
+begin
+  result := fheaders;
+end;
+
 function TDataObject.recursionLevel: integer;
 begin
   result := frecursionLevel;
@@ -1045,6 +1054,7 @@ var escapedURL: string;
 
 var
   i: Integer;
+  d: TDataObject;
 begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
@@ -1065,7 +1075,13 @@ begin
     for i:=0 to internet.lastHTTPHeaders.Count-1 do
       wln(internet.lastHTTPHeaders[i]);
   end;
-  if Assigned(internet) then (result as TDataObject).fcontenttype := internet.getLastHTTPHeader('Content-Type');
+  if Assigned(internet) then begin
+    d := (result as TDataObject);
+    d.fcontenttype := internet.getLastHTTPHeader('Content-Type');
+    d.fheaders := TStringList.Create;
+    for i := 0 to internet.lastHTTPHeaders.count - 1 do
+      d.fheaders.Add(internet.lastHTTPHeaders[i]);
+  end;
 end;
 
 procedure THTTPRequest.replaceVariables;
@@ -1262,6 +1278,12 @@ begin
   fbaseurl:=aurl;
   fdisplaybaseurl:=aurl;
   fcontenttype := acontenttype;
+end;
+
+destructor TDataObject.Destroy;
+begin
+  fheaders.free;
+  inherited Destroy;
 end;
 
 { TStdinDataRequest }
@@ -1811,6 +1833,28 @@ end;
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
   procedure subProcess(data: IData; skipActions: integer = 0);
+    function makeHeaders: ixqvalue;
+    var
+      headers: TStringList;
+      obj: TXQValueObject;
+      h: String;
+      i: Integer;
+      name: RawByteString;
+      j: SizeInt;
+    begin
+      headers := data.headers;
+      if headers = nil then exit(xqvalue());
+      obj := TXQValueObject.create();
+      for i := 0 to headers.count - 1 do begin
+        h := trim(headers[i]);
+        if h = '' then continue;
+        j := pos(':', h);
+        if j = 0 then obj.values.add('', h)
+        else obj.values.add(lowercase(copy(h, 1, j-1)), xqvalue(trim(strCopyFrom(h,j+1))));
+      end;
+      result := obj;
+    end;
+
   var
     i: Integer;
     decoded: TDecodedUrl;
@@ -1830,6 +1874,7 @@ var next, res: TFollowToList;
     htmlparser.variableChangeLog.add('host', decoded.host + IfThen(decoded.port <> '' , ':' + decoded.port, ''));
     htmlparser.variableChangeLog.add('path', decoded.path);
     htmlparser.variableChangeLog.add('raw', data.rawData);
+    htmlparser.variableChangeLog.add('headers', makeHeaders);
 
     if yieldDataToParent then begin
       if res = nil then res := TFollowToList.Create;
