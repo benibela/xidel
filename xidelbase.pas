@@ -1095,7 +1095,7 @@ begin
   end;
   if Assigned(internet) then begin
     d := (result as TDataObject);
-    d.fcontenttype := internet.getLastHTTPHeader('Content-Type');
+    d.fcontenttype := internet.getLastContentType;
     d.fheaders := TStringList.Create;
     for i := 0 to internet.lastHTTPHeaders.count - 1 do
       d.fheaders.Add(internet.lastHTTPHeaders[i]);
