@@ -22,7 +22,6 @@ function getVersion(){
 }
 
 sfProject videlibri
-getVersion 
 
 action=2
 
@@ -36,6 +35,12 @@ function pushhg(){
 	syncHg $VIDELIBRIBASE/_hg.filemap $HGROOT $PUBLICHG
 }
 
+function compile(){
+  getVersion
+  eval $1 xidel
+  echo > xidelbuilddata.inc  
+}
+
 case "$1" in
 web)
 	cd web
@@ -45,28 +50,28 @@ web)
 	;;
 	
 linux64)
-        lazCompileLinux64 xidel
+        compile lazCompileLinux64 
         if [ $action -lt 2 ]; then exit; fi
         tar -vczf xidel-$VERSION.linux64.tar.gz xidel readme.txt changelog install.sh
-        fileUpload xidel-$VERSION.linux64.tar.gz "/Xidel/Xidel\ $VERSION/"
+        fileUpload xidel-$VERSION.linux64.tar.gz "$UPLOAD_PATH"
         checkinstall --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
-        fileUpload xidel_$VERSION-1_amd64.deb "/Xidel/Xidel\ $VERSION/"
+        fileUpload xidel_$VERSION-1_amd64.deb "$UPLOAD_PATH"
         ;;
 
 linux32)
-        lazCompileLinux32 xidel
+        compile lazCompileLinux32 xidel
         if [ $action -lt 2 ]; then exit; fi
         tar -vczf xidel-$VERSION.linux32.tar.gz xidel readme.txt changelog install.sh
-        fileUpload xidel-$VERSION.linux32.tar.gz "/Xidel/Xidel\ $VERSION/"
+        fileUpload xidel-$VERSION.linux32.tar.gz "$UPLOAD_PATH"
         checkinstall --pkgarch=i386 --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
-        fileUpload xidel_$VERSION-1_i386.deb "/Xidel/Xidel\ $VERSION/"
+        fileUpload xidel_$VERSION-1_i386.deb "$UPLOAD_PATH"
         ;;
 
 win32)
-        lazCompileWin32 xidel 
+        compile lazCompileWin32 
         if [ $action -lt 2 ]; then exit; fi
         zip -v xidel-$VERSION.win32.zip xidel.exe changelog readme.txt
-        fileUpload xidel-$VERSION.win32.zip "/Xidel/Xidel\ $VERSION/"
+        fileUpload xidel-$VERSION.win32.zip "$UPLOAD_PATH"
         ;;
 
 cgi)    lazCompileLinux64 xidelcgi
@@ -90,6 +95,7 @@ mirror)
         ;;
 
 src)
+  getVersion 
 	pushhg
 	SRCDIR=/tmp/xidel-$VERSION-src
 	rm -R $SRCDIR
@@ -97,11 +103,17 @@ src)
 	cd /tmp
 	rm -Rvf $SRCDIR/programs/internet/VideLibri $SRCDIR/programs/internet/sourceforgeresponder/
       	tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hg xidel-$VERSION-src
-        fileUpload xidel-$VERSION.src.tar.gz "/Xidel/Xidel\ $VERSION/"
+        fileUpload xidel-$VERSION.src.tar.gz "$UPLOAD_PATH"
 	;;	
 		
 
 downloadTable)
+   getVersion 
+  if [[ "$ISPRERELEASE" = true ]]; then 
+    ((BUILD_VERSION = $BUILD_VERSION - 1 ))
+    if [[ $BUILD_VERSION = 0 ]] ; then VERSION=$MAJOR_VERSION.$MINOR_VERSION; 
+    else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
+  fi;
 
    ./xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( if (contains($n, "win")) then "Windows: " else if (contains($n, "linux")) then "Universal Linux: " else if (contains($n, ".deb")) then "Debian: " else if (contains($n, "src")) then "Source:" else "", if (contains($n, "32") or contains($n, "386")) then "32 Bit" else if (contains($n, "64"))then "64 Bit" else ""  )   };            
                            <table class="downloadTable">
@@ -111,6 +123,10 @@ downloadTable)
                              return <tr><td>{$link.verboseName}</td><td><a href="{$link.a/@href}">{$link.a/text()}</a></td><td>{$link.size/text()}</td></tr>}
                            <tr><td>Mac 10.8</td><td colspan="2"><a href="https://www.evernote.com/shard/s69/sh/ff1e78f3-a369-4855-b18f-6184ce789c45/f3511927d0fb356ce883835f2eb712e0">externally prebuilt version</a> and compile instructions.</td></tr>
                            </table>'     --printed-node-format xml > /tmp/downloadTable.html;
+  
+  if [[ "$ISPRERELEASE" = true ]]; then 
+    echo '<br> Prereleases for the next version are also <a href="https://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20development/">available</a>.' >> /tmp/downloadTable.html
+  fi
   
   cat /tmp/downloadTable.html
   
