@@ -38,7 +38,7 @@ var cgimode: boolean = false;
 
     majorVersion: integer = 0;
     minorVersion: integer = 9;
-    buildVersion: integer = 0;
+    buildVersion: integer = 1;
 
 
 type EXidelException = class(Exception);
@@ -3171,6 +3171,7 @@ end;
 procedure printVersion;
 begin
   writeln('Xidel '+getVersionString);
+  {$I xidelbuilddata.inc}
   writeln('');
   writeln('http://www.videlibri.de/xidel.html');
   writeln('by Benito van der Zander <benito@benibela.de>');

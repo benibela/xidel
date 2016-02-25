@@ -10,6 +10,15 @@ function getVersion(){
   BUILD_VERSION=`grep -i buildVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
   if [[ $BUILD_VERSION = 0 ]] ; then  VERSION=$MAJOR_VERSION.$MINOR_VERSION; 
   else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
+  UPLOAD_PATH="/Xidel/Xidel\ $VERSION/"
+  BUILDDATE=`date +%Y%m%d`.`hg log -l 1 | head -1 | sed -e 's/^[^:]*: *//' | tr : .`
+  echo "writeln('($BUILDDATE)');" > xidelbuilddata.inc
+  ISPRERELEASE=""
+  if [[ $BUILD_VERSION = 1 ]] || [[ $BUILD_VERSION = 3 ]] || [[ $BUILD_VERSION = 5 ]] || [[ $BUILD_VERSION = 7 ]] || [[ $BUILD_VERSION = 9 ]]; then 
+    UPLOAD_PATH="/Xidel/Xidel\ development/"
+    VERSION=$VERSION.$BUILDDATE; 
+    ISPRERELEASE=true
+  fi
 }
 
 sfProject videlibri

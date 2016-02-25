@@ -1,6 +1,23 @@
 Some important changes:
 
+--------Xidel 0.9.1--------
+
+* supports more XQuery 3.0 expressions and all XPath 3.0 functions, e.g. format-integer, math:* functions
+* uses a new underlying regular expression engine, FLRE, which supports Unicode, \p,\c,\i character classes and is supposed to be extremely fast
+* stricter error conditions, invalid XPath queries that were previously evaluated are now rejected, for example
+  in regular expressions (?i) or \b, (1 + if(..) then ...) instead of (1 + (if(..) then ...)),  gYear("123") instead of gYear("0123")
+* this improves the XQuery Test Suite conformance and it passes basically 100% of the XPath 2 tests and 97.6% of the XQuery 3 tests
+* supports the EXPath file module
+* custom functions: random($max), random-seed(), x:product($seq)
+* new multipage template statements: <try><catch>, <else>
+* the error raising HTTP codes are now customizable
+* the headers of the last HTTP request can be accessed via $headers
+* improved debugging facilities. Evaluation tracing, colored output, improved error messages
+* --quiet/-q was renamed to --silent/-s
+* various fixes
+
 --------Xidel 0.9--------
+(2015-06-28)
 
 * support of more XQuery 3 expressions and functions:
   - anonymous functions, higher order function, function references, function tests

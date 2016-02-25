@@ -65,16 +65,19 @@
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="utf8tools"/>
+        <PackageName Value="LCL"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCLBase"/>
+        <PackageName Value="utf8tools"/>
       </Item2>
       <Item3>
-        <PackageName Value="internettools"/>
+        <PackageName Value="LCLBase"/>
       </Item3>
+      <Item4>
+        <PackageName Value="internettools"/>
+      </Item4>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>
