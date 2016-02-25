@@ -13,7 +13,7 @@ uses //heaptrc,
  { TTemplateReaderBreaker }
 
 
-function prepareInternet(const userAgent, proxy: string): TInternetAccess;
+function prepareInternet(const userAgent, proxy: string; onReact: TTransferReactEvent): TInternetAccess;
 begin
   defaultInternetConfiguration.userAgent:=userAgent;
   defaultInternetConfiguration.setProxy(proxy);
@@ -24,6 +24,7 @@ begin
   end;
   result := simpleinternet.defaultInternet;
   defaultInternetAccessClass := TInternetAccessClass( result.ClassType);
+  result.OnTransferReact := onReact;
 end;
 
 function retrieve(const method, url, post, headers: string): string;

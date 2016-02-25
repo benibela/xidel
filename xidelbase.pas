@@ -45,7 +45,7 @@ type EXidelException = class(Exception);
 
 var
     onPostParseCmdLine: procedure ();
-    onPrepareInternet: function (const useragent, proxy: string): tinternetaccess;
+    onPrepareInternet: function (const useragent, proxy: string; onReact: TTransferReactEvent): tinternetaccess;
     onRetrieve: function (const method, url, postdata, headers: string): string;
     onPreOutput: procedure (extractionKind: TExtractionKind);
 
@@ -755,8 +755,10 @@ TProcessingContext = class(TDataProcessing)
 
   destructor destroy; override;
 private
+  stupidHTTPReactionHackFlag: integer;
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
   function evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
+  procedure httpReact (sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data:string; var reaction: TInternetAccessReaction);
 end;
 
 type EInvalidArgument = Exception;
@@ -1030,59 +1032,25 @@ end;
 
 function THTTPRequest.retrieve(parent: TProcessingContext): IData;
 var escapedURL: string;
-  function doRetrieve(retries: integer): string;
-    function matches(filter: string; value: string): boolean;
-    var
-      i: Integer;
-    begin
-      if length(filter) <> length(value) then exit(false);
-      for i := 1 to length(filter) do
-        if (filter[i] <> 'x') and (filter[i] <> value[i]) then
-          exit(false);
-      result := true;
-    end;
-
-  var
-    errors: TStringArray;
-    cur: TStringArray;
-    i: Integer;
-  begin
-    try
-      result := onRetrieve(method, escapedURL, data ,header);
-    except
-      on e: EInternetException do begin
-        errors := strSplit(parent.errorHandling, ',');
-        for i:=0 to high(errors) do begin
-          cur := strSplit(errors[i], '=');
-          if matches(trim(cur[0]), inttostr(e.errorCode)) then
-            case trim(cur[1]) of
-              'abort': raise;
-              'ignore': exit('');
-              'retry': begin
-                if retries <= 0 then raise;
-                Sleep(trunc(parent.wait*1000));
-                exit(doRetrieve(retries-1));
-              end;
-            end;
-        end;
-        raise;
-      end;
-    end;
-  end;
 
 var
   i: Integer;
   d: TDataObject;
 begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
-  if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy);
+  if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
   escapedURL := url;
   if not rawURL then escapedURL := urlHexEncode(url, [#32..#126]); //    fn:escape-html-uri
   parent.printStatus('**** Retrieving ('+method+'): '+escapedURL+' ****');
   if parent.printPostData and (data <> '') then parent.printStatus(data);
   result := TDataObject.create('', escapedURL);
   if assigned(onRetrieve) then begin
-    (result as TDataObject).frawdata := doRetrieve(10);
+    parent.stupidHTTPReactionHackFlag := 0;
+    (result as TDataObject).frawdata := onRetrieve(method, escapedURL, data, header);
+    case parent.stupidHTTPReactionHackFlag of
+      1: (result as TDataObject).frawdata := '';
+      2: exit(nil);
+    end;
     if assigned(internet) then begin
       (result as TDataObject).fbaseurl := internet.lastUrl;
       (result as TDataObject).fdisplaybaseurl := internet.lastUrl;
@@ -1867,6 +1835,7 @@ var next, res: TFollowToList;
     decoded: TDecodedUrl;
     followKind: TExtractionKind;
   begin
+    if data = nil then exit;
     if follow <> '' then printStatus('**** Processing: '+data.displayBaseUri+' ****')
     else for i := skipActions to high(actions) do
       if actions[i] is TExtraction then begin
@@ -2078,6 +2047,52 @@ begin
 
   if data.inputFormat <> ifJSON then result := query.evaluate(currentRoot)
   else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
+end;
+
+procedure TProcessingContext.httpReact(sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data: string;
+  var reaction: TInternetAccessReaction);
+  function matches(filter: string; value: string): boolean;
+  var
+    i: Integer;
+  begin
+    if length(filter) <> length(value) then exit(false);
+    for i := 1 to length(filter) do
+      if (filter[i] <> 'x') and (filter[i] <> value[i]) then
+        exit(false);
+    result := true;
+  end;
+
+var
+  errors: TStringArray;
+  cur: TStringArray;
+  i: Integer;
+begin
+  if errorHandling = '' then exit;
+  errors := strSplit(errorHandling, ',');
+  for i:=0 to high(errors) do begin
+    cur := strSplit(errors[i], '=');
+    if matches(trim(cur[0]), inttostr(sender.lastHTTPResultCode)) then begin
+      case trim(cur[1]) of
+        'accept': reaction := iarAccept;
+        'retry': begin
+          Sleep(trunc(wait*1000));
+          reaction := iarRetry;
+        end;
+        'redirect': reaction := iarFollowRedirectGET;
+        'redirect-data': reaction := iarFollowRedirectKeepMethod;
+        'ignore': begin
+          stupidHTTPReactionHackFlag := 1;
+          reaction := iarAccept;
+        end;
+        'skip': begin
+          stupidHTTPReactionHackFlag := 2;
+          reaction := iarAccept;
+        end;
+        'abort': reaction := iarReject
+      end;
+      exit;
+    end;
+  end;
 end;
 
 var hasRawWrapper: boolean = false;
@@ -2398,7 +2413,7 @@ begin
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
       multipage.onPageProcessed:=@pageProcessed;
-      multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy);
+      multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
       multipagetemp := TMultiPageTemplate.create();
       multipagetemp.loadTemplateFromString(extract);
       multipage.setTemplate(multipagetemp);
@@ -3322,7 +3337,7 @@ begin
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
     mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b"). Can be used multiple times like --post.'); mycmdline.addAbbreviation('H');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
-    mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 403=ignore,4xx=abort,5xx=retry (default is xxx=abort)');
+    mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 1xx=retry,200=accept,3xx=redirect,4xx=abort,5xx=skip');
     mycmdLine.declareFlag('raw-url', 'Do not escape the url (preliminary)');
   end;
 
@@ -3453,7 +3468,7 @@ begin
     debugPrintContext(baseContext);
 
   if allowInternetAccess and assigned(onPrepareInternet) then
-    onPrepareInternet(baseContext.userAgent, baseContext.proxy);
+    onPrepareInternet(baseContext.userAgent, baseContext.proxy, @baseContext.httpReact);
 
   cmdlineWrapper.Free;
 
