@@ -1,0 +1,15 @@
+
+.xidelfeatures { list-style: none }
+.xidelfeatures li { margin-bottom: 1em }
+.xidelfeatures li li { margin-top: 0.3em; margin-bottom: 0em }
+
+h2 { padding: 1em 5px 5px }
+h2 div { background-color: #88EE88}
+h2 div a { color: #330000;  }
+
+.examples {style: list-type: none}
+.examples li {margin-bottom: 1em}
+.examples li ul {margin-top: 1em}
+.downloadTable td { padding-right: 2em; padding-left: 2em}
+
+dl dt { margin-top:8px; margin-bottom: 8px }
