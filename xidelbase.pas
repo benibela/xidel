@@ -3171,7 +3171,7 @@ end;
 procedure printVersion;
 begin
   writeln('Xidel '+getVersionString);
-  {$I xidelbuilddata.inc}
+  {$I xidelbuilddata.inc} //more version information to print. if you do not have the file, just create an empty one or remove this line
   writeln('');
   writeln('http://www.videlibri.de/xidel.html');
   writeln('by Benito van der Zander <benito@benibela.de>');
