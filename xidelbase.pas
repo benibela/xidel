@@ -2051,47 +2051,12 @@ end;
 
 procedure TProcessingContext.httpReact(sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data: string;
   var reaction: TInternetAccessReaction);
-  function matches(filter: string; value: string): boolean;
-  var
-    i: Integer;
-  begin
-    if length(filter) <> length(value) then exit(false);
-    for i := 1 to length(filter) do
-      if (filter[i] <> 'x') and (filter[i] <> value[i]) then
-        exit(false);
-    result := true;
-  end;
-
-var
-  errors: TStringArray;
-  cur: TStringArray;
-  i: Integer;
 begin
-  if errorHandling = '' then exit;
-  errors := strSplit(errorHandling, ',');
-  for i:=0 to high(errors) do begin
-    cur := strSplit(errors[i], '=');
-    if matches(trim(cur[0]), inttostr(sender.lastHTTPResultCode)) then begin
-      case trim(cur[1]) of
-        'accept': reaction := iarAccept;
-        'retry': begin
-          Sleep(trunc(wait*1000));
-          reaction := iarRetry;
-        end;
-        'redirect': reaction := iarFollowRedirectGET;
-        'redirect-data': reaction := iarFollowRedirectKeepMethod;
-        'ignore': begin
-          stupidHTTPReactionHackFlag := 1;
-          reaction := iarAccept;
-        end;
-        'skip': begin
-          stupidHTTPReactionHackFlag := 2;
-          reaction := iarAccept;
-        end;
-        'abort': reaction := iarReject
-      end;
-      exit;
-    end;
+  stupidHTTPReactionHackFlag := 0;
+  case TInternetAccess.reactFromCodeString(errorHandling, sender.lastHTTPResultCode, reaction) of
+    'retry': Sleep(trunc(wait*1000));
+    'ignore': stupidHTTPReactionHackFlag := 1;
+    'skip': stupidHTTPReactionHackFlag := 2;
   end;
 end;
 
