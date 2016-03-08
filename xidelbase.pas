@@ -617,8 +617,8 @@ TFollowToList = class(TFpObjectList)
 
   function containsEqual(ft: TFollowTo): boolean;
 private
-  procedure addBasicUrl(absurl: string; baseurl: string);
-  procedure addObject(absurl: string; baseurl: string; options: TXQValueObject);
+  procedure addBasicUrl(absurl: string; baseurl: string; inputFormat: TInputFormat);
+  procedure addObject(absurl: string; baseurl: string; options: TXQValueObject; fallBackInputFormat: TInputFormat);
 end;
 
 
@@ -1424,7 +1424,7 @@ begin
       isPureDataSource := true;
       for i := 0 to keys.Count - 1 do
         case keys[i] of
-          'header', 'headers', 'post', 'data', 'url', 'form', 'method': ;
+          'header', 'headers', 'post', 'data', 'url', 'form', 'method', 'input-format': ;
           else begin
             isPureDataSource := false;
             break;
@@ -1433,9 +1433,9 @@ begin
       keys.free;
       if isPureDataSource then begin
         if (dest as TXQValueObject).hasProperty('url', @tempv) then
-          addObject( tempv.toString, basedata.baseUri, dest as TXQValueObject)
+          addObject( tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat)
         else if (dest as TXQValueObject).hasProperty('data', @tempv) then
-          addObject(tempv.toString, basedata.baseUri, dest as TXQValueObject );
+          addObject(tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat );
       end else if parent <> nil then begin
         temp := TProcessingContext.Create();
         temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
@@ -1443,6 +1443,7 @@ begin
         temp.follow := parent.follow; //need to copy follow and follow-to, so it follows to the new data
         temp.followKind := parent.followKind;
         temp.followTo := parent.followTo;
+        temp.followInputFormat := parent.followInputFormat;
         temp.nextSibling := parent.nextSibling;
         temp.mergeWithObject(dest as TXQValueObject);
         merge(temp.process(basedata));
@@ -1457,12 +1458,8 @@ begin
       exit;
     end;
     pvkNode: raise EXidelException.Create('Assert failure: Expected resolved url for following, but got raw '+dest.debugAsStringWithTypeAnnotation());
-    else addBasicUrl(dest.toString, basedata.baseUri);
+    else addBasicUrl(dest.toString, basedata.baseUri, parent.followInputFormat);
   end;
-
-  //copy additional info
-  for i := oldCount to count - 1 do
-    TFollowTo(items[i]).inputFormat := parent.followInputFormat;
 end;
 
 function TFollowToList.containsEqual(ft: TFollowTo): boolean;
@@ -1474,14 +1471,18 @@ begin
   exit(false);
 end;
 
-procedure TFollowToList.addBasicUrl(absurl: string; baseurl: string);
+procedure TFollowToList.addBasicUrl(absurl: string; baseurl: string; inputFormat: TInputFormat);
+var
+  ft: TFollowTo;
 begin
   if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(absurl) = rtFile) then
     absurl := strResolveURI(absurl, baseurl);
-  Add(TFollowTo.createFromRetrievalAddress(absurl));
+  ft := TFollowTo.createFromRetrievalAddress(absurl);
+  ft.inputFormat := inputFormat;
+  Add(ft);
 end;
 
-procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQValueObject);
+procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQValueObject; fallBackInputFormat: TInputFormat);
 var
   followTo: TFollowTo;
   reader: TOptionReaderFromObject;
@@ -1489,6 +1490,7 @@ begin
   if (guessType(baseurl) in [rtFile, rtRemoteURL]) and (guessType(absurl) = rtFile) then
     absurl := strResolveURI(absurl, baseurl);
   followTo := TFollowTo.createFromRetrievalAddress(absurl);
+  followTo.inputFormat := fallBackInputFormat;
   reader := TOptionReaderFromObject.create(options);
   followTo.readOptions(reader);
   reader.free;

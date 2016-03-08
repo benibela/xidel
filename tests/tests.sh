@@ -394,6 +394,15 @@ tests/test.sh moduleFuncImport2 -e 'import module namespace rename = "pseudo://t
 
 tests/test.sh utf8  -e 'substring("äbcd",1,3)'
 
+#parser
+tests/test.sh dtd-broken tests/dtd.xml -e /
+tests/test.sh dtd-working --input-format xml-strict tests/dtd.xml -e /
+tests/test.sh dtd-working  '<e/>' -e '()' --input-format xml-strict tests/dtd.xml -e / #without  the -e () the last -e applies to both inputs
+tests/test.sh dtd-working --input-format html '<e>'  --input-format xml-strict  -f "'tests/dtd.xml'"  -e /
+tests/test.sh dtd-working --input-format html '<e>'  -f '{"data": "tests/dtd.xml", "input-format": "xml-strict"}'  -e /
+tests/test.sh dtd-working --input-format html '<e>'  -f '{"data": "tests/dtd.xml", "input-format": "xml-strict", "xx--yy--non-pure-caße!": 1}'  -e /
+
+
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
 tests/test.sh get1  http://videlibri.sourceforge.net/xidelecho.php -e //meth
