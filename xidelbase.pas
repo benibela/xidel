@@ -2867,7 +2867,7 @@ TCommandLineReaderBreaker = class(TCommandLineReader)
   procedure setProperties(newProperties: TPropertyArray);
   function getProperties(): TPropertyArray;
 
-  procedure parseUTF8;
+  procedure parseUTF8(autoReset: boolean = true);
 
 end;
 
@@ -2906,7 +2906,7 @@ begin
   result := propertyArray;
 end;
 
-procedure TCommandLineReaderBreaker.parseUTF8;
+procedure TCommandLineReaderBreaker.parseUTF8(autoReset: boolean = true);
 {$ifndef windows}
 var args: TStringArray;
   i: Integer;
@@ -2915,11 +2915,11 @@ begin
   if Paramcount = 0 then exit;
 
   {$ifdef windows}
-  parse(SysToUTF8(string(GetCommandLine)), true);
+  parse(SysToUTF8(string(GetCommandLine)), true, autoReset);
   {$else}
   setlength(args, Paramcount);
   for i:=0 to high(args) do args[i] := SysToUTF8(paramstr(i+1));
-  parse(args);
+  parse(args, autoReset);
   {$endif}
 end;
 
@@ -3372,7 +3372,8 @@ begin
 
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
 
-  TCommandLineReaderBreaker(mycmdLine).parseUTF8();
+  mycmdline.parse(GetEnvironmentVariableUTF8('XIDEL_OPTIONS'));
+  TCommandLineReaderBreaker(mycmdLine).parseUTF8(false);
 
   if Assigned(onPostParseCmdLine) then onPostParseCmdLine();
 

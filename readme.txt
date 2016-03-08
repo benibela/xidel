@@ -113,8 +113,9 @@ g) xidel http://site1 [ -f //a[@type1] --download type1/ ]
  
 [ and ] must be surrounded by a space.
 
-
-
+The environment variable XIDEL_OPTIONS can be used to set Xidel's default options, for example
+ XIDEL_OPTIONS="--silent --color=never"
+to disable some output and coloring.
 
 
 
