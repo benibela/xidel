@@ -392,7 +392,15 @@ tests/test.sh moduleFunc2 -e 'declare variable $a:=123; declare function local:x
 tests/test.sh moduleFuncImport -e 'import module namespace foobar = "pseudo://test-module" at "tests/module.xq"; ()' -e '$foobar:abc'
 tests/test.sh moduleFuncImport2 -e 'import module namespace rename = "pseudo://test-module" at "tests/module.xq"; ()' -e 'rename:test()'
 
+#interpreter tests
 tests/test.sh utf8  -e 'substring("äbcd",1,3)'
+tests/test.sh division --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a div .), " ")'
+tests/test.sh multiplication --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a * .), " ")'
+tests/test.sh addition --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a + .), " ")'
+tests/test.sh subtraction --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a - .), " ")'
+tests/test.sh divisionInt --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( try { ($a) idiv xs:double(.) } catch *  {$Q{http://www.w3.org/2005/xqt-errors}code} ), " ")'
+tests/test.sh modulo --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( try { $a mod . } catch *  {$Q{http://www.w3.org/2005/xqt-errors}code} ), " ")'
+
 
 #parser
 tests/test.sh dtd-broken tests/dtd.xml -e /

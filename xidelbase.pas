@@ -3244,6 +3244,7 @@ begin
   ThousandSeparator:=#0;
   ShortDateFormat:='YYYY-MM-DD';
   LongDateFormat:='YYYY-MM-DD';
+  SetExceptionMask([exInvalidOp, exDenormalized, {exZeroDivide,} exOverflow, exUnderflow, exPrecision]);
   registerModuleMath;
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
