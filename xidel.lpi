@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--color always http://google.de --download -"/>
+        <CommandLineParams Value="--input-format html '&lt;e>'  -f '{&quot;data&quot;: 'tests/dtd.xml', &quot;input-format&quot;: &quot;xml-strict&quot;}'  -e /"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
       </local>
@@ -93,6 +93,7 @@
       <Unit2>
         <Filename Value="../../../components/pascal/data/xquery_module_file.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="xquery_module_file"/>
       </Unit2>
     </Units>
   </ProjectOptions>
@@ -109,6 +110,7 @@
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
       <Checks>
+        <RangeChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
     </CodeGeneration>
