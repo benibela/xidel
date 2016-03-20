@@ -2559,7 +2559,6 @@ var
 begin
   f := data.inputFormat;
   if f = ifJSON then exit;
-  HTMLParser.repairMissingStartTags := f = ifHTML;
   if (f = ifXMLStrict) <> (HTMLParser is TTreeParserDOM) then begin
     if alternativeXMLParser = nil then begin
       alternativeXMLParser := TTreeParserDOM.Create;
