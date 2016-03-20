@@ -2914,6 +2914,11 @@ var args: TStringArray;
   i: Integer;
 {$endif}
 begin
+  if cgimode then begin
+    parse(autoReset);
+    exit;
+  end;
+
   if Paramcount = 0 then exit;
 
   {$ifdef windows}
@@ -3376,7 +3381,7 @@ begin
 
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
 
-  mycmdline.parse(GetEnvironmentVariableUTF8('XIDEL_OPTIONS'));
+  mycmdline.parse(GetEnvironmentVariableUTF8('XIDEL_OPTIONS'), false);
   TCommandLineReaderBreaker(mycmdLine).parseUTF8(false);
 
   if Assigned(onPostParseCmdLine) then onPostParseCmdLine();
