@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<r>
+
+  <?php 
+      echo "<span class='cap'>".$row['ID'].". ";
+?>
+</r>

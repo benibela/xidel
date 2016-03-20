@@ -410,6 +410,11 @@ tests/test.sh dtd-working --input-format html '<e>'  --input-format xml-strict  
 tests/test.sh dtd-working --input-format html '<e>'  -f '{"data": "tests/dtd.xml", "input-format": "xml-strict"}'  -e /
 tests/test.sh dtd-working --input-format html '<e>'  -f '{"data": "tests/dtd.xml", "input-format": "xml-strict", "xx--yy--non-pure-caße!": 1}'  -e /
 
+tests/test.sh pinode-xml tests/weirdpinode.xml -e / --output-format xml
+tests/test.sh pinode-xml --input-format xml tests/weirdpinode.xml -e / --output-format xml
+tests/test.sh pinode-xml-strict --input-format xml-strict tests/weirdpinode.xml -e / --output-format xml
+tests/test.sh pinode-html --input-format html tests/weirdpinode.xml -e / --output-format xml #this is nonsense. gigo
+
 
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
