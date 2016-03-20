@@ -1,5 +1,8 @@
 #!/bin/sh
 
+rm /tmp/xidel-tests-state-ok
+rm /tmp/xidel-tests-state-failed
+
 tests/test.sh t1   tests/a.xml
 tests/test.sh te   tests/a.xml -e //title 
 #Follow all a, print all titles
@@ -488,3 +491,8 @@ tests/test.sh regression_multipage3 -e '<action><page url="http://example.org"><
 tests/test.sh regression_multipage3b -e '<action><page url="http://videlibri.sourceforge.net/test/reddit/index.html"><template><head>{resolve-uri("../b.xml")}</head></template></page></action>' --extract-kind=multipage
 
 tests/test.sh regression_htmlparse  --input-format html '<ol><li>a<li>b<li>c</ol>' -e '//ol/li'
+
+
+echo
+echo Results: 
+wc -l /tmp/xidel-tests-state-ok /tmp/xidel-tests-state-failed 2> /dev/null | grep tests  | sed -Ee 's/([0-9]+).*-([^-]+)/\1 \2/'
