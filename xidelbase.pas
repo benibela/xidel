@@ -2570,6 +2570,10 @@ begin
     FHTML := alternativeXMLParser;
     alternativeXMLParser := tempparser;
   end;
+  if f = ifXML then HTMLParser.parsingModel := pmUnstrictXML
+  else HTMLParser.parsingModel := pmHTML;
+  HTMLParser.repairMissingStartTags := f = ifHTML;
+  HTMLParser.readProcessingInstructions := f <> ifHTML;
 end;
 
 procedure THtmlTemplateParserBreaker.parseHTML(const data: IData);
