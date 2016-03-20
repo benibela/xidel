@@ -3257,6 +3257,7 @@ begin
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
   htmlparser:=THtmlTemplateParserBreaker.create;
+  htmlparser.HTMLParser.readProcessingInstructions := true;
 
   mycmdline.onCustomOptionInterpretation := TOptionInterpretationEvent(procedureToMethod(TProcedure(@variableInterpret)));
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
