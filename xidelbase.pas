@@ -64,6 +64,7 @@ type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML,
       );
 var //output options
     outputFormat: TOutputFormat;
+    windowsCmdPercentageEscape: string;
     outputEncoding: TEncoding = eUTF8;  //default to utf-8
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
