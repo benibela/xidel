@@ -77,10 +77,12 @@ var //output options
 
     internet: TInternetAccess;
 
+type TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON);
+
+var
+    globalDefaultInputFormat: TInputFormat;
+
 type
-
-TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON);
-
 IData = interface //data interface, so we do not have to care about memory managment
 function rawData: string;
 function baseUri: string;
@@ -668,6 +670,8 @@ TExtraction = class(TDataProcessing)
  printVariables: set of (pvLog, pvCondensedLog, pvFinal);
  printTypeAnnotations,  hideVariableNames: boolean;
  printedNodeFormat: TTreeNodeSerialization;
+
+ inputFormat: TInputFormat;
 
  constructor create;
 
@@ -1629,6 +1633,8 @@ begin
         'xml': printedNodeFormat:=tnsXML;
         'html': printedNodeFormat:=tnsHTML;
       end;
+
+  reader.read('input-format', inputFormat);
 end;
 
 procedure TExtraction.setVariables(v: string);
@@ -1920,6 +1926,7 @@ var next, res: TFollowToList;
       htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
 
       followKind := self.followKind;
+      globalDefaultInputFormat := followInputFormat;
       if followKind = ekAuto then followKind := guessExtractionKind(follow);
 
       if followKind in [ekPatternHTML, ekPatternXML] then begin
@@ -2393,6 +2400,7 @@ begin
 
   if outputEncoding = eUnknown then htmlparser.OutputEncoding := outputEncoding
   else htmlparser.OutputEncoding := eUTF8;
+  globalDefaultInputFormat := inputFormat;
 
   case extractKind of
     ekPatternHTML, ekPatternXML: begin
@@ -2460,6 +2468,8 @@ begin
   printTypeAnnotations := other.printTypeAnnotations;
   hideVariableNames := other.hideVariableNames;
   printedNodeFormat := other.printedNodeFormat;
+
+  inputFormat := inputFormat;
 end;
 
 function TExtraction.clone(newparent: TProcessingContext): TDataProcessing;
@@ -2698,6 +2708,10 @@ var
 begin
   if cgimode or (not allowFileAccess) then raise EXQEvaluationException.create('pxp:cgi', 'Using doc is not allowed in cgi mode');
   tempData := TDataObject.create(html, uri, contenttype);
+  if (uri <> xpathparser.staticContext.baseURI) //then it is one of the explicit parse-* functions
+     or (strContains(contenttype, 'xml') and (globalDefaultInputFormat in [ifXML, ifXMLStrict])) //still allow to switch between xml and xml-strict for parse-xml
+     then
+    tempData.finputFormat := globalDefaultInputFormat;
   temptemp := tempData;
   parseHTMLSimple(temptemp);
   node := HTMLTree;
