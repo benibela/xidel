@@ -2155,7 +2155,7 @@ end;
 function windowsCmdEscape(s: string): string;
 begin
   result := StringsReplace(s, [#10, #13, '%',   '^',  '&',  '<',  '>',  '|',  '"',  ',',  ';',  '(',  ')', '"' ],
-                              ['',  '',  '%%',  '^^', '^&', '^<', '^>', '^|', '^"', '^,', '^;', '^(', '^)', '^"'],
+                              ['',  '',  windowsCmdPercentageEscape + '%',  '^^', '^&', '^<', '^>', '^|', '^"', '^,', '^;', '^(', '^)', '^"'],
                               [rfReplaceAll]);
 end;
 
@@ -3543,9 +3543,18 @@ begin
     'bash': begin
       outputFormat:=ofBash;
     end;
-    'cmd':  begin
+    'cmd':  begin //legacy. remove it?
       outputFormat:=ofWindowsCmd;
-    end
+      windowsCmdPercentageEscape := '';
+    end;
+    'cmd-bat':  begin
+      outputFormat:=ofWindowsCmd;
+      windowsCmdPercentageEscape := '%'; //% must be escaped as %% in bat files
+    end;
+    'cmd-for':  begin
+      outputFormat:=ofWindowsCmd;
+      windowsCmdPercentageEscape := '^'; //for /f only accepts ^%, not %%
+    end;
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
   case mycmdline.readString('color') of
