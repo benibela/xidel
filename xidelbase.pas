@@ -551,7 +551,7 @@ public
   rawURL: boolean;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): IData; override;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
   procedure replaceVariables; override;
   function equalTo(ft: TFollowTo): boolean; override;
   procedure readOptions(reader: TOptionReaderWrapper); override;
@@ -563,7 +563,7 @@ TFileRequest = class(TFollowTo)
   url: string;
   constructor create(aurl: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): IData; override;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
   procedure replaceVariables; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
@@ -574,7 +574,7 @@ TDirectDataRequest = class(TFollowTo)
   data: string;
   constructor create(adata: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): IData; override;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
   //procedure replaceVariables;  do not replace vars in direct data
 end;
@@ -583,7 +583,7 @@ end;
 
 TStdinDataRequest = class(TFollowTo)
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): IData; override;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
@@ -593,7 +593,16 @@ TFollowToProcessedData = class(TFollowTo)
   data: IData;
   constructor create(d: IData);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext): IData; override;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
+  function equalTo(ft: TFollowTo): boolean; override;
+end;
+
+TFollowToXQVObject = class(TFollowTo)
+  v: IXQValue;
+  basedata: IData;
+  constructor create(const abasedata: IData; const av: IXQValue);
+  function clone: TFollowTo; override;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
@@ -763,6 +772,50 @@ end;
 
 type EInvalidArgument = Exception;
 
+constructor TFollowToXQVObject.create(const abasedata: IData; const av: IXQValue);
+begin
+  basedata := abasedata;
+  v := av;
+end;
+
+function TFollowToXQVObject.clone: TFollowTo;
+begin
+  result := TFollowToXQVObject.create(basedata, v);
+end;
+
+function TFollowToXQVObject.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
+var
+  temp: TProcessingContext;
+  fl: TFollowToList;
+begin
+  if parent = nil then exit(nil);
+  temp := TProcessingContext.Create();
+  fl := TFollowToList.Create;
+  temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
+  temp.parent := parent;
+  temp.follow := parent.follow; //need to copy follow and follow-to, so it follows to the new data
+  temp.followKind := parent.followKind;
+  temp.followTo := parent.followTo;
+  temp.followInputFormat := parent.followInputFormat;
+  temp.nextSibling := parent.nextSibling;
+  temp.mergeWithObject(v as TXQValueObject);
+  fl := temp.process(basedata);
+  case fl.count of
+    0: ;
+    1: result := fl.first.retrieve(temp, arecursionLevel );
+    else raise Exception.Create('Invalid follow to count: ' + inttostr(fl.Count));
+  end;
+  temp.followTo := nil;
+  temp.nextSibling := nil;
+  temp.Free;
+end;
+
+function TFollowToXQVObject.equalTo(ft: TFollowTo): boolean;
+begin
+  if not (ft is TFollowToXQVObject) then exit(false);
+  result := false;//not working: xpathparser.StaticContext.compareDeepAtomic(v, TFollowToXQVObject(ft).v, xpathparser.StaticContext.collation) = 0;
+end;
+
 { TOptionReaderWrapper }
 
 function TOptionReaderWrapper.read(const name: string; out value: IXQValue): boolean;
@@ -840,9 +893,13 @@ begin
   result.inputFormat := inputFormat;
 end;
 
-function TFollowToProcessedData.retrieve(parent: TProcessingContext): IData;
+function TFollowToProcessedData.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
 begin
   result := data;
+  if data <> nil then begin
+    (result as TDataObject).finputFormat := self.inputFormat;
+    (result as TDataObject).frecursionLevel := arecursionLevel;
+  end;
 end;
 
 function TFollowToProcessedData.equalTo(ft: TFollowTo): boolean;
@@ -1030,7 +1087,7 @@ begin
   result.assign(self);
 end;
 
-function THTTPRequest.retrieve(parent: TProcessingContext): IData;
+function THTTPRequest.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
 var escapedURL: string;
 
 var
@@ -1067,6 +1124,10 @@ begin
     d.fheaders := TStringList.Create;
     for i := 0 to internet.lastHTTPHeaders.count - 1 do
       d.fheaders.Add(internet.lastHTTPHeaders[i]);
+  end;
+  with result as TDataObject do begin
+    finputFormat := self.inputFormat;
+    frecursionLevel := arecursionLevel;
   end;
 end;
 
@@ -1209,13 +1270,16 @@ begin
   result.assign(self);
 end;
 
-function TFileRequest.retrieve(parent: TProcessingContext): IData;
+function TFileRequest.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
 begin
   if not allowFileAccess then raise EXidelException.Create('File access not permitted');
   parent.printStatus('**** Retrieving: '+url+' ****');
   result := TDataObject.create(strLoadFromFileUTF8(url), url);
-  with result as TDataObject do
+  with result as TDataObject do begin
     fbaseurl:=fileNameExpandToURI(fbaseurl);
+    finputFormat := self.inputFormat;
+    frecursionLevel := arecursionLevel;
+  end;
 end;
 
 procedure TFileRequest.replaceVariables;
@@ -1241,14 +1305,18 @@ begin
   result.assign(self);
 end;
 
-function TDirectDataRequest.retrieve(parent: TProcessingContext): IData;
+function TDirectDataRequest.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
 var
   partialData: String;
 begin
   partialData := data;
   if length(partialData) > 80 then begin SetLength(partialData, 80); partialData += '...'; end;
   result := TDataObject.Create(data, 'data:,'+partialData);
-  (result as TDataObject).fbaseurl := GetCurrentDir+DirectorySeparator;
+  with result as TDataObject do begin
+    fbaseurl := GetCurrentDir+DirectorySeparator;
+    finputFormat := self.inputFormat;
+    frecursionLevel := arecursionLevel;
+  end;
   //if length(data) > length(result.fullurl) then (result as TDataObject).ffullurl := (result as TDataObject).ffullurl + '...';
 end;
 
@@ -1280,10 +1348,14 @@ begin
   result.assign(self);
 end;
 
-function TStdinDataRequest.retrieve(parent: TProcessingContext): IData;
+function TStdinDataRequest.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
 begin
   result := TDataObject.Create(strReadFromStdin(), 'stdin:///');
-  (Result as TDataObject).fbaseurl := GetCurrentDir + DirectorySeparator;
+  with Result as TDataObject do begin
+    fbaseurl := GetCurrentDir + DirectorySeparator;
+    finputFormat := self.inputFormat;
+    frecursionLevel := arecursionLevel;
+  end;
 end;
 
 function TStdinDataRequest.equalTo(ft: TFollowTo): boolean;
@@ -1308,14 +1380,6 @@ begin
   //todo: handle completely empty data ''
 end;
 
-function TFollowTo.retrieve(parent: TProcessingContext; recursionLevel: integer): IData;
-begin
-  result := retrieve(parent);
-  if result is TDataObject then begin
-    (result as TDataObject).frecursionLevel:=recursionLevel;
-    (result as TDataObject).finputformat:=inputFormat;
-  end;
-end;
 
 procedure TFollowTo.replaceVariables;
 begin
@@ -1436,21 +1500,7 @@ begin
           addObject( tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat)
         else if (dest as TXQValueObject).hasProperty('data', @tempv) then
           addObject(tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat );
-      end else if parent <> nil then begin
-        temp := TProcessingContext.Create();
-        temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
-        temp.parent := parent;
-        temp.follow := parent.follow; //need to copy follow and follow-to, so it follows to the new data
-        temp.followKind := parent.followKind;
-        temp.followTo := parent.followTo;
-        temp.followInputFormat := parent.followInputFormat;
-        temp.nextSibling := parent.nextSibling;
-        temp.mergeWithObject(dest as TXQValueObject);
-        merge(temp.process(basedata));
-        temp.followTo := nil;
-        temp.nextSibling := nil;
-        temp.Free;
-      end;
+      end else add(TFollowToXQVObject.create(basedata, dest));
     end;
     pvkSequence: begin
       for x in dest do
@@ -1669,6 +1719,7 @@ begin
   inherited;
 
   tempreader := TOptionReaderFromObject.create(obj);
+  readOptions(tempreader);
   if length(actions) > 0 then
     for i := 0 to high(actions) do
       actions[i].readOptions(tempreader);
@@ -3230,7 +3281,7 @@ begin
   if xpathparser.findModule(namespace) <> nil then exit;
   for i := 0 to high(at) do begin
     ft := TFollowTo.createFromRetrievalAddress(at[i]);
-    d := ft.retrieve(baseContext);
+    d := ft.retrieve(baseContext, 0);
     ft.free;
     if d <> nil then begin
       xpathparser.registerModule(xpathparser.parseXQuery1(d.rawData));

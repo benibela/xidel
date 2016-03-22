@@ -60,9 +60,9 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--input-format html '&lt;e>'  -f '{&quot;data&quot;: 'tests/dtd.xml', &quot;input-format&quot;: &quot;xml-strict&quot;}'  -e /"/>
+        <CommandLineParams Value="&quot;&lt;e>&quot; -f '{&quot;data&quot;: &quot;tests/dtd.xml&quot;, &quot;input-format&quot;: &quot;xml-strict&quot;, &quot;xx--yy--non-pure-caße!&quot;: 1}' -e /"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
-        <WorkingDirectory Value="/home/benito/hg/programs/internet/VideLibri/_meta/sites"/>
+        <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
     </RunParams>
     <RequiredPackages Count="4">

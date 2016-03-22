@@ -113,6 +113,9 @@ tests/test.sh multipageTryHttp --extract-kind=multipage --extract '<action>
     <try><page url="http://example.org/invalid"/><catch errors="http:44*"/><catch errors="http:*"><s>x:=$x+1</s></catch></try> 
     <try><page url="http://example.org/invalid"/><catch errors="err:*"/><catch errors="pxp:*"><s>x:=$x+1</s></catch></try> 
 </action>'  --xpath '$x'
+tests/test.sh followCustomErrorHandling '<a/>' --error-handling=xxx=accept -f '{"url": "http://example.org", "error-handling": "xxx=accept"}' -e 'contains(//title, "Example")'
+tests/test.sh followCustomErrorHandling '<a/>'  -f '{"url": "http://example.org", "error-handling": "xxx=accept"}' -e 'contains(//title, "Example")'
+
 
 #output formats
 tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
