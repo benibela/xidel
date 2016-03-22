@@ -529,8 +529,7 @@ TFollowTo = class
   class function createFromRetrievalAddress(data: string): TFollowTo;
 
   function clone: TFollowTo; virtual; abstract;
-  function retrieve(parent: TProcessingContext): IData; virtual; abstract;
-  function retrieve(parent: TProcessingContext; recursionLevel: integer): IData; virtual;
+  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; virtual; abstract;
   procedure replaceVariables; virtual;
   function equalTo(ft: TFollowTo): boolean; virtual; abstract;
   procedure readOptions(reader: TOptionReaderWrapper); virtual;
@@ -2476,9 +2475,19 @@ procedure TExtraction.printExtractedVariables(vars: TXQVariableChangeLog; state:
     result := ((length(extractInclude) = 0) and (arrayIndexOf(extractExclude, n) = -1)) or
               ((length(extractInclude) > 0) and (arrayIndexOf(extractInclude, n) > -1));
   end;
-  function showVar(const n: string): boolean;
+var jsonItselfAssigned: boolean;
+  function showVar(const i: integer): boolean;
+  var
+    n: String;
   begin
-    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName) ) and (n <> 'json') //todo: make json configurable
+    n := vars.Names[i];
+    result := not hideVariableNames and (showDefaultVariable or (n <> defaultName) );
+    if result and (n = 'json') then begin
+      //changing properties of the default json should not output the variable name
+      //however, creating a new json variable should
+      if not vars.isPropertyChange(i) then jsonItselfAssigned := true;
+      result := jsonItselfAssigned;
+    end;
   end;
 
 var
@@ -2487,33 +2496,38 @@ var
   first: boolean;
   values: IXQValue;
   j: Integer;
+  isShown: Boolean;
 begin
   writeBeginGroup;
+  jsonItselfAssigned := false;
   parent.printStatus(state);
   case outputFormat of
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then writeVarName(vars.Names[i] + ' := ');
-           printExtractedValue(vars.get(i), showVar(vars.Names[i]));
+           isShown := showVar(i);
+           if isShown then writeVarName(vars.Names[i] + ' := ');
+           printExtractedValue(vars.get(i), isShown);
          end;
     end;
     ofRawXML: begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then writeVarName('<'+vars.Names[i] + '>', cXML);
-           printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
-           if showVar(vars.Names[i]) then wcolor('</'+vars.Names[i] + '>', cXML);
+           isShown := showVar(i);
+           if isShown then writeVarName('<'+vars.Names[i] + '>', cXML);
+           printExtractedValue(vars.get(i), isShown );
+           if isShown then wcolor('</'+vars.Names[i] + '>', cXML);
          end;
     end;
     ofRawHTML: begin
       if vars.count > 1 then needRawWrapper;
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
-           if showVar(vars.Names[i]) then writeVarName('<span class="'+vars.Names[i] + '">', cXML);
-           printExtractedValue(vars.get(i), showVar(vars.Names[i]) );
-           if showVar(vars.Names[i]) then wcolor('</span>', cXML);
+           isShown := showVar(i);
+           if isShown then writeVarName('<span class="'+vars.Names[i] + '">', cXML);
+           printExtractedValue(vars.get(i), isShown );
+           if isShown then wcolor('</span>', cXML);
          end;
     end;
     ofJsonWrapped:
