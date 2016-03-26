@@ -469,15 +469,18 @@ xml-wrapped:    It will print a xml-based machine readable output.
 
 json-wrapped:   It will print a json-based machine readable output.
                 Sequences become arrays [ ... ].
-                Objects become objects. {"prop-1": "value 1", "prop-2": "value 2", ... }       
+                Objects become objects. {"prop-1": "value 1", "prop-2": "value 2", ... }  
+                (This converts non-JSON to JSON. It is not required to create JSON directly)
 
 bash:           Prints a bash script that sets the internal variables as bash variables.
-                E.g.
-                eval $(xidel http://data -e 'title:=//title' -e 'links:=//a')
+                The variables can be imported in the current script with, e.g:
+                  eval $(xidel http://data -e 'title:=//title' -e 'links:=//a')
                 can be used to set the bash variable $title to the title of a page and the
                 variable $links to a bash array of all links on the page.
 
 cmd:            Like bash, but for Windows cmd.exe
+                The variables can be set in the current script with a for statement like:
+                    FOR /F "delims=" %A IN ('xidel --output-format^=cmd ... ') DO %A
 
 Generally it prints a sequence of all processed pages (i.e. each page a single sequence element), 
 and the variables defined as global variables or read by a template become variables or 
@@ -486,7 +489,7 @@ There is a special rule for json-wrapped  output, if the template assigns multip
 variable: Xidel will collect all these values in an array. I.e. (a:=1, b:=2, a:=3, c:=4)
 becomes "a": [1, 3], "b": 2. "c": 4
 
-Only the string value of elements is printed, unless the --printed-node-format is set to xml or html.
+Only the string value of elements is printed, unless the --printed-node-format is set to XML or HTML.
 (E.g. <a>bc</a> only prints "bc")
 
 The separators between elements can be set with --output-separator. 
