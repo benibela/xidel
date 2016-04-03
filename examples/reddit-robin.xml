@@ -5,45 +5,50 @@
     xidel --template-file reddit-robin.xml 
   to set it to GROW once. It will ask for username and password.
   
-  Or fully automated with a bash loop like
-    while true; do
-      xidel -e 'user := "your name", passwd := "your password"' --template-file reddit-robin.xml 
-      sleep 600
-    done
-  to vote every 5 minutes.
-  
-  Or hide user and passwd in bash variables: 
+  You can also pass username and password on the command line as
+    xidel -e 'user := "your name", passwd := "your password"' --template-file reddit-robin.xml 
+
+  Or on bash with: 
      export user=name
      export passwd=password
-    while true; do
-      xidel --variable user,passwd --template-file reddit-robin.xml 
-      sleep 600
-    done
-    
+    xidel --variable user,passwd --template-file reddit-robin.xml 
+  
   
 -->
     <s> if (empty(get("user", ()))) then $user := (trace((), "Username: "), read()) else () </s>
     <s> if (empty(get("passwd", ()))) then $passwd := (trace((), "Password: "), read()) else () </s>
     <s> if (empty(get("vote", ()))) then $vote := "INCREASE" else () </s>
+    <s> delay := get("delay", 300) </s>
     
-    
-    <page url="https://www.reddit.com/"/>
-    <s>login := form(css('form.login-form')[1], {'user': $user, 'passwd': $passwd})</s>
-    <page url="{$login}"/>
-    
-    <page url="https://www.reddit.com/robin"/>
-    
-    <s>robin := jn:parse-json(join(//script/extract(., "setup[(](.*)[)]", 1)))</s>
-    
-    <page url="https://www.reddit.com/api/robin/{($robin).robin_room_id}/vote">
-      <header name="X-Requested-With" value="XMLHttpRequest"/>
-      <header name="X-Modhash" value="{($robin).modhash}"/>
-      <post name="room_id" value="{($robin).robin_room_id}"/>
-      <post name="room_name" value="{($robin).robin_room_name}"/>
-      <post name="winning_vote" value="NOVOTE"/>
-      <post name="api_type" value="json"/>
-      <post name="vote" value="{$vote}"/>
-    </page>
-    <s>trace($raw, "res")</s>
-    
+    <loop test="true()">
+      <try>
+        <page url="https://www.reddit.com/"/>
+        <s>login := form(css('form.login-form')[1], {'user': $user, 'passwd': $passwd})</s>
+        <page url="{$login}"/>
+        
+        <page url="https://www.reddit.com/robin"/>
+        
+        <s>robin := jn:parse-json(join(//script/extract(., "setup[(](.*)[)]", 1)))</s>
+        
+        <if test='($robin).robin_user_list()[.("name")=$user].vote = $vote'>
+          <s>trace("Already voted", "status")</s>
+        </if>
+        <else>
+          <page url="https://www.reddit.com/api/robin/{($robin).robin_room_id}/vote">
+            <header name="X-Requested-With" value="XMLHttpRequest"/>
+            <header name="X-Modhash" value="{($robin).modhash}"/>
+            <post name="room_id" value="{($robin).robin_room_id}"/>
+            <post name="room_name" value="{($robin).robin_room_name}"/>
+            <post name="winning_vote" value="NOVOTE"/>
+            <post name="api_type" value="json"/>
+            <post name="vote" value="{$vote}"/>
+          </page>
+          <s>trace($raw, "res")</s>
+        </else>
+                
+        <catch erros="*"></catch>
+      </try>
+      
+      <s>trace(x"sleeping for {$delay} seconds", "status"), sleep($delay*1000)</s>
+    </loop>
 </action>
