@@ -18,9 +18,11 @@
     <s> if (empty(get("user", ()))) then $user := (trace((), "Username: "), read()) else () </s>
     <s> if (empty(get("passwd", ()))) then $passwd := (trace((), "Password: "), read()) else () </s>
     <s> if (empty(get("vote", ()))) then $vote := "INCREASE" else () </s>
-    <s> delay := get("delay", 300) </s>
+    <s> delay := get("delay", 300), 
+        mass-pm := get("mass-pm", ()),
+        looping := get("looping", empty($mass-pm))  </s>
     
-    <loop test="true()">
+    <loop test="$looping or $mass-pm ">
       <try>
         <page url="https://www.reddit.com/"/>
         <s>login := form(css('form.login-form')[1], {'user': $user, 'passwd': $passwd})</s>
@@ -29,6 +31,26 @@
         <page url="https://www.reddit.com/robin"/>
         
         <s>robin := jn:parse-json(join(//script/extract(., "setup[(](.*)[)]", 1)))</s>
+        
+        <if test="exists($mass-pm)">
+                     <s>trace($mass-pm, "huh")</s>
+          <loop var="user" list="($robin).robin_user_list/name">
+             <s>trace($user, "huh")</s>
+             <try>
+            <page url="https://www.reddit.com/api/compose">
+              <header name="X-Modhash" value="{($robin).modhash}"/>
+              <post name="to" value="{$user}"/>
+              <post name="subject" value="KuPrlits"/>
+              <post name="text" value="{$mass-pm}"/>
+              <post name="api_type" value="json"/>
+            </page>    
+             <catch erros="*"></catch>
+            </try>
+            <s>trace($raw, "response"), sleep(500 + random(700))</s>
+          </loop>
+        </if>
+        <s>error("a","b")</s>
+        
         
         <if test='($robin).robin_user_list()[.("name")=$user].vote = $vote'>
           <s>trace("Already voted", "status")</s>
@@ -46,9 +68,9 @@
           <s>trace($raw, "res")</s>
         </else>
                 
-        <catch erros="*"></catch>
+        <catch errors="*"><s>trace("error", "error")</s></catch>
       </try>
       
-      <s>trace(x"sleeping for {$delay} seconds", "status"), sleep($delay*1000)</s>
+      <s>trace(x"sleeping for {$delay} seconds", "status"), sleep($delay*1000), mass-pm := ()</s>
     </loop>
 </action>
