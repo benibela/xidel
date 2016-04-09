@@ -21,6 +21,11 @@
     <s> delay := get("delay", 300), 
         mass-pm := get("mass-pm", ()),
         looping := get("looping", empty($mass-pm))  </s>
+    <s>declare function shuffle($s) { 
+      if (count($s) le 1) then $s 
+      else let $i := 1 + floor(random() * count($s)) 
+           return ($s[$i], shuffle((subsequence($s, 1, $i - 1),  subsequence($s, $i + 1, count($s))))) }; random-seed()
+    </s>
     
     <loop test="$looping or $mass-pm ">
       <try>
@@ -33,12 +38,12 @@
         <s>robin := jn:parse-json(join(//script/extract(., "setup[(](.*)[)]", 1)))</s>
         
         <if test="exists($mass-pm)">
-          <loop var="user" list="($robin).robin_user_list/name">
+          <loop var="user" list="shuffle(($robin).robin_user_list/name)">
              <try>
               <page url="https://www.reddit.com/api/compose">
                 <header name="X-Modhash" value="{($robin).modhash}"/>
                 <post name="to" value="{$user}"/>
-                <post name="subject" value="KuPrlits"/>
+                <post name="subject" value="ROBIN MERGE"/>
                 <post name="text" value="{$mass-pm}"/>
                 <post name="api_type" value="json"/>
               </page>    
