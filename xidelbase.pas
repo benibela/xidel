@@ -1190,9 +1190,10 @@ procedure THTTPRequest.replaceVariables;
         end;
         if value <> '' then begin
           for temp in strSplit(value, ';', false) do begin
-            case strSplitGet('=', temp) of
-              'filename': filename := temp;
-              'type':     contenttype := temp;
+            value := temp;
+            case strSplitGet('=', value) of
+              'filename': filename := value;
+              'type':     contenttype := value;
               else raise EXidelException.Create('Unknown option in '+forms[i]);
             end;
           end;
@@ -3084,7 +3085,7 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
   end;
   procedure parseVariableArg;
   var
-    temps: String;
+    temps, temps2: String;
     equalSign: SizeInt;
     vars: bbutils.TStringArray;
   begin
@@ -3096,8 +3097,8 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
     end;
     vars := strSplit(temps, ',');
     if (length(vars) <> 1) and (equalSign > 0) then raise EXidelException.Create('Cannot import multiple variables and specify a variable value at once. In '+value);
-    for temps in vars do begin
-      temps := trim(temps);
+    for temps2 in vars do begin
+      temps := trim(temps2);
       if strBeginsWith(temps, '$') then delete(temps, 1, 1);
       if equalSign = 0 then htmlparser.variableChangeLog.add(temps, GetEnvironmentVariable(temps))
       else htmlparser.variableChangeLog.add(trim(temps), strCopyFrom(value, equalSign+1));
