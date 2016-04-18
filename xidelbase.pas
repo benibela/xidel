@@ -3460,6 +3460,8 @@ begin
   if xpathparser.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
   xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
   xpathparser.StaticContext.namespaces.add(TNamespace.create(XMLNamespaceURL_XQTErrors, 'err'));
+  xpathparser.StaticContext.namespaces.add(TNamespace.create('http://jsoniq.org/function-library', 'libjn'));
+
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
   xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
   xpathparser.OnTrace := TXQTraceEvent(procedureToMethod(TProcedure(@traceCall)));
