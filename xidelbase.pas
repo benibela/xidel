@@ -769,6 +769,7 @@ TProcessingContext = class(TDataProcessing)
   destructor destroy; override;
 private
   stupidHTTPReactionHackFlag: integer;
+  procedure loadDataForQueryPreParse(const data: IData);
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
   function evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
   procedure httpReact (sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data:string; var reaction: TInternetAccessReaction);
@@ -1944,6 +1945,7 @@ var next, res: TFollowToList;
         //assume xpath like
         xpathparser.StaticContext. BaseUri := data.baseUri;
         xpathparser.ParsingOptions.StringEntities:=xqseDefault;
+        loadDataForQueryPreParse(data);
         if followQueryCache = nil then
           case followKind of
             ekXQuery1: followQueryCache := xpathparser.parseXQuery1(follow, xpathparser.StaticContext);
@@ -2065,6 +2067,7 @@ begin
   if standard then exit(expr);
 
 
+  loadDataForQueryPreParse(data);
   temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
   loadDataForQuery(data, temp);
   result := evaluateQuery(temp, data).toString;
@@ -2081,22 +2084,23 @@ begin
   inherited destroy;
 end;
 
+procedure TProcessingContext.loadDataForQueryPreParse(const data: IData);
+begin
+  if data.inputFormat = ifJSON then begin //we need to set json before parsing, or it fails
+    htmlparser.VariableChangelog.add('json', xpathparser.evaluateXPath2('jn:parse-json($raw)')); //todo: cache
+    currentRoot := nil;
+  end;
+end;
+
 procedure TProcessingContext.loadDataForQuery(const data: IData; const query: IXQuery);
 var
   f: TInputFormat;
 begin
-  if query.Term = nil then exit;
   f := data.inputFormat;
-  if ((self = nil) or (noOptimizations)) or
-     (f = ifJSON {can not detect access to json variable via get("j"||"son") } ) or
-     (xqcdFocusDocument in query.Term.getContextDependencies) then begin
-    if f = ifJSON then begin
-      htmlparser.VariableChangelog.add('json', xpathparser.evaluateXPath2('jn:parse-json($raw)')); //todo: cache
-      currentRoot := nil;
-    end else begin
-      htmlparser.parseHTMLSimple(data);
-      currentRoot := htmlparser.HTMLTree;
-    end;
+  if (query.Term = nil) or (f = ifJSON) then exit;
+  if (self = nil) or (noOptimizations) or (xqcdFocusDocument in query.Term.getContextDependencies) then begin
+    htmlparser.parseHTMLSimple(data);
+    currentRoot := htmlparser.HTMLTree;
   end;
 end;
 
@@ -2416,6 +2420,8 @@ begin
     ekXPath2, ekXPath3, ekCSS, ekXQuery1, ekXQuery3: begin
       xpathparser.StaticContext.BaseUri := fileNameExpandToURI(data.baseUri);
       xpathparser.ParsingOptions.StringEntities:=xqseDefault;
+
+      parent.loadDataForQueryPreParse(data);
       if extractQueryCache = nil then
         case extractKind of
           ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
@@ -2424,7 +2430,6 @@ begin
           ekXPath3: extractQueryCache := xpathparser.parseXPath3(extract, xpathparser.StaticContext);
           ekXQuery3: extractQueryCache := xpathparser.parseXQuery3(extract, xpathparser.StaticContext);
         end;
-
       parent.loadDataForQuery(data, extractQueryCache);
       if termContainsVariableDefinition(extractQueryCache.Term) then begin
         THtmlTemplateParserBreaker(htmlparser).closeVariableLog;

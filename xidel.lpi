@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="&quot;https://tweakers.net/nieuws/111041/bethesda-maakt-systeemeisen-doom-bekend.html&quot; -f &quot;if (//iframe) then substring-before(//iframe/@src,'?') else \$url&quot; --xquery &quot;\$raw, \$headers&quot;"/>
+        <CommandLineParams Value="tests/data.json -e '(($json).b, (.).c, .(&quot;d&quot;), . ! e, . / f, . // property)'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
