@@ -498,6 +498,7 @@ tests/test.sh regression_multipage3b -e '<action><page url="http://videlibri.sou
 
 tests/test.sh regression_htmlparse  --input-format html '<ol><li>a<li>b<li>c</ol>' -e '//ol/li'
 
+tests/test.sh variableActions  [ '<a/>' --template-file tests/variable.actions ] '<b/>' --xquery '$first || ":" || $second '
 
 echo
 echo Results: 

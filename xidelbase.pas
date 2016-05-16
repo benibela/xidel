@@ -2721,6 +2721,8 @@ end;
 
 constructor TTemplateReaderBreaker.create;
 begin
+  queryCache := TXQMapStringObject.Create;
+  queryCache.OwnsObjects := false;
   onLog:=@selfLog;
 end;
 

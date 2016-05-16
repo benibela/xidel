@@ -1,0 +1,4 @@
+<action>
+<s>declare variable $first := 123; trace($first, 'first')</s>
+<s>$second := trace($first, 'second') + 1</s>  
+</action> 
