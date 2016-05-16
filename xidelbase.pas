@@ -878,10 +878,22 @@ end;
 
 function TDataObject.inputFormat: TInputFormat;
 const FormatMap: array[TInternetToolsFormat] of TInputFormat = ( ifXML, ifHTML, ifJSON, ifXML );
+var
+  enc: TEncoding;
 begin
+  if finputformat = ifAuto then begin
+    finputformat := FormatMap[guessFormat(rawData, baseUri, contentType)];
+
+    if (finputformat = ifJSON) and (outputEncoding <> eUnknown) then begin
+      //convert json to utf-8, because the regex parser does not match non-utf8 (not even with . escape)
+      //it might be useful to convert other data, but the x/html parser does its own encoding detection
+      enc := strEncodingFromContentType(contentType);
+      if enc = eUnknown then
+        if isInvalidUTF8(frawData) and not strContains(frawData, #0) then enc := eWindows1252;
+      if (enc <> eUTF8) and (enc <> eUnknown) then frawdata := strConvertToUtf8(frawData, enc);
+    end;
+  end;
   result := finputFormat;
-  if result = ifAuto then
-    result := FormatMap[guessFormat(rawData, baseUri, contentType)];
 end;
 
 
@@ -1910,6 +1922,7 @@ var next, res: TFollowToList;
     decoded := decodeURL(data.baseUri);
     htmlparser.variableChangeLog.add('host', decoded.host + IfThen(decoded.port <> '' , ':' + decoded.port, ''));
     htmlparser.variableChangeLog.add('path', decoded.path);
+    data.inputFormat; //auto deteect format and convert json to utf-8
     htmlparser.variableChangeLog.add('raw', data.rawData);
     htmlparser.variableChangeLog.add('headers', makeHeaders);
 

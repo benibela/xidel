@@ -390,6 +390,10 @@ tests/test.sh inputformatAutoC '<c>x</c>'  -e 'outer-xml(/)' --input-format auto
 tests/test.sh inputformatXml '<a>x</a>'  -e 'outer-xml(/)' --input-format xml
 tests/test.sh inputformatHtml  '<a>x</a>'  -e 'outer-xml(/)' --input-format html
 tests/test.sh inputformatAutoJson tests/data.json  -e '(($json).b, (.).c, .("d"), . ! e, . / f, . // property)' 
+
+tests/test.sh encodingJson tests/encodingUtf8.json -e '$raw || $json()'
+tests/test.sh encodingJson tests/encodingLatin1.json -e '$raw || $json()'
+
 tests/test.sh optadhoc '<a>x</a>'  -e /
 tests/test.sh optxml --xml '<a>x</a>'  -e /
 tests/test.sh opthtml --html '<a>x</a>'  -e /
@@ -499,6 +503,7 @@ tests/test.sh regression_multipage3b -e '<action><page url="http://videlibri.sou
 tests/test.sh regression_htmlparse  --input-format html '<ol><li>a<li>b<li>c</ol>' -e '//ol/li'
 
 tests/test.sh variableActions  [ '<a/>' --template-file tests/variable.actions ] '<b/>' --xquery '$first || ":" || $second '
+
 
 echo
 echo Results: 
