@@ -60,7 +60,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="&quot;&lt;e>&quot; -f '{&quot;data&quot;: &quot;tests/dtd.xml&quot;, &quot;input-format&quot;: &quot;xml-strict&quot;, &quot;xx--yy--non-pure-caße!&quot;: 1}' -e /"/>
+        <CommandLineParams Value="&quot;https://tweakers.net/nieuws/111041/bethesda-maakt-systeemeisen-doom-bekend.html&quot; -f &quot;if (//iframe) then substring-before(//iframe/@src,'?') else \$url&quot; --xquery &quot;\$raw, \$headers&quot;"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
@@ -83,17 +83,14 @@
       <Unit0>
         <Filename Value="xidel.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xidel"/>
       </Unit0>
       <Unit1>
         <Filename Value="xidelbase.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xidelbase"/>
       </Unit1>
       <Unit2>
         <Filename Value="../../../components/pascal/data/xquery_module_file.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xquery_module_file"/>
       </Unit2>
     </Units>
   </ProjectOptions>
