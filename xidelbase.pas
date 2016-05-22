@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs, dregexpr, simplexmltreeparserfpdom, LazUTF8, xquery_module_file, xquery_module_math,
+  internetaccess, contnrs, simplexmltreeparserfpdom, LazUTF8, xquery_module_file, xquery_module_math,
   rcmdline,math
   ;
 
@@ -54,7 +54,7 @@ procedure perform;
 
 implementation
 
-uses process, strutils, bigdecimalmath, xquery_json, xquery_utf8 {$ifdef unix},termio{$endif};
+uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8 {$ifdef unix},termio{$endif};
 //{$R xidelbase.res}
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
@@ -2037,13 +2037,10 @@ end;
 
 function translateDeprecatedStrings(expr: string): string;
 var
-  regex: TRegExpr;
+  regex: TWrappedRegExpr;
 begin
-  if mycmdline.readFlag('deprecated-string-options') then begin
-    regex := TRegExpr.Create('([$][a-zA-Z0-9-]);');
-    while regex.Exec(expr) do
-      expr := regex.Replace(expr, '{$1}', true);
-  end;
+  if mycmdline.readFlag('deprecated-string-options') then
+    expr := xqFunctionReplace(xqvalueArray([xqvalue(expr), xqvalue('([$][a-zA-Z0-9-]);'), xqvalue('{$1}')])).toString;
   result := expr;
 end;
 
