@@ -6,7 +6,6 @@ uses //heaptrc,
      simpleinternet, internetaccess, multipagetemplate, bbutils,
      xidelbase,
      rcmdline, //<< if you don't have this command line parser unit, you can download it from www.benibela.de
-     utf8tools,
      xquery_module_file;
 
 

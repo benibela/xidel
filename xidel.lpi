@@ -60,24 +60,15 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="tests/data.json -e '(($json).b, (.).c, .(&quot;d&quot;), . ! e, . / f, . // property)'"/>
+        <CommandLineParams Value="-e 'date(&quot;0000-01-01&quot;)'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="4">
+    <RequiredPackages Count="1">
       <Item1>
-        <PackageName Value="LCL"/>
-      </Item1>
-      <Item2>
-        <PackageName Value="utf8tools"/>
-      </Item2>
-      <Item3>
-        <PackageName Value="LCLBase"/>
-      </Item3>
-      <Item4>
         <PackageName Value="internettools"/>
-      </Item4>
+      </Item1>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>
