@@ -25,7 +25,7 @@ interface
 uses
   Classes,         {$ifdef win32} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
-  internetaccess, contnrs, simplexmltreeparserfpdom, LazUTF8, xquery_module_file, xquery_module_math,
+  internetaccess, contnrs, simplexmltreeparserfpdom, xquery_module_file, xquery_module_math,
   rcmdline,math
   ;
 
@@ -56,6 +56,99 @@ implementation
 
 uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8 {$ifdef unix},termio{$endif};
 //{$R xidelbase.res}
+
+///////////////LCL IMPORT
+//uses lazutf8;
+function WinCPToUTF8(const s: string): string; {$ifdef WinCe}inline;{$endif}
+// result has codepage CP_ACP
+var
+  UTF16WordCnt: SizeInt;
+  UTF16Str: UnicodeString;
+begin
+  {$ifdef WinCE}
+  Result := SysToUtf8(s);
+  {$else}
+  Result:=s;(*
+  if IsASCII(Result) then begin
+    {$ifdef FPC_HAS_CPSTRING}
+    // prevent codepage conversion magic
+    SetCodePage(RawByteString(Result), CP_ACP, False);
+    {$endif}
+    exit;
+  end;        *)
+  UTF16WordCnt:=MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, Pointer(s), length(s), nil, 0);
+  // this will null-terminate
+  if UTF16WordCnt>0 then
+  begin
+    setlength(UTF16Str, UTF16WordCnt);
+    MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, Pointer(s), length(s), @UTF16Str[1], UTF16WordCnt);
+    Result:=UTF8Encode(UTF16Str);
+    {$ifdef FPC_HAS_CPSTRING}
+    // prevent codepage conversion magic
+    SetCodePage(system.RawByteString(Result), CP_ACP, False);
+    {$endif}
+  end;
+  {$endif}
+end;
+
+function ConsoleToUTF8(const s: string): string;// converts UTF8 string to console encoding (used by Write, WriteLn)
+{$ifNdef WinCE}
+var
+  Dst: PChar;
+{$endif}
+begin
+  {$ifdef WinCE}
+  Result := SysToUTF8(s);
+  {$else}
+  Dst := AllocMem((Length(s) + 1) * SizeOf(Char));
+  if OemToChar(PChar(s), Dst) then
+    Result := StrPas(Dst)
+  else
+    Result := s;
+  FreeMem(Dst);
+  Result := WinCPToUTF8(Result);
+  {$endif}
+end;
+(*
+function UTF8ToConsole(const s: string): string;
+{$ifNdef WinCE}
+var
+  Dst: PChar;
+{$endif}
+begin
+  {$ifdef WinCE}
+  Result := UTF8ToSys(s);
+  {$else WinCE}
+  {$ifndef NO_CP_RTL}
+  Result := UTF8ToWinCP(s);
+  {$else NO_CP_RTL}
+  Result := UTF8ToSys(s); // Kept for compatibility
+  {$endif NO_CP_RTL}
+  Dst := AllocMem((Length(Result) + 1) * SizeOf(Char));
+  if CharToOEM(PChar(Result), Dst) then
+    Result := StrPas(Dst);
+  FreeMem(Dst);
+  {$ifndef NO_CP_RTL}
+  SetCodePage(RawByteString(Result), CP_OEMCP, False);
+  {$endif NO_CP_RTL}
+  {$endif WinCE}
+end;*)
+
+
+function GetEnvironmentVariableUTF8(const EnvVar: string): String;
+begin
+  {$IFDEF FPC_RTL_UNICODE}
+  Result:=UTF16ToUTF8(SysUtils.GetEnvironmentVariable(UTF8ToUTF16(EnvVar)));
+  {$ELSE}
+  // on Windows SysUtils.GetEnvironmentString returns OEM encoded string
+  // so ConsoleToUTF8 function should be used!
+  // RTL issue: http://bugs.freepascal.org/view.php?id=15233
+  Result:=ConsoleToUTF8(SysUtils.GetEnvironmentVariable({UTF8ToSys}(EnvVar)));
+  {$ENDIF}
+end;
+
+
+/////////////////////////////////////////////////////
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
      TColorOptions = (cAuto, cNever, cAlways, cJSON, cXML);
@@ -3023,10 +3116,10 @@ begin
   if Paramcount = 0 then exit;
 
   {$ifdef windows}
-  parse(SysToUTF8(string(GetCommandLine)), true, autoReset);
+  parse({$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(string(GetCommandLine)), true, autoReset);
   {$else}
   setlength(args, Paramcount);
-  for i:=0 to high(args) do args[i] := SysToUTF8(paramstr(i+1));
+  for i:=0 to high(args) do args[i] := {$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(paramstr(i+1));
   parse(args, autoReset);
   {$endif}
 end;
