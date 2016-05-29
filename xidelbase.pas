@@ -59,6 +59,7 @@ uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8 
 
 ///////////////LCL IMPORT
 //uses lazutf8;
+{$ifdef windows}
 function WinCPToUTF8(const s: string): string; {$ifdef WinCe}inline;{$endif}
 // result has codepage CP_ACP
 var
@@ -134,6 +135,7 @@ begin
   {$endif WinCE}
 end;*)
 
+{$endif}
 
 function GetEnvironmentVariableUTF8(const EnvVar: string): String;
 begin
@@ -143,7 +145,7 @@ begin
   // on Windows SysUtils.GetEnvironmentString returns OEM encoded string
   // so ConsoleToUTF8 function should be used!
   // RTL issue: http://bugs.freepascal.org/view.php?id=15233
-  Result:=ConsoleToUTF8(SysUtils.GetEnvironmentVariable({UTF8ToSys}(EnvVar)));
+  Result:={$ifdef windows}ConsoleToUTF8{$endif}(SysUtils.GetEnvironmentVariable({UTF8ToSys}(EnvVar)));
   {$ENDIF}
 end;
 
