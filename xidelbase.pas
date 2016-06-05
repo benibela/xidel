@@ -3696,7 +3696,7 @@ begin
     isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
     isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
     {$endif}
-    if not isStdoutTTY then setOutputEncoding('utf-8');
+    if not isStdoutTTY and not hasOutputEncoding then setOutputEncoding('utf-8');
   end;
 
   case colorizing of
