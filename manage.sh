@@ -137,6 +137,14 @@ downloadTable)
 
   ;;
 
+usage)
+  tr -d '\r' < readme.txt | sed -e "s/'/''/g"  | awk '{print " \047"$0"\047, "}'   > printUsage.pre.inc
+  echo 'const data: array[0..' $(wc -l printUsage.pre.inc | grep -oE '[0-9]+' ) '] of string = (' > printUsage.inc
+  cat printUsage.pre.inc >>  printUsage.inc
+  echo "'');" >> printUsage.inc
+  rm printUsage.pre.inc
+  ;;
+
 *)
         echo "Unknown command (use web hg cgi win32 linux32 linux64 src)"
         ;;
