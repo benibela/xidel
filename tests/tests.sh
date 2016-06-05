@@ -466,7 +466,7 @@ tests/test.sh multipart1 --form a=b http://videlibri.sourceforge.net/cgi-bin/xid
 tests/test.sh multipart2 --form 'a=b&c=d' --form e=f --form "f=@tests/output/post1a" --form "g=@tests/output/post1a;type=foo/bar" http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw 
 
 
-tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
+tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "something"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
 tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
 
 tests/test.sh regression_doconline --xquery '<a/> / doc("http://videlibri.sourceforge.net/xidelecho.php") // meth'
