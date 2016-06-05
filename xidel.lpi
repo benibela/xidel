@@ -44,6 +44,9 @@
             </Checks>
             <TargetCPU Value="i386"/>
             <TargetOS Value="win32"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
           </CodeGeneration>
           <Linking>
             <LinkSmart Value="True"/>
@@ -60,7 +63,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-e 'date(&quot;0000-01-01&quot;)'"/>
+        <CommandLineParams Value="https://www.spotlight.de/de/blog/article/2016541/XLSX-Dateien-in-Excel-2000-%C3%B6ffnen-Problem-gel%C3%B6st/ -e //title"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
@@ -101,6 +104,9 @@
         <RangeChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
+      <Optimizations>
+        <OptimizationLevel Value="3"/>
+      </Optimizations>
     </CodeGeneration>
     <Linking>
       <LinkSmart Value="True"/>
