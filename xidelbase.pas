@@ -160,7 +160,7 @@ type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML,
 var //output options
     outputFormat: TOutputFormat;
     windowsCmdPercentageEscape: string;
-    outputEncoding: TEncoding = eUTF8;  //default to utf-8
+    hasOutputEncoding: boolean;
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
@@ -260,6 +260,10 @@ var
 {$endif}
 begin
   if s = '' then exit;
+  {$IFDEF FPC_HAS_CPSTRING}
+  write(s);
+  {$ELSE}
+  fpc 3 is required now
   if (outputEncoding = eUTF8) or (outputEncoding = eUnknown) then write(s)
   {$ifdef win32}
   else if outputEncoding = eUnknownUser1 then begin
@@ -271,6 +275,7 @@ begin
   end
   {$endif}
   else write(strConvertFromUtf8(s, outputEncoding));
+  {$ENDIF}
 end;
 
 procedure wln(const s: string = '');
@@ -531,18 +536,30 @@ end;
 procedure setOutputEncoding(e: string);
 var
   str: String;
+  codepage: Integer;
 begin
   //todo call this
   str:=UpperCase(e);
-  outputEncoding:=eUnknown;
+  codepage := -1;
   case str of
-    'UTF-8', 'UTF8': outputEncoding:=eUTF8;
-    'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': outputEncoding:=eWindows1252;
-    'UTF-16BE', 'UTF16BE': outputEncoding:=eUTF16BE;
-    'UTF-16LE', 'UTF16LE': outputEncoding:=eUTF16LE;
-    'UTF-32BE', 'UTF32BE': outputEncoding:=eUTF32BE; //utf-32 seems to be broken, but no one is using anyways. TODO: Fix sometime
-    'UTF-32LE', 'UTF32LE': outputEncoding:=eUTF32LE;
-    'OEM': outputEncoding:=eUnknownUser1
+    'UTF-8', 'UTF8': codepage := CP_UTF8;
+    'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': codepage := 1252;
+    'UTF-16BE', 'UTF16BE': codepage := CP_UTF16BE;
+    'UTF16', 'UTF-16', 'UTF-16LE', 'UTF16LE': codepage := CP_UTF16;
+    'UTF-32BE', 'UTF32BE': codepage := CP_UTF32BE;
+    'UTF32', 'UTF-32', 'UTF-32LE', 'UTF32LE': codepage := CP_UTF32;
+    'OEM': codepage := CP_OEMCP;
+    'input': ;//none
+    else if strBeginsWith(str, 'CP') then SetTextCodePage(Output, StrToIntDef(strAfter(str, 'CP'), GetTextCodePage(output)))
+    else writeln(stderr, 'Unknown encoding: ',e)
+  end;
+  if codepage <> -1 then begin
+    hasOutputEncoding := true;
+    SetTextCodePage(Output, codepage);
+    //SetTextCodePage(StdErr, codepage);
+  end else begin
+    SetTextCodePage(Output, CP_ACP); //all our strings claim to be ACP (=UTF8) so there should be no conversion?
+    //SetTextCodePage(StdErr, CP_ACP);
   end;
 end;
 
@@ -979,7 +996,7 @@ begin
   if finputformat = ifAuto then begin
     finputformat := FormatMap[guessFormat(rawData, baseUri, contentType)];
 
-    if (finputformat = ifJSON) and (outputEncoding <> eUnknown) then begin
+    if (finputformat = ifJSON) and hasOutputEncoding then begin
       //convert json to utf-8, because the regex parser does not match non-utf8 (not even with . escape)
       //it might be useful to convert other data, but the x/html parser does its own encoding detection
       enc := strEncodingFromContentType(contentType);
@@ -2508,8 +2525,8 @@ begin
   currentFollowList := nil;
   currentData:=data;
 
-  if outputEncoding = eUnknown then htmlparser.OutputEncoding := outputEncoding
-  else htmlparser.OutputEncoding := eUTF8;
+  if hasOutputEncoding then htmlparser.OutputEncoding := eUTF8
+  else htmlparser.OutputEncoding := eUnknown;
   globalDefaultInputFormat := inputFormat;
 
   case extractKind of
@@ -3118,7 +3135,7 @@ begin
   if Paramcount = 0 then exit;
 
   {$ifdef windows}
-  parse({$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(string(GetCommandLine)), true, autoReset);
+  parse({$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(utf8string(GetCommandLineW)), true, autoReset);
   {$else}
   setlength(args, Paramcount);
   for i:=0 to high(args) do args[i] := {$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(paramstr(i+1));
@@ -3433,6 +3450,20 @@ begin
 end;
 
 
+function encodingName(e: TSystemCodePage): string;
+begin
+  case e of
+    CP_ASCII: result := 'US-ASCII';
+    CP_ACP, CP_OEMCP, CP_NONE, CP_UTF8: result := 'UTF-8';
+    CP_UTF7: result := 'UTF-7';
+    CP_WINDOWS1252, CP_LATIN1: result := 'ISO-8859-1';
+    28592..28605: result := 'ISO-8859-' + inttostr(e - 28590);
+    CP_UTF16BE, CP_UTF16: result := 'UTF-16';
+    CP_UTF32BE, CP_UTF32: result := 'UTF-32';
+    else result := 'windows-' + inttostr(e);
+  end;
+end;
+
 
 procedure blockFileAccessFunctions; forward;
 
@@ -3596,6 +3627,7 @@ begin
     writeln(stderr, '-quiet,-q is outdated. Use --silent,-s');
     exit;
   end;
+  if not hasOutputEncoding then setOutputEncoding('utf-8');
 
   currentContext.readOptions(cmdlineWrapper);
   if (length(currentContext.actions) <> 0) and not (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
@@ -3659,11 +3691,11 @@ begin
     end;
     'xml': begin
       outputFormat:=ofRawXML;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
     end;
     'xml-wrapped': begin
       outputFormat:=ofXMLWrapped;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(outputEncoding)+'"?>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
     end;
     'json', 'json-wrapped': begin
       outputFormat:=ofJsonWrapped;
@@ -3866,13 +3898,43 @@ begin
 end;
 
 
+var
+  oldUnicode2AnsiMoveProc : procedure(source:punicodechar;var dest:RawByteString;cp : TSystemCodePage;len:SizeInt);
+  oldAnsi2UnicodeMoveProc : procedure(source:pchar;cp : TSystemCodePage;var dest:unicodestring;len:SizeInt);
+
+procedure myUnicode2AnsiMoveProc(source:punicodechar;var dest:RawByteString;cp : TSystemCodePage;len:SizeInt);
+begin
+  case cp of
+    CP_UTF32, CP_UTF32BE,
+    CP_UTF16, CP_UTF16BE,
+    CP_UTF8,
+    CP_WINDOWS1252, CP_LATIN1: strUnicode2AnsiMoveProc(source, dest, cp, len);
+    else oldUnicode2AnsiMoveProc(source, dest, cp, len);
+  end;
+end;
+
+procedure myAnsi2UnicodeMoveProc(source:pchar;cp : TSystemCodePage;var dest:unicodestring;len:SizeInt);
+begin
+  case cp of
+    CP_UTF32, CP_UTF32BE,
+    CP_UTF16, CP_UTF16BE,
+    CP_UTF8,
+    CP_WINDOWS1252, CP_LATIN1: strAnsi2UnicodeMoveProc(source, cp, dest, len);
+    else oldAnsi2UnicodeMoveProc(source, cp, dest, len);
+  end;
+end;
 
 var pxp: TXQNativeModule;
 
-{ TMultiParameterList }
-
 
 initialization
+  SetMultiByteConversionCodePage(CP_UTF8);
+  SetMultiByteRTLFileSystemCodePage(CP_UTF8);
+  oldUnicode2AnsiMoveProc := widestringmanager.Unicode2AnsiMoveProc;
+  oldAnsi2UnicodeMoveProc := widestringmanager.Ansi2UnicodeMoveProc;
+  widestringmanager.Unicode2AnsiMoveProc := @myUnicode2AnsiMoveProc;
+  widestringmanager.Ansi2UnicodeMoveProc := @myAnsi2UnicodeMoveProc;
+
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
   pxp.registerFunction('read', @xqfRead, ['() as xs:untypedAtomic']);
