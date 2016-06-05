@@ -3696,7 +3696,6 @@ begin
     isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
     isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
     {$endif}
-    writeln(stderr, isStdoutTTY);
     if not isStdoutTTY then setOutputEncoding('utf-8');
   end;
 
