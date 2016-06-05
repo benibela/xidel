@@ -549,7 +549,7 @@ begin
     'UTF-32BE', 'UTF32BE': codepage := CP_UTF32BE;
     'UTF32', 'UTF-32', 'UTF-32LE', 'UTF32LE': codepage := CP_UTF32;
     'OEM': codepage := CP_OEMCP;
-    'input': ;//none
+    'INPUT': ;//none
     else if strBeginsWith(str, 'CP') then SetTextCodePage(Output, StrToIntDef(strAfter(str, 'CP'), GetTextCodePage(output)))
     else writeln(stderr, 'Unknown encoding: ',e)
   end;
