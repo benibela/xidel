@@ -3555,7 +3555,7 @@ begin
   mycmdLine.declareString('xmlns','Declares a namespace');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
-  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8 (default), latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
+  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8, latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   mycmdLine.declareString('output-separator', 'Separator between multiple items (default: line break)', LineEnding);
   mycmdLine.declareString('output-header', '2nd header for the output. (e.g. <html>)', '');
@@ -3627,7 +3627,6 @@ begin
     writeln(stderr, '-quiet,-q is outdated. Use --silent,-s');
     exit;
   end;
-  if not hasOutputEncoding then setOutputEncoding('utf-8');
 
   currentContext.readOptions(cmdlineWrapper);
   if (length(currentContext.actions) <> 0) and not (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
@@ -3679,6 +3678,49 @@ begin
 
   cmdlineWrapper.Free;
 
+
+  case mycmdline.readString('color') of
+    'auto': colorizing := cAuto;
+    'never': colorizing := cNever;
+    'always': colorizing := cAlways;
+    'json': colorizing := cJSON;
+    'xml': colorizing := cXML;
+    else raise EInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
+  end;
+  if not (colorizing in [cNever,cAlways]) or not hasOutputEncoding then begin
+    {$ifdef unix}
+    isStdoutTTY := IsATTY(stdout) <> 0;
+    isStderrTTY := IsATTY(StdErr) <> 0;
+    {$endif}
+    {$ifdef windows}
+    isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
+    isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
+    {$endif}
+    writeln(stderr, isStdoutTTY);
+    if not isStdoutTTY then setOutputEncoding('utf-8');
+  end;
+
+  case colorizing of
+    cNever: begin
+      isStderrTTY := false; //todo, coloring should not change this variable (but it is only used for coloring. rename it?)
+      isStdoutTTY := false;
+    end;
+    cAlways: begin
+      isStdoutTTY := true;
+      isStderrTTY := true;
+    end;
+  end;
+  case colorizing of
+    cAuto, cAlways: begin
+      case outputFormat of
+        ofXMLWrapped, ofRawHTML, ofRawXML: colorizing := cXML;
+        ofJsonWrapped: colorizing := cJSON;
+      end;
+    end;
+  end;
+
+
+
   outputHeader := mycmdline.readString('output-declaration') + mycmdline.readString('output-header');
   if (outputHeader <> '') and not mycmdline.existsProperty('output-header') then outputHeader += LineEnding;
   outputSeparator := mycmdline.readString('output-separator');
@@ -3717,39 +3759,6 @@ begin
       windowsCmdPercentageEscape := '^'; //for /f only accepts ^%, not %%
     end;
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
-  end;
-  case mycmdline.readString('color') of
-    'auto': colorizing := cAuto;
-    'never': colorizing := cNever;
-    'always': colorizing := cAlways;
-    'json': colorizing := cJSON;
-    'xml': colorizing := cXML;
-    else raise EInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
-  end;
-  case colorizing of
-    cNever: ;
-    cAlways: begin
-      isStdoutTTY := true;
-      isStderrTTY := true;
-    end;
-    else begin
-      {$ifdef unix}
-      isStdoutTTY := IsATTY(stdout) <> 0;
-      isStderrTTY := IsATTY(StdErr) <> 0;
-      {$endif}
-      {$ifdef windows}
-      isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
-      isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
-      {$endif}
-    end;
-  end;
-  case colorizing of
-    cAuto, cAlways: begin
-      case outputFormat of
-        ofXMLWrapped, ofRawHTML, ofRawXML: colorizing := cXML;
-        ofJsonWrapped: colorizing := cJSON;
-      end;
-    end;
   end;
 
   if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') or mycmdline.readFlag('trace-context-variables') then begin
