@@ -16,7 +16,7 @@
 #
 
 Name:           xidel
-Version:        0.9
+Version:        0.9.4
 Release:        1
 Summary:        A tool for querying local and remote XML/HTML/JSON data
 
@@ -26,7 +26,6 @@ URL:            http://www.videlibri.de/xidel.html
 Source0:        %{name}-%{version}.src.tar.gz 
 
 BuildRequires:  fpc
-BuildRequires:  lazarus
 #%if 0%{?suse_version}
 #%endif
 #%if 0%{?fedora} || 0%{?centos_version} || 0%{?mandriva_version}

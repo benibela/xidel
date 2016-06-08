@@ -38,7 +38,7 @@ var cgimode: boolean = false;
 
     majorVersion: integer = 0;
     minorVersion: integer = 9;
-    buildVersion: integer = 1;
+    buildVersion: integer = 4;
 
 
 type EXidelException = class(Exception);

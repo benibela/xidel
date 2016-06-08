@@ -1,27 +1,34 @@
+Package: xidel
 Source: xidel
 Section: web
 Priority: extra
 Maintainer: Benito van der Zander <benito@benibela.de>
-Build-Depends: debhelper (>= 7.0.50~), lcl, fpc
+Build-Depends: debhelper (>= 7.0.50~), fpc 
 Standards-Version: 3.9.1
 Homepage: http://www.videlibri.de/xidel.html
-#Vcs-Git: git://git.debian.org/collab-maint/xidel.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/xidel.git;a=summary
-
-Package: xidel
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libc6
+Version: 0.9.4
+Depends: libc6
 Recommends: libssl-dev, libcrypto++8 | libcrypto++9
 Description: Command line tool to process HTML/XML/JSON locally or from online sources
- Xidel is a command line tool to query data from HTML/XML web pages, JSON-APIs and local files.
+ Xidel is a command line tool to query data from HTML/XML web pages, JSON-APIs 
+ and local files.
  .
- It implements interpreters for XPath 2, XPath 3, XQuery 1, XQuery 3, JSONiq, CSS selectors and custom pattern matching.
+ It implements interpreters for XPath 2, XPath 3, XQuery 1, XQuery 3, JSONiq, 
+ CSS selectors and custom pattern matching.
  .
- XPath and CSS selectors are the most efficient way to select certain elements from XML/HTML documents.
+ XPath and CSS selectors are the most efficient way to select certain elements 
+ from XML/HTML documents.
  JSONiq (with custom extensions) is an easy way to select data from JSON.
  .
- XQuery is a Turing-complete superset of XPath and allows arbitrary data transformations and the creation of new documents.
+ XQuery is a Turing-complete superset of XPath and allows arbitrary data 
+ transformations and the creation of new documents.
  .
- Pattern matching is for XML/HTML documents what regular expressions are for plaintext, i.e. pattern matching behaves like a regular expression over the space of tags, instead over the space of characters.
+ Pattern matching is for XML/HTML documents what regular expressions are for 
+ plaintext, i.e. pattern matching behaves like a regular expression over the 
+ space of tags, instead over the space of characters.
  .
- Xidel implements a kind of internal pipes to pipe HTTP requests from one query to the next, so there is no need to distinguish selecting links and downloading the data referenced by them. Therefore arbitrary complex queries going over arbitrary many pages can be executed with a single call of Xidel.
+ Xidel implements a kind of internal pipes to pipe HTTP requests from one query 
+ to the next, so there is no need to distinguish selecting links and downloading
+ the data referenced by them. Therefore arbitrary complex queries going over 
+ arbitrary many pages can be executed with a single call of Xidel.

@@ -3,7 +3,7 @@ Upstream-Name: xidel
 Source: http://www.videlibri.de/xidel.html
 
 Files: *
-Copyright: 2006-2015 Benito van der Zander <benito@benibela.de>
+Copyright: 2006-2016 Benito van der Zander <benito@benibela.de>
 License: GPL-3.0+
 
 License: GPL-3.0+
@@ -23,5 +23,3 @@ License: GPL-3.0+
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.

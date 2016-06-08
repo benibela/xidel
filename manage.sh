@@ -54,8 +54,7 @@ linux64)
         if [ $action -lt 2 ]; then exit; fi
         tar -vczf xidel-$VERSION.linux64.tar.gz xidel readme.txt changelog install.sh
         fileUpload xidel-$VERSION.linux64.tar.gz "$UPLOAD_PATH"
-        checkinstall --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
-        fileUpload xidel_$VERSION-1_amd64.deb "$UPLOAD_PATH"
+        fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
         ;;
 
 linux32)
@@ -63,8 +62,7 @@ linux32)
         if [ $action -lt 2 ]; then exit; fi
         tar -vczf xidel-$VERSION.linux32.tar.gz xidel readme.txt changelog install.sh
         fileUpload xidel-$VERSION.linux32.tar.gz "$UPLOAD_PATH"
-        checkinstall --pkgarch=i386 --install=no --pkgname=Xidel --default  --pkgversion=$VERSION --nodoc --maintainer="Benito van der Zander \<benito@benibela.de\>" --requires="libc6" bash ./install.sh 
-        fileUpload xidel_$VERSION-1_i386.deb "$UPLOAD_PATH"
+        fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
         ;;
 
 win32)
@@ -115,12 +113,13 @@ downloadTable)
     else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
   fi;
 
-   ./xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( if (contains($n, "win")) then "Windows: " else if (contains($n, "linux")) then "Universal Linux: " else if (contains($n, ".deb")) then "Debian: " else if (contains($n, "src")) then "Source:" else "", if (contains($n, "32") or contains($n, "386")) then "32 Bit" else if (contains($n, "64"))then "64 Bit" else ""  )   };            
+   xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( if (contains($n, "win")) then "Windows: " else if (contains($n, "linux")) then "Universal Linux: " else if (contains($n, ".deb")) then "Debian: " else if (contains($n, "src")) then "Source:" else "", if (contains($n, "32") or contains($n, "386")) then "32 Bit" else if (contains($n, "64"))then "64 Bit" else ""  )   };            
                            <table class="downloadTable">
                            <tr><th>Operating System</th><th>Filename</th><th>Size</th></tr>
-                           { for <TABLE id="files_list"><t:loop><TR class="file"><TH><A class="name">{link := object(), link.verboseName := verboseName(.), link.a := .}</A></TH><td/><td>{link.size := .}</td></TR></t:loop></TABLE> in (/) 
+                           { for <TABLE id="files_list"><t:loop><TR class="file"><TH>
+                             {link := {"verboseName": verboseName(.), "url": resolve-uri(.) || "/download", "name": ./data()}}</TH><td/><td>{link.size := .}</td></TR></t:loop></TABLE> in (/) 
                              order by $link.verboseName descending 
-                             return <tr><td>{$link.verboseName}</td><td><a href="{$link.a/@href}">{$link.a/text()}</a></td><td>{$link.size/text()}</td></tr>}
+                             return <tr><td>{$link.verboseName}</td><td><a href="{$link.url}">{$link.name}</a></td><td>{$link.size/text()}</td></tr>}
                            <tr><td>Mac 10.8</td><td colspan="2"><a href="https://www.evernote.com/shard/s69/sh/ff1e78f3-a369-4855-b18f-6184ce789c45/f3511927d0fb356ce883835f2eb712e0">externally prebuilt version</a> and compile instructions.</td></tr>
                            </table>'     --printed-node-format xml > /tmp/downloadTable.html;
   
@@ -130,7 +129,7 @@ downloadTable)
   
   cat /tmp/downloadTable.html
   
-  ./xidel --html web/xidel.html --xquery 'transform(/, function($e) {
+  xidel --html web/xidel.html --xquery 'transform(/, function($e) {
     if ($e/@class = "downloadSection") then <div class="downloadSection">{ doc("/tmp/downloadTable.html")//body/node() } </div> else $e
   })' > /tmp/xidel.html
   cp /tmp/xidel.html web/

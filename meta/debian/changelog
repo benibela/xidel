@@ -1,6 +1,14 @@
+xidel (0.9.4) natty; urgency=low
+
+  * 0.9.4 Improves support for XPath/XQuery 3.0, adds the EXPath file module, 
+    uses a new regex library, and more ...
+
+ -- Benito van der Zander <benito@benibela.de>  Wed, 08 Jun 2016 18:00:00 +0200
+
 xidel (0.9) natty; urgency=low
 
   * 0.9 Improve support for XPath/XQuery 3.0, and more ...
 
  -- Benito van der Zander <benito@benibela.de>  Mon, 30 Jun 2015 22:00:00 +0200
+
 
