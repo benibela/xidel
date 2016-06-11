@@ -157,7 +157,7 @@ begin
   w('');
 
   w('<html><head>');
-  w('<title>Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Online Tester</title>');
+  w('<title>Template / XPath 3.0 / XQuery 3.0 / CSS 3 Selector / JSONiq Online Tester</title>');
   w('<link rel="stylesheet" href="../codemirror/codemirror.css">');
   w('<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css">');
   w('<link rel="stylesheet" type="text/css" href="../cgi.css" />');
@@ -165,12 +165,12 @@ begin
   w('<script src="../cgi.js"></script>');
   w('<script src="cgi.js"></script>');
   w('</head><body onload="init()">');
-  w('<h1>Template / XPath 2.0 / XQuery / CSS 3 Selector / JSONiq Online Tester</h1>');
+  w('<h1>Template / XPath 3.0 / XQuery 3.0 / CSS 3 Selector / JSONiq Online Tester</h1>');
   w('(You can find the documentation below)<br><br>');
   w('<form method="POST" action="./xidelcgi">');
   w('<div id="html">'+select('input-format', 'HTML/XML-Input file', ['auto', 'html', 'xml', 'xml-strict'])
     + '<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
-  w('<div id="template">'+kind('template', 'Template')+kind('xpath2', 'XPath 2.0')+kind('xquery1', 'XQuery 1.0')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
+  w('<div id="template">'+kind('template', 'Template')+kind('xpath3', 'XPath 3.0')+ kind('xpath2', '2.0')+kind('xquery3', 'XQuery 3.0')+kind('xquery1', '1')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
   w('<br><textarea name="extract" rows=18 cols=80 >');
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
@@ -187,7 +187,6 @@ begin
     + checkbox('strict-type-checking', 'Strict type checking') + checkbox('strict-namespaces', 'Strict namespaces')
     + checkbox('case-sensitive', 'case sensitive'));
   w('</span>');
-  w('<br>Incomplete languages/Work in progress: '+kind('xpath3', 'XPath 3')+kind('xquery3', 'XQuery 3'));
 
   w('</span></form>');
 
