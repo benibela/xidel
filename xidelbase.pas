@@ -2220,7 +2220,7 @@ var
 begin
   f := data.inputFormat;
   if (query.Term = nil) or (f = ifJSON) then exit;
-  if (self = nil) or (noOptimizations) or (xqcdFocusDocument in query.Term.getContextDependencies) then begin
+  if (self = nil) or (noOptimizations) or (xqcdFocusItem in query.Term.getContextDependencies) then begin
     htmlparser.parseHTMLSimple(data);
     currentRoot := htmlparser.HTMLTree;
   end;
