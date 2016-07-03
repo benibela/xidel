@@ -1,5 +1,11 @@
 Some important changes:
 
+--------Xidel 0.9.5 --------
+* add x:request for HTTP or follow-like requests inside a query
+* various performance improvements and internal restructuring
+
+
+
 --------Xidel 0.9.4 --------
 (2016-06-08)
 

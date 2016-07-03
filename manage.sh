@@ -41,6 +41,14 @@ function compile(){
   echo > xidelbuilddata.inc  
 }
 
+function xidelCompileAndroidArm(){
+  rm xidel  
+  #fpc -Tandroid -Parm -MObjFPC -Scghi -CX -Crt -O3 -g -gl -XX -l -vewnhibq -Filib/arm-android -Fu../../../components/pascal/import/synapse -Fu../../../components/pascal/internet -Fu../../../components/pascal/data -Fu../../../components/pascal/system -Fu../../../components/pascal/import/regexpr/source -Fu../../../components/pascal/import/utf8tools -Fu../../../components/pascal/lib/arm-android -Fu/opt/lazarus/packager/units/arm-android -Fu. -FUlib/arm-android -dUSE_SYNAPSE_WRAPPER -Cg xidel.pas
+  #we cannot compile dependencies, as they default to Java based internet access instead Synapse
+  /opt/lazarus/lazbuild -d --bm=androidarm xidel.lpi || (echo "FAILED!"; exit)
+  arm-linux-androideabi-strip --strip-all xidel
+}
+
 case "$1" in
 web)
 	cd web
@@ -70,6 +78,14 @@ win32)
         if [ $action -lt 2 ]; then exit; fi
         zip -v xidel-$VERSION.win32.zip xidel.exe changelog readme.txt
         fileUpload xidel-$VERSION.win32.zip "$UPLOAD_PATH"
+        ;;
+
+androidarm)
+        compile xidelCompileAndroidArm
+        if [ $action -lt 2 ]; then exit; fi
+        tar -vczf xidel-$VERSION.androidarm.tar.gz xidel readme.txt changelog install.sh
+        fileUpload xidel-$VERSION.androidarm.tar.gz "$UPLOAD_PATH"
+        #fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
         ;;
 
 cgi)    lazCompileLinux64 xidelcgi

@@ -10,7 +10,9 @@ cp meta/debian/copyright $builddir/usr/share/doc/xidel/copyright
 
 version=$(xidel --version | head -1 | grep -oE "[0-9.]+")
 sed -Ee "s/Version:.*/Version: $version/" -i $builddir/DEBIAN/control
-if grep x86-64 xidel; then arch=amd64; else arch=i386; fi
+if file xidel | grep x86-64; then arch=amd64; 
+else if file xidel | grep ARM; then arch=arm; else arch=i386; 
+fi; fi
 sed -Ee "s/Architecture:.*/Architecture: $arch/" -i $builddir/DEBIAN/control
 
 pkg=xidel_$version-1_$arch.deb
