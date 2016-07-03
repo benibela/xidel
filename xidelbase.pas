@@ -3863,6 +3863,43 @@ begin
   result := TXQValueString.create(baseSchema.untypedAtomic, s);
 end;
 
+function xqfRequest(const cxt: TXQEvaluationContext; const args: TXQVArray): IXQValue;
+var
+  follow: TFollowToList;
+  fakeData, data: Idata;
+  fakeContext: TProcessingContext;
+  list: TXQVList;
+  obj: TXQValueObject;
+  pv: PIXQValue;
+begin
+  requiredArgCount(args, 1);
+  fakeData := TDataObject.create('', cxt.staticContext.baseURI, '');
+  fakeContext := TProcessingContext.Create;
+  follow := TFollowToList.Create;
+  list := TXQVList.create();
+  try
+    for pv in args[0].GetEnumeratorPtrUnsafe do
+      follow.merge(pv^, fakeData, fakeContext);
+    while follow.Count > 0 do begin
+      data := follow.first.retrieve(fakeContext,0);
+      obj := TXQValueObject.create();
+      obj.setMutable('url', data.baseUri);
+      obj.setMutable('type', data.contenttype);
+      obj.setMutable('headers', xqvalue(data.headers));
+      obj.setMutable('raw', xqvalue(data.rawData));
+      if data.inputFormat = ifJSON then obj.setMutable('json', parseJSON(data.rawData))
+      else obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
+      list.add(obj);
+      follow.Delete(0);
+    end;
+
+  finally
+    follow.free;
+    fakeContext.Free;
+    xqvalueSeqSqueezed(result, list);
+  end;
+end;
+
 function xqFunctionJSONSafe(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
 var jn: TXQNativeModule;
 begin
@@ -3917,7 +3954,7 @@ begin
   end;
 end;
 
-var pxp: TXQNativeModule;
+var pxp,pxpx: TXQNativeModule;
 
 
 initialization
@@ -3931,5 +3968,7 @@ initialization
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
   pxp.registerFunction('read', @xqfRead, ['() as xs:untypedAtomic']);
+  pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
+  pxpx.registerFunction('request', @xqfRequest, ['($arg as item()*) as object()*']);
 end.
 
