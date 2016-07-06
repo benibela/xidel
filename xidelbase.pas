@@ -160,7 +160,7 @@ type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML,
 var //output options
     outputFormat: TOutputFormat;
     windowsCmdPercentageEscape: string;
-    hasOutputEncoding: boolean;
+    hasOutputEncoding: (oeAbsent,oeConvert,oePassRaw) = oeAbsent;
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
@@ -554,10 +554,11 @@ begin
     else writeln(stderr, 'Unknown encoding: ',e)
   end;
   if codepage <> -1 then begin
-    hasOutputEncoding := true;
+    hasOutputEncoding := oeConvert;
     SetTextCodePage(Output, codepage);
     //SetTextCodePage(StdErr, codepage);
   end else begin
+    hasOutputEncoding := oePassRaw;
     SetTextCodePage(Output, CP_ACP); //all our strings claim to be ACP (=UTF8) so there should be no conversion?
     //SetTextCodePage(StdErr, CP_ACP);
   end;
@@ -996,7 +997,7 @@ begin
   if finputformat = ifAuto then begin
     finputformat := FormatMap[guessFormat(rawData, baseUri, contentType)];
 
-    if (finputformat = ifJSON) and hasOutputEncoding then begin
+    if (finputformat = ifJSON) and (hasOutputEncoding <> oePassRaw) then begin
       //convert json to utf-8, because the regex parser does not match non-utf8 (not even with . escape)
       //it might be useful to convert other data, but the x/html parser does its own encoding detection
       enc := strEncodingFromContentType(contentType);
@@ -2525,7 +2526,7 @@ begin
   currentFollowList := nil;
   currentData:=data;
 
-  if hasOutputEncoding then htmlparser.OutputEncoding := eUTF8
+  if hasOutputEncoding <> oePassRaw then htmlparser.OutputEncoding := eUTF8
   else htmlparser.OutputEncoding := eUnknown;
   globalDefaultInputFormat := inputFormat;
 
@@ -3672,7 +3673,7 @@ begin
     'xml': colorizing := cXML;
     else raise EInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
   end;
-  if not (colorizing in [cNever,cAlways]) or not hasOutputEncoding then begin
+  if not (colorizing in [cNever,cAlways]) or (hasOutputEncoding = oeAbsent) then begin
     {$ifdef unix}
     isStdoutTTY := IsATTY(stdout) <> 0;
     isStderrTTY := IsATTY(StdErr) <> 0;
@@ -3681,7 +3682,7 @@ begin
     isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
     isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
     {$endif}
-    if not isStdoutTTY and not hasOutputEncoding then setOutputEncoding('utf-8');
+    if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
   end;
 
   case colorizing of
