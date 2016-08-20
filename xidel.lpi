@@ -80,7 +80,7 @@
             <LinkSmart Value="True"/>
           </Linking>
           <Other>
-            <CustomOptions Value="-dUSE_SYNAPSE_WRAPPER -Cg"/>
+            <CustomOptions Value="-dUSE_SYNAPSE_WRAPPER -Cg -k-pie"/>
             <OtherDefines Count="1">
               <Define0 Value="USE_SYNAPSE_WRAPPER"/>
             </OtherDefines>
@@ -97,7 +97,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-e 'function-arity(concat#123456)'"/>
+        <CommandLineParams Value="--trace &quot;http://www.omropfryslan.nl/live/omrop-fryslan-tv&quot; -f &quot;extract($$raw,'playlist: \&quot;(.+)\&quot;',1)&quot; -e &quot;[tokenize(unparsed-text($$json(2)/(sources)()[type='hls']/file),'#EXT-X-STREAM-INF:')[position()>1] ! {'format':string(extract(.,'BANDWIDTH=(\d+)',1) idiv 1000),'url':concat(resolve-uri('.'),extract(.,'(.+m3u8)',1))},doc($$json(2)/(sources)()[type='rtmp']/file)//video/{'format':concat('rtmp_',@system-bitrate idiv 1000),'url':concat(../../..//@base,@src)}]&quot;"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>

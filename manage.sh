@@ -46,7 +46,7 @@ function xidelCompileAndroidArm(){
   #fpc -Tandroid -Parm -MObjFPC -Scghi -CX -Crt -O3 -g -gl -XX -l -vewnhibq -Filib/arm-android -Fu../../../components/pascal/import/synapse -Fu../../../components/pascal/internet -Fu../../../components/pascal/data -Fu../../../components/pascal/system -Fu../../../components/pascal/import/regexpr/source -Fu../../../components/pascal/import/utf8tools -Fu../../../components/pascal/lib/arm-android -Fu/opt/lazarus/packager/units/arm-android -Fu. -FUlib/arm-android -dUSE_SYNAPSE_WRAPPER -Cg xidel.pas
   #we cannot compile dependencies, as they default to Java based internet access instead Synapse
   /opt/lazarus/lazbuild -d --bm=androidarm xidel.lpi || (echo "FAILED!"; exit)
-  arm-linux-androideabi-strip --strip-all xidel
+  #arm-linux-androideabi-strip --strip-all xidel
 }
 
 case "$1" in

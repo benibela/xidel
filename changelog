@@ -3,7 +3,7 @@ Some important changes:
 --------Xidel 0.9.5 --------
 * add x:request for HTTP or follow-like requests inside a query
 * various performance improvements and internal restructuring
-
+* fix that entities were not decoded, if --output-encoding was not set
 
 
 --------Xidel 0.9.4 --------
