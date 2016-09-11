@@ -3902,6 +3902,49 @@ begin
   result := nil;
 end;
 
+function xqfInteger(const args: TXQVArray): IXQValue;
+var
+  s: String;
+  base: Integer;
+begin
+  s := args[0].toString;
+  base := 10;
+  if (s <> '') and (s[1] = '0') then delete(s, 1, 1);
+  if (s <> '') then
+    case s[1] of
+      '$', 'x': begin
+        delete(s, 1, 1);
+        base := 16;
+      end;
+      'o', 'q': begin
+        delete(s, 1, 1);
+        base := 8;
+      end;
+      'b': begin
+        delete(s, 1, 1);
+        base := 2;
+      end;
+    end;
+
+  if base = 16 then result := xqvalue(StrToInt64('$' + s))
+  else if base = 10 then result := baseSchema.integer.createValue(s)
+  else raise EXQEvaluationException.create('pxp:todo','todo');
+end;
+
+function xqfIntegerToBase(const args: TXQVArray): IXQValue;
+var
+  base: Int64;
+  resstr: RawByteString;
+begin
+  base := args[1].toInt64;
+  if base = 10 then exit(xqvalue(args[0].toString));
+  resstr := '';
+  if base = 16 then resstr := strTrimLeft(IntToHex(args[0].toInt64, 1), ['0'])
+  else raise EXQEvaluationException.create('pxp:todo','todo');
+  if resstr = '' then resstr := '0';
+  result := xqvalue(resstr);
+end;
+
 procedure blockFileAccessFunctions;
 var fn, pxp, jn: TXQNativeModule;
 begin
@@ -3959,5 +4002,7 @@ initialization
   pxp.registerFunction('read', @xqfRead, ['() as xs:untypedAtomic']);
   pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
   pxpx.registerFunction('request', @xqfRequest, ['($arg as item()*) as object()*']);
+  pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer']);
+  pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
 end.
 

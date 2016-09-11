@@ -16,10 +16,9 @@ function prepareInternet(const userAgent, proxy: string; onReact: TTransferReact
 begin
   defaultInternetConfiguration.userAgent:=userAgent;
   defaultInternetConfiguration.setProxy(proxy);
-  simpleinternet.needInternetAccess;
-  if assigned(simpleinternet.defaultInternet.internetConfig) then begin
-    simpleinternet.defaultInternet.internetConfig^.userAgent := userAgent;
-    simpleinternet.defaultInternet.internetConfig^.setProxy(proxy);
+  if assigned(internetaccess.defaultInternet.internetConfig) then begin
+    internetaccess.defaultInternet.internetConfig^.userAgent := userAgent;
+    internetaccess.defaultInternet.internetConfig^.setProxy(proxy);
   end;
   result := simpleinternet.defaultInternet;
   defaultInternetAccessClass := TInternetAccessClass( result.ClassType);
@@ -28,11 +27,10 @@ end;
 
 function retrieve(const method, url, post, headers: string): string;
 begin
-  needInternetAccess;
   defaultInternet.additionalHeaders.Text := headers;
   if cgimode then result := url //disallow remote access in cgi mode
   else if (post = '') and ((method = '') or (method = 'GET')) then result := simpleinternet.retrieve(url)
-  else result:=simpleinternet.httpRequest(method, url, post);
+  else result:=internetaccess.httpRequest(method, url, post);
 end;
 
 //{$R *.res}
