@@ -992,7 +992,7 @@ end;
 function TDataObject.inputFormat: TInputFormat;
 const FormatMap: array[TInternetToolsFormat] of TInputFormat = ( ifXML, ifHTML, ifJSON, ifXML );
 var
-  enc: TEncoding;
+  enc: TSystemCodePage;
 begin
   if finputformat = ifAuto then begin
     finputformat := FormatMap[guessFormat(rawData, baseUri, contentType)];
@@ -1001,9 +1001,9 @@ begin
       //convert json to utf-8, because the regex parser does not match non-utf8 (not even with . escape)
       //it might be useful to convert other data, but the x/html parser does its own encoding detection
       enc := strEncodingFromContentType(contentType);
-      if enc = eUnknown then
-        if isInvalidUTF8(frawData) and not strContains(frawData, #0) then enc := eWindows1252;
-      if (enc <> eUTF8) and (enc <> eUnknown) then frawdata := strConvertToUtf8(frawData, enc);
+      if enc = CP_NONE then
+        if isInvalidUTF8(frawData) and not strContains(frawData, #0) then enc := CP_WINDOWS1252;
+      if (enc <> CP_UTF8) and (enc <> CP_NONE) then frawdata := strConvertToUtf8(frawData, enc);
     end;
   end;
   result := finputFormat;
@@ -1991,18 +1991,6 @@ begin
       TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded;
 end;
 
-function encodingName(e: TEncoding): string;
-begin
-  case e of
-    eWindows1252: result := 'ISO-8859-1';
-    eUTF16BE, eUTF16LE: result := 'UTF-16';
-    eUTF32BE, eUTF32LE: result := 'UTF-32';
-    else result := 'UTF-8';
-  end;
-end;
-
-
-
 
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
@@ -2526,8 +2514,8 @@ begin
   currentFollowList := nil;
   currentData:=data;
 
-  if hasOutputEncoding <> oePassRaw then htmlparser.OutputEncoding := eUTF8
-  else htmlparser.OutputEncoding := eUnknown;
+  if hasOutputEncoding <> oePassRaw then htmlparser.OutputEncoding := CP_UTF8
+  else htmlparser.OutputEncoding := CP_NONE;
   globalDefaultInputFormat := inputFormat;
 
   case extractKind of
