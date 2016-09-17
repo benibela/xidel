@@ -167,6 +167,7 @@ var //output options
     colorizing: TColorOptions;
 
     lastConsoleColor: TMyConsoleColors = ccNormal;
+    isStdinTTY: boolean = false;
     isStderrTTY: boolean = false;
     isStdoutTTY: boolean = false;
 
@@ -533,14 +534,13 @@ begin
 end;
 
 
-procedure setOutputEncoding(e: string);
+function setTextEncoding(var t: TextFile; e: string): integer;
 var
-  str: String;
   codepage: Integer;
+  str: String;
 begin
-  //todo call this
-  str:=UpperCase(e);
   codepage := -1;
+  str:=UpperCase(e);
   case str of
     'UTF-8', 'UTF8': codepage := CP_UTF8;
     'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': codepage := 1252;
@@ -550,12 +550,21 @@ begin
     'UTF32', 'UTF-32', 'UTF-32LE', 'UTF32LE': codepage := CP_UTF32;
     'OEM': codepage := CP_OEMCP;
     'INPUT': ;//none
-    else if strBeginsWith(str, 'CP') then SetTextCodePage(Output, StrToIntDef(strAfter(str, 'CP'), GetTextCodePage(output)))
+    else if strBeginsWith(str, 'CP') then codepage := StrToIntDef(strAfter(str, 'CP'), -1)
     else writeln(stderr, 'Unknown encoding: ',e)
   end;
+  result := codepage;
+  if codepage <> -1 then
+    SetTextCodePage(t, codepage);
+end;
+
+procedure setOutputEncoding(e: string);
+var
+  codepage: Integer;
+begin
+  codepage := setTextEncoding(output, e);
   if codepage <> -1 then begin
     hasOutputEncoding := oeConvert;
-    SetTextCodePage(Output, codepage);
     //SetTextCodePage(StdErr, codepage);
   end else begin
     hasOutputEncoding := oePassRaw;
@@ -3536,6 +3545,7 @@ begin
   mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </html>)', '');
   mycmdLine.declareString('color', 'Coloring option (never,always,json,xml)', ifthen(cgimode, 'never', 'auto'));
 
+  mycmdLine.declareString('stdin-encoding', 'Character encoding of stdin', 'utf-8');
 
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
@@ -3652,7 +3662,6 @@ begin
 
   cmdlineWrapper.Free;
 
-
   case mycmdline.readString('color') of
     'auto': colorizing := cAuto;
     'never': colorizing := cNever;
@@ -3663,14 +3672,17 @@ begin
   end;
   if not (colorizing in [cNever,cAlways]) or (hasOutputEncoding = oeAbsent) then begin
     {$ifdef unix}
+    isStdinTTY := IsATTY(Input) <> 0;
     isStdoutTTY := IsATTY(stdout) <> 0;
     isStderrTTY := IsATTY(StdErr) <> 0;
     {$endif}
     {$ifdef windows}
+    isStdinTTY :=  getfiletype(StdInputHandle) = FILE_TYPE_CHAR;
     isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
     isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
     {$endif}
     if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
+    if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextEncoding(input, mycmdline.readString('stdin-encoding'));
   end;
 
   case colorizing of
