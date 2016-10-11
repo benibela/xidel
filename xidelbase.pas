@@ -3426,7 +3426,7 @@ begin
     d := ft.retrieve(baseContext, 0);
     ft.free;
     if d <> nil then begin
-      xpathparser.registerModule(xpathparser.parseXQuery1(d.rawData));
+      xpathparser.registerModule(xpathparser.parseXQuery3(d.rawData));
       exit
     end;
   end;
