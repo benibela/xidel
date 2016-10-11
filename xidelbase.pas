@@ -3422,9 +3422,13 @@ var
 begin
   if xpathparser.findModule(namespace) <> nil then exit;
   for i := 0 to high(at) do begin
-    ft := TFollowTo.createFromRetrievalAddress(at[i]);
-    d := ft.retrieve(baseContext, 0);
-    ft.free;
+    d := nil;
+    try
+      ft := TFollowTo.createFromRetrievalAddress(at[i]);
+      d := ft.retrieve(baseContext, 0);
+      ft.free;
+    except
+    end;
     if d <> nil then begin
       xpathparser.registerModule(xpathparser.parseXQuery3(d.rawData));
       exit
