@@ -520,6 +520,7 @@ end;
 function strLoadFromFileChecked(const fn: string): string;
 begin
   result := strLoadFromFileUTF8(fn);
+  if strBeginsWith(result, '#!') then result := strAfter(result, #10);
   if Result = '' then raise EXidelException.Create('File '+fn+' is empty.');
 end;
 
@@ -3649,9 +3650,17 @@ begin
         baseContext.dataSources[i].readOptions(cmdlineWrapper);
 
     if (length(baseContext.actions) = 0) and (baseContext.follow = '') and not mycmdline.readFlag('version') then begin
-      writeln(stderr, 'No actions given.');
-      writeln(stderr, 'Expected at least one --extract, -e, --extract-file, --xquery, --xpath, --css, or --template-file option.');
-      ExitCode:=1;
+      if (ParamCount = 1) and FileExists(paramstr(1)) then begin
+        SetLength(baseContext.dataSources, 0);
+        SetLength(baseContext.actions, 1);
+        baseContext.actions[0] := TExtraction.create;
+        TExtraction(baseContext.actions[0]).extract := strLoadFromFileChecked(ParamStr(1));
+        baseContext.silent := true;
+      end else begin
+        writeln(stderr, 'No actions given.');
+        writeln(stderr, 'Expected at least one --extract, -e, --extract-file, --xquery, --xpath, --css, or --template-file option.');
+        ExitCode:=1;
+      end;
     end;
   end;
 
