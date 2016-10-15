@@ -3877,6 +3877,16 @@ begin
   result := TXQValueString.create(baseSchema.untypedAtomic, s);
 end;
 
+function xqfArgc(const args: TXQVArray): IXQValue;
+begin
+  result := xqvalue(paramcount);
+end;
+
+function xqfArgv(const args: TXQVArray): IXQValue;
+begin
+  result := xqvalue(ParamStr(args[0].toInt64));
+end;
+
 function xqfRequest(const cxt: TXQEvaluationContext; const args: TXQVArray): IXQValue;
 var
   follow: TFollowToList;
@@ -4027,6 +4037,8 @@ initialization
   pxp.registerFunction('read', @xqfRead, ['() as xs:untypedAtomic']);
   pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
   pxpx.registerFunction('request', @xqfRequest, ['($arg as item()*) as object()*']);
+  pxpx.registerFunction('argc', @xqfArgc, ['() as integer']);
+  pxpx.registerFunction('argv', @xqfArgv, ['($i as integer) as string']);
   pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer']);
   pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
 end.
