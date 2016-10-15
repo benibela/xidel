@@ -3937,13 +3937,41 @@ begin
   result := nil;
 end;
 
+function BigDecimalFromBase(const n: string; base: integer; negative: boolean): bigdecimal;
+var cur, bdbase: bigdecimal;
+  c: Char;
+  offset: Integer;
+begin
+  bdbase := base;
+  setZero(result);
+  setOne(cur);
+  for i := length(n) downto 1 do begin
+    c := n[i];
+    case c of
+      '0'..'9': offset := ord(c) - ord('0');
+      'A'..'Z': offset := ord(c) - ord('A') + 10;
+      'a'..'z': offset := ord(c) - ord('a') + 10;
+      else raise EXQEvaluationException.create('pxp:INT', 'Invalid digit in '+n);
+    end;
+    if offset >= base then raise EXQEvaluationException.create('pxp:INT', 'Invalid digit in '+n);
+    result := result + offset * cur;
+    cur := cur * bdbase;
+  end;
+  if not isZero(result) then result.signed := negative;
+end;
+
 function xqfInteger(const args: TXQVArray): IXQValue;
 var
-  s: String;
+  s, s0: String;
   base: Integer;
+  negative: Boolean;
 begin
-  s := args[0].toString;
+  s0 := args[0].toString;
+  s := s0;
+  negative := (s <> '') and (s[1] = '-');
+  if negative then delete(s,1,1);
   base := 10;
+  if length(args) = 2 then base := args[1].toInt64;
   if (s <> '') and (s[1] = '0') then delete(s, 1, 1);
   if (s <> '') then
     case s[1] of
@@ -3960,10 +3988,32 @@ begin
         base := 2;
       end;
     end;
+  if s = '' then exit(xqvalue(0));
+  if (base = 16) and (length(s) < 16) then exit(xqvalue(StrToInt64(ifthen(negative, '-$', '$') + s)))
+  else if base = 10 then result := baseSchema.integer.createValue(s0)
+  else result := baseSchema.integer.createValue(BigDecimalFromBase(s, base, negative))
+end;
 
-  if base = 16 then result := xqvalue(StrToInt64('$' + s))
-  else if base = 10 then result := baseSchema.integer.createValue(s)
-  else raise EXQEvaluationException.create('pxp:todo','todo');
+function BigDecimalToBase(bd: bigdecimal; const bdbase: bigdecimal): string;
+var
+  quotient, remainder: BigDecimal;
+  temp: integer;
+  negative: Boolean;
+begin
+  negative := bd.signed;
+  bd.signed:=false;
+  result := '';
+  while not isZero(bd) do begin
+    quotient.digits := nil;
+    divideModNoAlias(quotient, remainder, bd, bdbase, 0, [bddfFillIntegerPart, bddfNoFractionalPart]);
+    temp := BigDecimalToLongint(remainder);
+    case temp of
+      0..9: result := chr(ord('0') + temp) + result;
+      10..26+10: result := chr(ord('A') - 10 + temp) + result;
+    end;
+    bd := quotient;
+  end;
+  if negative then result := '-' + result;
 end;
 
 function xqfIntegerToBase(const args: TXQVArray): IXQValue;
@@ -3972,10 +4022,12 @@ var
   resstr: RawByteString;
 begin
   base := args[1].toInt64;
+  if (base < 2) or (base > 36) then raise EXQEvaluationException.create('pxp:INT', 'Invalid base');
   if base = 10 then exit(xqvalue(args[0].toString));
   resstr := '';
-  if base = 16 then resstr := strTrimLeft(IntToHex(args[0].toInt64, 1), ['0'])
-  else raise EXQEvaluationException.create('pxp:todo','todo');
+  if (base = 16) and (args[0].kind = pvkInt64) and (args[0].toInt64 >= 0) then resstr := strTrimLeft(IntToHex(args[0].toInt64, 1), ['0'])
+  else resstr := BigDecimalToBase(args[0].toDecimal, base);
+
   if resstr = '' then resstr := '0';
   result := xqvalue(resstr);
 end;
@@ -4039,7 +4091,7 @@ initialization
   pxpx.registerFunction('request', @xqfRequest, ['($arg as item()*) as object()*']);
   pxpx.registerFunction('argc', @xqfArgc, ['() as integer']);
   pxpx.registerFunction('argv', @xqfArgv, ['($i as integer) as string']);
-  pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer']);
+  pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer', '($arg as item(), $base as xs:integer) as xs:integer']);
   pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
 end.
 
