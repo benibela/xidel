@@ -2149,9 +2149,14 @@ end;
 function translateDeprecatedStrings(expr: string): string;
 var
   regex: TWrappedRegExpr;
+  a: array[0..2] of IXQValue;
 begin
-  if mycmdline.readFlag('deprecated-string-options') then
-    expr := xqFunctionReplace(xqvalueArray([xqvalue(expr), xqvalue('([$][a-zA-Z0-9-]);'), xqvalue('{$1}')])).toString;
+  if mycmdline.readFlag('deprecated-string-options') then begin
+    a[0] := xqvalue(expr);
+    a[1] := xqvalue('([$][a-zA-Z0-9-]);');
+    a[2] := xqvalue('{$1}');
+    expr := xqFunctionReplace(3, @a[0]).toString;
+  end;
   result := expr;
 end;
 
@@ -2893,8 +2898,9 @@ type TXQTracer = class
   //varLog: TXQVariableChangeLog;
   logLength: integer;
   all, backtrace, context, contextVariables: boolean;
-  procedure globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; entering: boolean; const args: TXQVArray);
-  procedure printStderr(term: TXQTerm; const args: TXQVArray);
+  procedure globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; argc: SizeInt; args: PIXQValue);
+  procedure printStderr(term: TXQTerm; argc: sizeint; args: PIXQValue);
+  procedure printStderr(term: TXQTerm; args: TXQVArray);
   procedure printBacktrace;
   procedure printLastContext;
   destructor Destroy; override;
@@ -2902,13 +2908,18 @@ end;
 
 var tracer: TXQTracer;
 
-procedure TXQTracer.globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; entering: boolean; const args: TXQVArray);
+procedure TXQTracer.globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; argc: SizeInt; args: PIXQValue);
+var
+  entering: Boolean;
 begin
+  entering := argc >= 0;
   if backtrace then begin;
     if entering then begin
       if logLength > high(log) then SetLength(log, max(logLength + 8, length(log) * 2));
       log[logLength].t := term;
-      log[logLength].args := args;
+      SetLength(log[logLength].args, argc);
+      for i := 0 to argc - 1 do
+        log[logLength].args[i] := args[i];
       inc(logLength);
     end else begin
       while (logLength > 0) and (log[logLength - 1].t <> term) do dec(logLength);
@@ -2916,7 +2927,7 @@ begin
     end;
   end;
   if entering then begin
-    if all and entering then printStderr(term, args);
+    if all and entering then printStderr(term, argc, args);
     if self.context and entering then begin
       lastContext := acontext;
       {if contextVariables then
@@ -2927,7 +2938,7 @@ begin
   end;
 end;
 
-procedure TXQTracer.printStderr(term: TXQTerm; const args: TXQVArray);
+procedure TXQTracer.printStderr(term: TXQTerm; argc: sizeint; args: PIXQValue);
 var i: integer;
 begin
   if term is TXQTermNamedFunction then begin
@@ -2940,10 +2951,16 @@ begin
   else if term is TXQTermTryCatch then write('try/catch')
   else write('unknown event');
   write(stderr, '(');
-  for i := 0 to high(args) do
+  for i := 0 to argc-1 do
     if i = 0 then write(args[i].debugAsStringWithTypeAnnotation())
     else write(', ', args[i].debugAsStringWithTypeAnnotation());
   writeln(stderr, ')');
+end;
+
+procedure TXQTracer.printStderr(term: TXQTerm; args: TXQVArray);
+begin
+  if length(args) = 0 then printStderr(term, 0, nil)
+  else printStderr(term, length(args), @args[0])
 end;
 
 procedure TXQTracer.printBacktrace;
@@ -3847,13 +3864,13 @@ begin
 end;
 
 
-function xqfSystem(const args: TXQVArray): IXQValue;
+function xqfSystem(argc: SizeInt; args: PIXQValue): IXQValue;
 var
   proc: TProcess;
   temps: string;
 begin
   if cgimode or not allowFileAccess then exit(xqvalue('Are you trying to hack an OSS project? Shame on you!'));
-  requiredArgCount(args, 1);
+  requiredArgCount(argc, 1);
   proc := TProcess.Create(nil);
   proc.CommandLine := args[0].toString;
   try
@@ -3869,25 +3886,24 @@ begin
   end;
 end;
 
-function xqfRead(const args: TXQVArray): IXQValue;
+function xqfRead(argc: SizeInt; args: PIXQValue): IXQValue;
 var s: string;
 begin
-  requiredArgCount(args, 0);
   ReadLn(s);
   result := TXQValueString.create(baseSchema.untypedAtomic, s);
 end;
 
-function xqfArgc(const args: TXQVArray): IXQValue;
+function xqfArgc(argc: SizeInt; args: PIXQValue): IXQValue;
 begin
   result := xqvalue(paramcount);
 end;
 
-function xqfArgv(const args: TXQVArray): IXQValue;
+function xqfArgv(argc: SizeInt; args: PIXQValue): IXQValue;
 begin
   result := xqvalue(ParamStr(args[0].toInt64));
 end;
 
-function xqfRequest(const cxt: TXQEvaluationContext; const args: TXQVArray): IXQValue;
+function xqfRequest(const cxt: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
 var
   follow: TFollowToList;
   fakeData, data: Idata;
@@ -3896,7 +3912,7 @@ var
   obj: TXQValueObject;
   pv: PIXQValue;
 begin
-  requiredArgCount(args, 1);
+  requiredArgCount(argc, 1);
   fakeData := TDataObject.create('', cxt.staticContext.baseURI, '');
   fakeContext := TProcessingContext.Create;
   follow := TFollowToList.Create;
@@ -3924,14 +3940,14 @@ begin
   end;
 end;
 
-function xqFunctionJSONSafe(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
+function xqFunctionJSONSafe(const context: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
 var jn: TXQNativeModule;
 begin
   jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
-  result := jn.findBasicFunction('parse-json', length(args)).func(args);
+  result := jn.findBasicFunction('parse-json', argc).func(argc,args);
 end;
 
-function xqFunctionBlocked(const context: TXQEvaluationContext; const args: TXQVArray): IXQValue;
+function xqFunctionBlocked(const context: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
 begin
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
   result := nil;
@@ -3960,7 +3976,7 @@ begin
   if not isZero(result) then result.signed := negative;
 end;
 
-function xqfInteger(const args: TXQVArray): IXQValue;
+function xqfInteger(argc: SizeInt; args: PIXQValue): IXQValue;
 var
   s, s0: String;
   base: Integer;
@@ -3971,7 +3987,7 @@ begin
   negative := (s <> '') and (s[1] = '-');
   if negative then delete(s,1,1);
   base := 10;
-  if length(args) = 2 then base := args[1].toInt64;
+  if argc = 2 then base := args[1].toInt64;
   if (s <> '') and (s[1] = '0') then delete(s, 1, 1);
   if (s <> '') then
     case s[1] of
@@ -4016,7 +4032,7 @@ begin
   if negative then result := '-' + result;
 end;
 
-function xqfIntegerToBase(const args: TXQVArray): IXQValue;
+function xqfIntegerToBase(argc: SizeInt; args: PIXQValue): IXQValue;
 var
   base: Int64;
   resstr: RawByteString;
