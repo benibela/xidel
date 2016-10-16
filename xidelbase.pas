@@ -2890,7 +2890,7 @@ type TXQTracer = class
     args: TXQVArray;
   end;
   lastContext: TXQEvaluationContext;
-  varLog: TXQVariableChangeLog;
+  //varLog: TXQVariableChangeLog;
   logLength: integer;
   all, backtrace, context, contextVariables: boolean;
   procedure globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; entering: boolean; const args: TXQVArray);
@@ -2919,9 +2919,9 @@ begin
     if all and entering then printStderr(term, args);
     if self.context and entering then begin
       lastContext := acontext;
-      if contextVariables then
+      {if contextVariables then
         if acontext.temporaryVariables = nil then varlog.clear
-        else varLog.assign(acontext.temporaryVariables);
+        else varLog.assign(acontext.temporaryVariables);}
       if all then printLastContext;
     end;
   end;
@@ -2954,27 +2954,27 @@ begin
 end;
 
 procedure TXQTracer.printLastContext;
-var
-  vars: TXQVariableChangeLog;
+//var
+//  vars: TXQVariableChangeLog;
 begin
   writeln(stderr, 'Dynamic context: ');
   if lastContext.RootElement <> nil then writeln(stderr, '  root node: ', lastContext.ParentElement.toString());
   if lastContext.ParentElement <> nil then writeln(stderr, '  parent node: ', lastContext.ParentElement.toString());
   if lastContext.SeqValue <> nil then writeln(stderr, '  context item (.): ', lastContext.SeqValue.debugAsStringWithTypeAnnotation());
   writeln(stderr, '  position()/last(): ', lastContext.SeqIndex, ' / ', lastContext.SeqLength);
-  vars := lastContext.temporaryVariables;
+  {vars := lastContext.temporaryVariables;
   if contextVariables then vars := varLog;
   if (vars <> nil) and (vars.count > 0) then begin
     writeln(stderr, '  Local variables: ');
     for i := 0 to vars.count - 1 do
       writeln(stderr, '    ', vars.getName(i), ' = ', vars.get(i).debugAsStringWithTypeAnnotation());
-  end;
+  end;}
   WriteLn(stderr, '');
 end;
 
 destructor TXQTracer.Destroy;
 begin
-  varLog.Free;
+  //varLog.Free;
   inherited Destroy;
 end;
 
@@ -3562,7 +3562,7 @@ begin
   mycmdline.declareFlag('trace', 'Traces the evaluation of all queries');
   mycmdline.declareFlag('trace-stack', 'Traces the evaluation to print a backtrace in case of errors');
   mycmdline.declareFlag('trace-context', 'Like trace-stack, but for the context');
-  mycmdline.declareFlag('trace-context-variables', 'Like trace-stack, but for the context variables');
+  //mycmdline.declareFlag('trace-context-variables', 'Like trace-stack, but for the context variables');
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
@@ -3759,13 +3759,13 @@ begin
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
 
-  if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') or mycmdline.readFlag('trace-context-variables') then begin
+  if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') {or mycmdline.readFlag('trace-context-variables') }then begin
     tracer := TXQTracer.Create;
     tracer.all := mycmdline.readFlag('trace');
     tracer.backtrace := mycmdline.readFlag('trace-stack');
-    tracer.context := mycmdline.readFlag('trace-context') or mycmdline.readFlag('trace-context-variables');
-    tracer.contextVariables := mycmdline.readFlag('trace-context-variables');
-    if tracer.contextVariables then tracer.varLog := TXQVariableChangeLog.create();
+    tracer.context := mycmdline.readFlag('trace-context');// or mycmdline.readFlag('trace-context-variables');
+    //tracer.contextVariables := mycmdline.readFlag('trace-context-variables');
+    //if tracer.contextVariables then tracer.varLog := TXQVariableChangeLog.create();
     XQOnGlobalDebugTracing := @tracer.globalTracing;
   end;
 
