@@ -2292,8 +2292,8 @@ end;
 
 function windowsCmdEscape(s: string): string;
 begin
-  result := StringsReplace(s, [#10, #13, '%',   '^',  '&',  '<',  '>',  '|',  '"',  ',',  ';',  '(',  ')', '"' ],
-                              ['',  '',  windowsCmdPercentageEscape + '%',  '^^', '^&', '^<', '^>', '^|', '^"', '^,', '^;', '^(', '^)', '^"'],
+  result := StringsReplace(s, [#10, #13, '%',   '^',  '&',  '<',  '>',  '|',  '"',  ',',  ';',  '(',  ')', '"', '=' ],
+                              ['',  '',  windowsCmdPercentageEscape + '%',  '^^', '^&', '^<', '^>', '^|', '^"', '^,', '^;', '^(', '^)', '^"', '^='],
                               [rfReplaceAll]);
 end;
 
