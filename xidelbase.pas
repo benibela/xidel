@@ -2337,7 +2337,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-        result := escape(v.jsonSerialize(printedNodeFormat, true));
+        result := escape(v.jsonSerialize(printedNodeFormat, not invariable));
       end;
       else if not printTypeAnnotations then begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;

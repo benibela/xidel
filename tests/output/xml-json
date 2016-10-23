@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xml>
-[1, 2, 3, {&quot;a&quot;: 123, &quot;b&quot;: &quot;c&quot;}]
+[
+  1,
+  2,
+  3,
+  {
+    &quot;a&quot;: 123,
+    &quot;b&quot;: &quot;c&quot;
+  }
+]
 </xml>

@@ -3,6 +3,10 @@ xs:int("17"),
 xs:untypedAtomic("?"), 
 3.7, 
 xs:float("10"))
-{"a": 1}
+{
+  "a": 1
+}
 text{"bc"}
-[10]
+[
+  10
+]
