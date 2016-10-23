@@ -1648,7 +1648,7 @@ begin
         merge(x, basedata, parent);
       exit;
     end;
-    pvkNode: raise EXidelException.Create('Assert failure: Expected resolved url for following, but got raw '+dest.debugAsStringWithTypeAnnotation());
+    pvkNode: raise EXidelException.Create('Assert failure: Expected resolved url for following, but got raw '+dest.toXQuery());
     else addBasicUrl(dest.toString, basedata.baseUri, parent.followInputFormat);
   end;
 end;
@@ -2321,23 +2321,6 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
   end;
 
   function singletonToString(const v: IXQValue): string;
-    function escapeToXQueryString(const s: string): string;
-    begin
-      result := StringReplace(s, '&', '&amp;', [rfReplaceAll]);
-      if pos('"', result) = 0 then exit('"' + result + '"');
-      if pos('''', result) = 0 then exit('''' + result + '''');
-      result := StringReplace(s, '"', '""', [rfReplaceAll]);
-      result := '"' + result + '"';
-    end;
-
-    function qualifiedTypeName(const arg: string; const ignoreDefault: string = ''): string;
-    begin
-      if v.typeAnnotation.schema.url <> XMLNamespaceURL_XMLSchema then
-         exit(escape('Q{'+v.typeAnnotation.schema.url + '}' + v.typeName+'('+arg+')'));
-      if v.typeName = ignoreDefault then exit(escape(arg));
-      exit(escape('xs:'+v.typeName+'('+escapeToXQueryString(v.toString)+')'));
-    end;
-
   begin
     case v.kind of
       pvkNode: begin
@@ -2350,7 +2333,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
         end;
         if printTypeAnnotations then
           if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
-            result := 'text{' + escapeToXQueryString(result) + '}';
+            result := 'text{' + xqvalue(result).toXQuery + '}';
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
@@ -2359,17 +2342,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       else if not printTypeAnnotations then begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
         exit(escape(v.toString));
-      end else case v.kind of
-        pvkBoolean:    result := qualifiedTypeName(IfThen(v.toBoolean, 'true()', 'false()'), 'boolean');
-        pvkNull:       result := 'null';
-        pvkInt64:      result := qualifiedTypeName(v.toString, 'integer');
-        pvkFloat:      result := qualifiedTypeName(v.toString, '');
-        pvkBigDecimal: result := qualifiedTypeName(v.toString, IfThen(IsIntegral(v.toDecimal), 'integer', 'decimal') );
-        pvkString:     result := qualifiedTypeName(escapeToXQueryString(v.toString), 'string' );
-        pvkQName, pvkDateTime:
-          result := qualifiedTypeName(escapeToXQueryString(v.toString), '' );
-        pvkFunction: raise EXidelException.Create('Cannot serialize function');
-      end;
+      end else result := escape(v.toXQuery)
     end;
   end;
 
@@ -2886,7 +2859,7 @@ end;
 procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
 begin
   if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
-  writeln(stderr, value.debugAsStringWithTypeAnnotation());
+  writeln(stderr, value.toXQuery());
 end;
 
 type TXQTracer = class
@@ -2952,8 +2925,8 @@ begin
   else write('unknown event');
   write(stderr, '(');
   for i := 0 to argc-1 do
-    if i = 0 then write(args[i].debugAsStringWithTypeAnnotation())
-    else write(', ', args[i].debugAsStringWithTypeAnnotation());
+    if i = 0 then write(args[i].toXQuery())
+    else write(', ', args[i].toXQuery());
   writeln(stderr, ')');
 end;
 
@@ -2977,14 +2950,14 @@ begin
   writeln(stderr, 'Dynamic context: ');
   if lastContext.RootElement <> nil then writeln(stderr, '  root node: ', lastContext.ParentElement.toString());
   if lastContext.ParentElement <> nil then writeln(stderr, '  parent node: ', lastContext.ParentElement.toString());
-  if lastContext.SeqValue <> nil then writeln(stderr, '  context item (.): ', lastContext.SeqValue.debugAsStringWithTypeAnnotation());
+  if lastContext.SeqValue <> nil then writeln(stderr, '  context item (.): ', lastContext.SeqValue.toXQuery());
   writeln(stderr, '  position()/last(): ', lastContext.SeqIndex, ' / ', lastContext.SeqLength);
   {vars := lastContext.temporaryVariables;
   if contextVariables then vars := varLog;
   if (vars <> nil) and (vars.count > 0) then begin
     writeln(stderr, '  Local variables: ');
     for i := 0 to vars.count - 1 do
-      writeln(stderr, '    ', vars.getName(i), ' = ', vars.get(i).debugAsStringWithTypeAnnotation());
+      writeln(stderr, '    ', vars.getName(i), ' = ', vars.get(i).toXQuery());
   end;}
   WriteLn(stderr, '');
 end;
