@@ -1,10 +1,14 @@
+
 Some important changes:
 
 --------Xidel 0.9.5 --------
 * add x:request for HTTP or follow-like requests inside a query
+* more new functions: x:argc, x:argv, x:integer, x:integer-to-base
 * various performance improvements and internal restructuring
 * fix that entities were not decoded, if --output-encoding was not set
-
+* better default encoding setting when converting between Windows terminal encoding and utf8 for piped files
+* json output is prettified
+* An xquery version declaration disables all extension unless a version cide like "3.0-xidel" or "3.0-jsoniq" is used.
 
 --------Xidel 0.9.4 --------
 (2016-06-08)

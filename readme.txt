@@ -125,69 +125,61 @@ See http://en.wikipedia.org/wiki/XPath_3.0 and https://en.wikipedia.org/wiki/XQu
 or https://www.w3.org/TR/xpath-30/ , https://www.w3.org/TR/xquery-30/ and 
 https://www.w3.org/TR/xpath-functions-30/ for all the details.
 
-Xidel also supports JSONiq and some custom extensions, so it deviates in a few ways from the standard. 
-However, you can disable these differences with the respective options (see link below or the
-command line parameter listing printed by --help).
-In the most standard compatible mode it passes over 99.5% of the new XQuery Test Suite test cases.
+Xidel also supports JSONiq and some custom extensions. 
+If the query begins with a version declaration like xquery version "3.0"; all extensions are disabled (then it can pass 99.6% of the test cases in the QT3 XQuery Test Suite). If you use version codes like "3.0-xidel" or "3.0-jsoniq", all or some extensions are enabled. Without any version declaration the extensions are enabled, unless disabled by command-line parameters.
 
+Important extensions are:
 
-However, in the default mode, there are the following important extensions:
+  Variable assignment:                                         $var := value
+ 
+    adds $var to a set of global variables, which can be created and accessed 
+    everywhere.
+    (Xidel prints the value of all variables to stdout, unless you use the --extract-exclude option)
 
-  Syntax:
+  JSONiq literals                                           true, false, null
   
-    Variable assignment:                                         $var := value
+    true and false are evaluated as true(), false(), null becomes jn:null()
+  
+  JSONiq arrays:                                                     [a,b,c]
+
+     Arrays store a list of values and can be nested within each other and 
+     within sequences.
+     jn:members converts an array to a sequence.
+
+  JSONiq objects:                                      {"name": value, ...}
+  
+     Objects store a set of values as associative map. The values can be 
+     accessed similar to a function call, e.g.: {"name": value, ...}("name").
+     Xidel also has {"name": value, ..}.name and {"name": value, ..}/name
+     as an additional, proprietary syntax to access properties.
+     jn:keys or $object() returns a sequence of all property names, 
+     libjn:values a sequence of values.
+     Used with global variables, you can copy an object with obj2 := obj 
+     (objects are immutable, but properties can be changed with 
+     obj2.foo := 12, which will create a new object with the changed property)
+    
+  Extended strings:                                                x"..{..}.."
+
+    If a string is prefixed by an "x", all expressions inside {}-parentheses 
+    are evaluated, like in the value of a direct attribute constructor.
+    E.g. x"There are {1+2+3} elements" prints "There are 6 elements".
+    
+  Special string comparison:
    
-      adds $var to a set of global variables, which can be created and accessed 
-      everywhere.
-      (Xidel prints the value of all variables to stdout, unless you use the --extract-exclude option)
-
-    JSONiq literals                                           true, false, null
-    
-      true and false are evaluated as true(), false(), null becomes jn:null()
-    
-    JSONiq arrays:                                                     [a,b,c]
-
-       Arrays store a list of values and can be nested within each other and 
-       within sequences.
-       jn:members converts an array to a sequence.
-
-    JSONiq objects:                                      {"name": value, ...}
-    
-       Objects store a set of values as associative map. The values can be 
-       accessed similar to a function call, e.g.: {"name": value, ...}("name").
-       Xidel also has {"name": value, ..}.name and {"name": value, ..}/name
-       as an additional, proprietary syntax to access properties.
-       jn:keys or $object() returns a sequence of all property names, 
-       libjn:values a sequence of values.
-       Used with global variables, you can copy an object with obj2 := obj 
-       (objects are immutable, but properties can be changed with 
-       obj2.foo := 12, which will create a new object with the changed property)
-      
-    Extended strings:                                                x"..{..}.."
-  
-      If a string is prefixed by an "x", all expressions inside {}-parentheses 
-      are evaluated, like in the value of a direct attribute constructor.
-      E.g. x"There are {1+2+3} elements" prints "There are 6 elements".
-      
-       
-  Semantic:
+    All string comparisons are case insensitive, and "clever", e.g.: 
+            '9xy' = '9XY' < '10XY' < 'xy'
+   This is more useful for HTML (think of @class = 'foobar'), but can be 
+   disabled by passing collation urls to the string functions. 
+   
+   Dynamic typing:
+   
+     Strings are automatically converted to untypedAtomic, so 'false' = false() is true, and 1+"2" is 3. 
      
-     All string comparisons are case insensitive, and "clever", e.g.: 
-              '9xy' = '9XY' < '10XY' < 'xy'
-     This is more useful for HTML (think of @class = 'foobar'), but can be 
-     disabled by passing collation urls to the string functions. 
-     
-     It is mostly weakly typed, e.g 'false' = false() is true, and 1+"2" is 3. 
+   Local namespace prefix resolving:
 
      Unknown namespace prefixes are resolved with the namespace bindings of the 
      input data. 
      Therefore //a always finds all links, independent of any xmlns-attributes.
-     (however, if you explicitly declare a namespace like 
-     'declare default element namespace "..."' in XQuery, it will only find 
-     elements in that namespace)
-
-     XML Schemas are not supported. 
-     
 
   Certain additional functions:
   
@@ -242,9 +234,21 @@ However, in the default mode, there are the following important extensions:
                   transformer-function for every descendant node and replacing the node with the value returned by the function.
                   E.g. transform(/, function($x) { if (name($x) = "a") then <a>{$x/@*, <b>{$x/node()}</b>}</a> else $x } )
                   will make every link bold.
+    garbage-collect() 
+                  Frees unused memory
+    x:request($request)
+                  Sends an HTTP request. The request parameters are the same as the value accepted by --follow.
+                  It returns a JSON object with properties "url", "headers", "raw" corresponding to the default
+                  variables listed below. The property "type" contains the content-type, and either "json" or "doc"
+                  a JSON or X/HTML document.
+    x:argc(), x:argv($i)
+                  Return command line arguments.
+    x:integer($input, [$base])
+                  Converts a string to an integer. It accepts base-prefixes like 0x or 0b, e.g 0xABCDEF
+    x:integer-to-base($i, $base)
+                  Converts an integer to a certain base
                  
-    All additional functions except the jn/libjn functions are in the pxp: namespace, which is also set
-    as default namespace.
+    Additional functions without prefix are in the pxp: namespace, which is also set as default namespace.
 
 The pasdoc documentation of my XPath / XQuery 3.0 library explains more details and lists more functions:
 http://www.benibela.de/documentation/internettools/xquery.TXQueryEngine.html
