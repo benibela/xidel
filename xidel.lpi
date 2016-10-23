@@ -15,7 +15,6 @@
     <VersionInfo>
       <Language Value=""/>
       <CharSet Value=""/>
-      <StringTable ProductVersion=""/>
     </VersionInfo>
     <BuildModes Count="3">
       <Item1 Name="default" Default="True"/>
@@ -97,7 +96,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--trace &quot;http://www.omropfryslan.nl/live/omrop-fryslan-tv&quot; -f &quot;extract($$raw,'playlist: \&quot;(.+)\&quot;',1)&quot; -e &quot;[tokenize(unparsed-text($$json(2)/(sources)()[type='hls']/file),'#EXT-X-STREAM-INF:')[position()>1] ! {'format':string(extract(.,'BANDWIDTH=(\d+)',1) idiv 1000),'url':concat(resolve-uri('.'),extract(.,'(.+m3u8)',1))},doc($$json(2)/(sources)()[type='rtmp']/file)//video/{'format':concat('rtmp_',@system-bitrate idiv 1000),'url':concat(../../..//@base,@src)}]&quot;"/>
+        <CommandLineParams Value="-e 'import module namespace utils=&quot;studenttopics&quot; at &quot;/tmp/tl.xqm&quot;; ()'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
@@ -139,7 +138,7 @@
         <StackChecks Value="True"/>
       </Checks>
       <Optimizations>
-        <OptimizationLevel Value="3"/>
+        <OptimizationLevel Value="2"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>
@@ -152,7 +151,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="3">
+    <Exceptions Count="4">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -162,6 +161,9 @@
       <Item3>
         <Name Value="EFOpenError"/>
       </Item3>
+      <Item4>
+        <Name Value="EXQEvaluationException"/>
+      </Item4>
     </Exceptions>
   </Debugging>
 </CONFIG>
