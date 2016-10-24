@@ -16,9 +16,6 @@
     <i18n>
       <EnableI18N LFM="False"/>
     </i18n>
-    <VersionInfo>
-      <StringTable ProductVersion=""/>
-    </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
@@ -33,21 +30,19 @@
         <LaunchingApplication PathPlusParams="/usr/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="2">
       <Item1>
-        <PackageName Value="utf8tools"/>
+        <PackageName Value="LCLBase"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCLBase"/>
-      </Item2>
-      <Item3>
         <PackageName Value="internettools"/>
-      </Item3>
+      </Item2>
     </RequiredPackages>
     <Units Count="1">
       <Unit0>
         <Filename Value="xidelcgi.lpr"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="xidelsoap"/>
       </Unit0>
     </Units>
   </ProjectOptions>
