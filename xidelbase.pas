@@ -3811,6 +3811,12 @@ begin
       displayError(e);
      // if not cgimode then raise;
     end;
+    on e: EInOutError do begin
+      if e.ErrorCode <> 101 then begin //disk full, caused on ended pipe (e.g. |head)
+        ExitCode:=1;
+        displayError(e);
+      end;
+    end;
   end;
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
