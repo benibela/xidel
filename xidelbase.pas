@@ -1741,6 +1741,7 @@ var
   tempstr: string;
 begin
   reader.read('extract', extract);  //todo. option: extract-file
+  if not cgimode and strBeginsWith(extract, '@') then extract := strLoadFromFileChecked(strCopyFrom(extract, 2));
   extract:=trim(extract);
   if reader.read('extract-exclude', tempstr) then extractExclude := strSplit(tempstr, ',', false);
   if reader.read('extract-include', tempstr) then extractInclude := strSplit(tempstr, ',', false);
@@ -1819,6 +1820,7 @@ begin
     if follow = '-' then follow :=strReadFromStdin;
   end;} //handled in variableRead
   reader.read('follow', follow);
+  if not cgimode and strBeginsWith(follow, '@') then follow := strLoadFromFileChecked(strCopyFrom(follow, 2));
   if reader.read('follow-kind', tempstr) then followKind := extractKindFromString(tempstr);
   reader.read('follow-exclude', tempstr); followExclude := strSplit(tempstr, ',', false);
   reader.read('follow-include', tempstr); followInclude := strSplit(tempstr, ',', false);
@@ -3931,6 +3933,12 @@ end;
 
 function xqFunctionBlocked(const context: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
 begin
+  ignore(context);
+  raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
+  result := nil;
+end;
+function xqFunctionBlockedSimple(argc: SizeInt; args: PIXQValue): IXQValue;
+begin
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
   result := nil;
 end;
@@ -4032,10 +4040,18 @@ end;
 
 procedure blockFileAccessFunctions;
 var fn, pxp, jn: TXQNativeModule;
+    i: integer;
 begin
   fn := TXQueryEngine.findNativeModule(XMLNamespaceURL_XPathFunctions);
   fn.findComplexFunction('doc', 1).func:=@xqFunctionBlocked;
   fn.findComplexFunction('doc-available', 1).func:=@xqFunctionBlocked;
+  for i := 1 to 2 do begin
+    fn.findComplexFunction('unparsed-text', i).func:=@xqFunctionBlocked;
+    fn.findInterpretedFunction('unparsed-text-lines', i).source:='"not available in cgi mode"';
+    fn.findComplexFunction('unparsed-text-available', i).func:=@xqFunctionBlocked;
+  end;
+  fn.findBasicFunction('environment-variable', 1).func:=@xqFunctionBlockedSimple;
+
 
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
   pxp.findComplexFunction('json', 1).func:=@xqFunctionJSONSafe;
