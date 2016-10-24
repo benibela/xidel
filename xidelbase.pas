@@ -3894,6 +3894,7 @@ begin
   requiredArgCount(argc, 1);
   fakeData := TDataObject.create('', cxt.staticContext.baseURI, '');
   fakeContext := TProcessingContext.Create;
+  if baseContext <> nil then fakeContext.assignOptions(baseContext);
   follow := TFollowToList.Create;
   list := TXQVList.create();
   try
