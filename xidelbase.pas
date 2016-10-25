@@ -3480,9 +3480,9 @@ begin
   mycmdLine.declareString('extract-kind', 'How the extract expression is evaluated. Can be auto (automatically choose between xpath/template), xpath{|2|3}, xquery{|1|3}, css, template or multipage', 'auto');
   mycmdLine.declareString('css', 'Abbreviation for --extract-kind=css --extract=...');
   mycmdLine.declareString('xpath', 'Abbreviation for --extract-kind=xpath3 --extract=...');
-  mycmdline.addAbbreviation('p');
+  //mycmdline.addAbbreviation('p');
   mycmdLine.declareString('xquery', 'Abbreviation for --extract-kind=xquery3 --extract=...');
-  mycmdline.addAbbreviation('q');
+  //mycmdline.addAbbreviation('q');
   mycmdLine.declareString('xpath2', 'Abbreviation for --extract-kind=xpath2 --extract=...');
   mycmdLine.declareString('xquery1', 'Abbreviation for --extract-kind=xquery1 --extract=...');
   mycmdLine.declareString('xpath3', 'Abbreviation for --extract-kind=xpath3 --extract=...');
