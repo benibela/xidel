@@ -2475,17 +2475,13 @@ function TExtraction.process(data: IData): TFollowToList;
   function termContainsVariableDefinition(term: TXQTerm): boolean;
   var
     i: Integer;
+    visitor: TXQTerm_VisitorFindWeirdGlobalVariableDeclarations;
   begin
     if term = nil then exit(false);
-    if term is TXQTermWithChildren then
-      with TXQTermWithChildren(term) do begin
-        if term is TXQTermDefineVariable then exit(true);
-        if (term is TXQTermModule) or (term is TXQTermDefineFunction) then
-           exit(termContainsVariableDefinition(children[high(children)])); //todo: move to xquery engine
-        for i := 0 to high(children) do
-          if termContainsVariableDefinition(children[i]) then exit(true);
-      end;
-    exit(false);
+    visitor := TXQTerm_VisitorFindWeirdGlobalVariableDeclarations.Create;
+    visitor.simpleTermVisit(@term, nil);
+    result := visitor.hasVars;
+    visitor.free;
   end;
 
 
