@@ -793,6 +793,7 @@ TExtraction = class(TDataProcessing)
  printVariables: set of (pvLog, pvCondensedLog, pvFinal);
  printTypeAnnotations,  hideVariableNames: boolean;
  printedNodeFormat: TTreeNodeSerialization;
+ printedJSONFormat: (jisDefault, jisPretty, jisCompact);
 
  inputFormat: TInputFormat;
 
@@ -1772,6 +1773,13 @@ begin
         'html': printedNodeFormat:=tnsHTML;
       end;
 
+  if reader.read('printed-json-format', tempstr) then begin
+    case tempstr of
+      'pretty': printedJSONFormat := jisPretty;
+      'compact': printedJSONFormat := jisCompact;
+    end;
+  end;
+
   reader.read('input-format', inputFormat);
 end;
 
@@ -2339,7 +2347,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
-        result := escape(v.jsonSerialize(printedNodeFormat, not invariable));
+        result := escape(v.jsonSerialize(printedNodeFormat, (printedJSONFormat = jisPretty) or (not invariable and (printedJSONFormat <> jisCompact))));
       end;
       else if not printTypeAnnotations then begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
@@ -2396,7 +2404,7 @@ begin
       end;
     end;
     ofJsonWrapped: begin
-      wcolor(value.jsonSerialize(printedNodeFormat), cJSON);
+      wcolor(value.jsonSerialize(printedNodeFormat, printedJSONFormat <> jisCompact), cJSON);
     end;
     ofXMLWrapped: begin
       wcolor(value.xmlSerialize(printedNodeFormat, 'seq', 'e', 'object'), cXML);
@@ -2571,6 +2579,7 @@ begin
   printTypeAnnotations := other.printTypeAnnotations;
   hideVariableNames := other.hideVariableNames;
   printedNodeFormat := other.printedNodeFormat;
+  printedJSONFormat := other.printedJSONFormat;
 
   inputFormat := inputFormat;
 end;
@@ -3532,6 +3541,7 @@ begin
   mycmdLine.declareString('variable','Declares a variable (value taken from environment if not given explicitely) (multiple variables are preliminary)');
   mycmdLine.declareString('xmlns','Declares a namespace');
   mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
+  mycmdline.declareString('printed-json-format', 'Format of JSON items: pretty or compact');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8, latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
