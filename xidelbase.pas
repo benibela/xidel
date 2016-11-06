@@ -2383,7 +2383,7 @@ begin
       case value.getSequenceCount of
         0: begin
           if not printTypeAnnotations then begin
-            if invariable and (outputFormat in [ofBash, ofWindowsCmd]) then writeItem('');
+            if invariable {and (outputFormat in [ofBash, ofWindowsCmd]) }then writeItem('');
             exit;
           end;
           if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper;
