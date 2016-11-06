@@ -3908,6 +3908,7 @@ begin
   follow := TFollowToList.Create;
   list := TXQVList.create();
   try
+    htmlparser.variableChangeLog.pushAll;
     for pv in args[0].GetEnumeratorPtrUnsafe do
       follow.merge(pv^, fakeData, fakeContext);
     while follow.Count > 0 do begin
@@ -3924,6 +3925,7 @@ begin
     end;
 
   finally
+    htmlparser.variableChangeLog.popAll();
     follow.free;
     fakeContext.Free;
     xqvalueSeqSqueezed(result, list);
