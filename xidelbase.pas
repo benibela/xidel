@@ -173,7 +173,7 @@ var //output options
 
     internet: TInternetAccess;
 
-type TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON);
+type TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON, ifJSONStrict);
 
 var
     globalDefaultInputFormat: TInputFormat;

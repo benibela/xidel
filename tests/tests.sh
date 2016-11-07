@@ -243,6 +243,11 @@ tests/test.sh xmlraw9b --output-format xml --print-type-annotations -e '(1,2)' -
 #tests/test.sh htmlraw9b --output-format html --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
 tests/test.sh bash9b --output-format bash --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
 
+tests/test.sh adhoc9c -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
+tests/test.sh xmlraw9c --output-format xml  -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
+tests/test.sh htmlraw9c --output-format html  -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
+tests/test.sh bash9c --output-format bash -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
+
 tests/test.sh separator-adhoc --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
 tests/test.sh separator-xml --output-format xml --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
 tests/test.sh separator-html --output-format html --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
