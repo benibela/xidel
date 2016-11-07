@@ -963,7 +963,8 @@ begin
       'xml': inputFormat:=ifXML;
       'html': inputFormat:=ifHTML;
       'xml-strict': inputFormat:=ifXMLStrict;
-      'json': inputFormat := ifJSON
+      'json': inputFormat := ifJSON;
+      'json-strict': inputFormat := ifJSONStrict
       else raise EXidelException.Create('Invalid input-format: '+temp);
     end;
 end;
@@ -1008,7 +1009,7 @@ begin
   if finputformat = ifAuto then begin
     finputformat := FormatMap[guessFormat(rawData, baseUri, contentType)];
 
-    if (finputformat = ifJSON) and (hasOutputEncoding <> oePassRaw) then begin
+    if (finputformat in [ifJSON,ifJSONStrict]) and (hasOutputEncoding <> oePassRaw) then begin
       //convert json to utf-8, because the regex parser does not match non-utf8 (not even with . escape)
       //it might be useful to convert other data, but the x/html parser does its own encoding detection
       enc := strEncodingFromContentType(contentType);
@@ -1181,7 +1182,7 @@ begin
     if color in [cAlways, cAuto] then
       case data.inputFormat of
         ifHTML, ifXML, ifXMLStrict: color := cXML;
-        ifJSON: color := cJSON;
+        ifJSON, ifJSONStrict: color := cJSON;
       end;
     wcolor(data.rawdata, color);
     exit;
@@ -2220,10 +2221,20 @@ begin
   inherited destroy;
 end;
 
+function parseJSON(const data: IData): IXQValue;
+begin
+  case data.inputFormat of //todo: cache?
+    ifJSON: result := xquery_json.parseJSON(data.rawData, [pjoAllowMultipleTopLevelItems, pjoLiberal, pjoAllowTrailingComma]);
+    ifJSONStrict: result := xquery_json.parseJSON(data.rawData, []);
+    else result := xqvalue();
+  end;
+end;
+
 procedure TProcessingContext.loadDataForQueryPreParse(const data: IData);
 begin
-  if data.inputFormat = ifJSON then begin //we need to set json before parsing, or it fails
-    htmlparser.VariableChangelog.add('json', xpathparser.evaluateXPath2('jn:parse-json($raw)')); //todo: cache
+  if data.inputFormat in [ifJSON,ifJSONStrict] then begin //we need to set json before parsing, or it fails
+    //this used htmlparser.VariableChangelog.get('raw') rather than data. why??
+    htmlparser.VariableChangelog.add('json',  parseJSON(data));
     currentRoot := nil;
   end;
 end;
@@ -2233,7 +2244,7 @@ var
   f: TInputFormat;
 begin
   f := data.inputFormat;
-  if (query.Term = nil) or (f = ifJSON) then exit;
+  if (query.Term = nil) or (f in [ifJSON,ifJSONStrict]) then exit;
   if (self = nil) or (noOptimizations) or (xqcdFocusItem in query.Term.getContextDependencies) then begin
     htmlparser.parseHTMLSimple(data);
     currentRoot := htmlparser.HTMLTree;
@@ -2246,7 +2257,7 @@ begin
   if allowWithoutReturnValue and ((query.Term is TXQTermModule) and (TXQTermModule(query.Term).children[high(TXQTermModule(query.Term).children)] = nil)) then
     TXQTermModule(query.Term).children[high(TXQTermModule(query.Term).children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
 
-  if data.inputFormat <> ifJSON then result := query.evaluate(currentRoot)
+  if not (data.inputFormat in [ifJSON,ifJSONStrict]) then result := query.evaluate(currentRoot)
   else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
 end;
 
@@ -2746,7 +2757,7 @@ var
   tempparser: TTreeParser;
 begin
   f := data.inputFormat;
-  if f = ifJSON then exit;
+  if f in [ifJSON,ifJSONStrict] then exit;
   if (f = ifXMLStrict) <> (HTMLParser is TTreeParserDOM) then begin
     if alternativeXMLParser = nil then begin
       alternativeXMLParser := TTreeParserDOM.Create;
@@ -3918,7 +3929,7 @@ begin
       obj.setMutable('type', data.contenttype);
       obj.setMutable('headers', xqvalue(data.headers));
       obj.setMutable('raw', xqvalue(data.rawData));
-      if data.inputFormat = ifJSON then obj.setMutable('json', parseJSON(data.rawData))
+      if data.inputFormat in [ifJSON,ifJSONStrict] then obj.setMutable('json', parseJSON(data))
       else obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
       list.add(obj);
       follow.Delete(0);

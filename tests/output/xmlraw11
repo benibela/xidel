@@ -9,7 +9,5 @@ xs:float(&quot;10&quot;))
   &quot;a&quot;: 1
 }
 <a>bc</a>
-[
-  10
-]
+[10]
 </xml>
