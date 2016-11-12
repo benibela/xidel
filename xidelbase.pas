@@ -3911,6 +3911,8 @@ var
   list: TXQVList;
   obj: TXQValueObject;
   pv: PIXQValue;
+  oldInternetConfig: TInternetConfig;
+  oldReact: TTransferReactEvent;
 begin
   requiredArgCount(argc, 1);
   fakeData := TDataObject.create('', cxt.staticContext.baseURI, '');
@@ -3918,6 +3920,11 @@ begin
   if baseContext <> nil then fakeContext.assignOptions(baseContext);
   follow := TFollowToList.Create;
   list := TXQVList.create();
+
+
+  oldInternetConfig := defaultInternetConfiguration;
+  if assigned(internetaccess.defaultInternet) then oldReact := internetaccess.defaultInternet.OnTransferReact
+  else oldReact := nil;
   try
     htmlparser.variableChangeLog.pushAll;
     for pv in args[0].GetEnumeratorPtrUnsafe do
@@ -3936,6 +3943,14 @@ begin
     end;
 
   finally
+    defaultInternetConfiguration := oldInternetConfig;
+    if assigned(internetaccess.defaultInternet) then begin
+      if assigned(internetaccess.defaultInternet.internetConfig) then
+        internetaccess.defaultInternet.internetConfig^ := oldInternetConfig; //this is not necessary??
+      internetaccess.defaultInternet.OnTransferReact := oldReact; //this is. otherwise it points to fakeContext and the next download might crash
+    end;
+
+
     htmlparser.variableChangeLog.popAll();
     follow.free;
     fakeContext.Free;
