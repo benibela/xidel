@@ -96,7 +96,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-e 'import module namespace utils=&quot;studenttopics&quot; at &quot;/tmp/tl.xqm&quot;; ()'"/>
+        <CommandLineParams Value="/tmp/xx.xq"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>

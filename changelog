@@ -7,8 +7,9 @@ Some important changes:
 * various performance improvements and internal restructuring
 * fix that entities were not decoded, if --output-encoding was not set
 * better default encoding setting when converting between Windows terminal encoding and utf8 for piped files
-* json output is prettified
-* An xquery version declaration disables all extension unless a version cide like "3.0-xidel" or "3.0-jsoniq" is used.
+* JSON output is prettified.
+* It uses a new JSON parser and has an input format json-strict
+* An xquery version declaration disables all extension unless a version code like "3.0-xidel" or "3.0-jsoniq" is used. #!xidel in the first line is ignored, so it can be used for executable XQuery scripts.
 
 --------Xidel 0.9.4 --------
 (2016-06-08)
