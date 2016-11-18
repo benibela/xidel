@@ -110,16 +110,21 @@ mirror)
 
 src)
   getVersion 
-	pushhg
-	SRCDIR=/tmp/xidel-$VERSION-src
-	rm -R $SRCDIR
-	cp -r $PUBLICHG $SRCDIR
-	cd /tmp
-	rm -Rvf $SRCDIR/programs/internet/VideLibri $SRCDIR/programs/internet/sourceforgeresponder/
-      	tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hg xidel-$VERSION-src
+        pushhg
+        SRCDIR=/tmp/xidel-$VERSION-src
+        rm -R $SRCDIR
+        cp -r $PUBLICHG $SRCDIR
+        cd /tmp
+        rm -Rvf $SRCDIR/programs/internet/VideLibri $SRCDIR/programs/internet/sourceforgeresponder/
+        
+        mkdir $SRCDIR/components/pascal/import/flre $SRCDIR/components/pascal/import/flre/src
+        cp ~/components/pascal/import/flre/README.md ~/components/pascal/import/flre/COPYING* $SRCDIR/components/pascal/import/flre
+        cp ~/components/pascal/import/flre/src/*.pas $SRCDIR/components/pascal/import/flre/src
+        
+        tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hg xidel-$VERSION-src
         fileUpload xidel-$VERSION.src.tar.gz "$UPLOAD_PATH"
-	;;	
-		
+        ;;
+
 
 downloadTable)
    getVersion 

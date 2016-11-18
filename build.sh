@@ -1,6 +1,6 @@
 #!/bin/bash
 #ls /usr/lib/lazarus/default/lcl/units/* /usr/lib/lazarus/default/lcl/units/*/*
-cd programs/internet/xidel #if this fails we are already in the correct directory
+cd programs/internet/xidel 2> /dev/null #if this fails we are already in the correct directory
 
 function addpaths() {
   paths="$paths $(find $1 -type d  | while read -r f; do 
@@ -19,6 +19,8 @@ export paths=""
 addpaths ../../..
 
 
-echo $paths
+#echo $paths
+
+touch xidelbuilddata.inc
 
 fpc -FE. $paths xidel.pas 
