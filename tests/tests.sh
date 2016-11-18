@@ -401,6 +401,9 @@ tests/test.sh inputformatAutoJson tests/data.json  -e '(($json).b, (.).c, .("d")
 
 tests/test.sh encodingJson tests/encodingUtf8.json -e '$raw || $json()'
 tests/test.sh encodingJson tests/encodingLatin1.json -e '$raw || $json()'
+echo '[nan, NaN, NAN, inf, Inf, INF, infinity, Infinity, INFINITY, -inf, -Inf, -INF, -infinity, -Infinity, -INFINITY]' | tests/test.sh jsonExtensions - -e '.'
+
+
 
 tests/test.sh optadhoc '<a>x</a>'  -e /
 tests/test.sh optxml --xml '<a>x</a>'  -e /
