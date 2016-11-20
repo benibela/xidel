@@ -1,15 +1,16 @@
 
 Some important changes:
 
---------Xidel 0.9.5 --------
-* add x:request for HTTP or follow-like requests inside a query
-* more new functions: x:argc, x:argv, x:integer, x:integer-to-base
-* various performance improvements and internal restructuring
+--------Xidel 0.9.6 --------
+(2016-11-20)
+* add function x:request for HTTP or follow-like requests inside a query
+* new functions: x:argc, x:argv, x:integer, x:integer-to-base
 * fix that entities were not decoded, if --output-encoding was not set
-* better default encoding setting when converting between Windows terminal encoding and utf8 for piped files
+* better default encoding settings when converting between Windows terminal encoding and utf8 for piped files
+* a new JSON parser with two distinct modes: input formats json/json-strict for accepting/rejecting invalid JSON
 * JSON output is prettified.
-* It uses a new JSON parser and has an input format json-strict
 * An xquery version declaration disables all extension unless a version code like "3.0-xidel" or "3.0-jsoniq" is used. #!xidel in the first line is ignored, so it can be used for executable XQuery scripts.
+* various fixes, performance improvements and internal restructuring
 
 --------Xidel 0.9.4 --------
 (2016-06-08)
