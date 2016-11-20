@@ -506,6 +506,15 @@ tests/test.sh regression_object2 -e '$x := object(("b","c"))' -e '($x).a' #allow
 tests/test.sh regression_object2 -e '$x := {"b": "c"}' -e '($x).a' 
 tests/test.sh regression_object2 --dot-notation=on -e '$x := {"b": "c"}' -e '$x.a' 
 
+tests/test.sh regression_mutablevariable1 -e '$x := 123' 
+tests/test.sh regression_mutablevariable1 -e 'false()[0 ! ((if (true()) then (($x := 123) > 100) else ())) ][0]' 
+tests/test.sh regression_mutablevariable1 -e 'declare function local:xx(){$x := 123}; local:xx()'
+tests/test.sh regression_mutablevariable1 -e 'declare function local:xx($x){$x := 123}; local:xx(100)'
+tests/test.sh regression_mutablevariable1 --xquery '$x := let <a>{$foo}</a> := <a>123</a> return $foo'
+tests/test.sh regression_mutablevariable2 --xquery 'let <a>{$foo}</a> := <a>123</a> return $foo'
+tests/test.sh regression_mutablevariable2 --xquery 'for <a>{$foo}</a> in <a>123</a> return $foo'
+
+
 tests/test.sh regression_multipage1  -e "<action><page url=\"tests/a.xml\"><template><title>{concat(., \"'\", '\"')}</title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage2 -e "<action><page url=\"tests/a.xml\"><template><title><t:read var=\"res\" source=\" concat(., &quot;'&quot;, '&quot;')\"/></title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage3 -e '<action><page url="http://example.org"><template><title>{resolve-uri("b.xml")}</title></template></page></action>' --extract-kind=multipage
