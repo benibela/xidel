@@ -97,9 +97,11 @@ release)
         ./manage.sh linux32
         ./manage.sh linux64        
         ./manage.sh win32
+        ./manage.sh mirror
         ;;
         
-hg)     pushhg;;
+hg)     pushhg
+        ;;
 
 mirror) 
         pushhg
@@ -134,7 +136,7 @@ downloadTable)
     else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
   fi;
 
-   xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( if (contains($n, "win")) then "Windows: " else if (contains($n, "linux")) then "Universal Linux: " else if (contains($n, ".deb")) then "Debian: " else if (contains($n, "src")) then "Source:" else "", if (contains($n, "32") or contains($n, "386")) then "32 Bit" else if (contains($n, "64"))then "64 Bit" else ""  )   };            
+   xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( if (contains($n, "win")) then "Windows: " else if (contains($n, "linux")) then "Universal Linux: " else if (contains($n, ".deb")) then "Debian: " else if (contains($n, "src")) then "Source:" else "", if (contains($n, "32") or contains($n, "386")) then "32 Bit" else if (contains($n, "64"))then "64 Bit" else ""  )   };   
                            <table class="downloadTable">
                            <tr><th>Operating System</th><th>Filename</th><th>Size</th></tr>
                            { for <TABLE id="files_list"><t:loop><TR class="file"><TH>
