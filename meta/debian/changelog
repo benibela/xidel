@@ -1,6 +1,7 @@
 xidel (0.9.6) natty; urgency=low
 
-  * The 0.9.6 release brings new functions, performance improvements, bug fixes, and stricter default settings.
+  * The 0.9.6 release brings new functions, performance improvements, bug fixes,
+    and stricter default settings.
 
  -- Benito van der Zander <benito@benibela.de>  Sun, 20 Nov 2016 18:06:00 +0200
 
