@@ -1,4 +1,21 @@
 <functions>
+<module prefixes="fn">
+<f name="concatenate" deprecated="true">
+This function should be in op: not fn: and was included by accident.
+</f>
+</module>
+
+<module prefixes="jn">
+<f name="is-null" deprecated="true">
+Function was removed from JSONiq as it is redundant with eq and instance of operators.
+</f>
+<f name="object" deprecated="true">
+Function was removed from JSONiq as it is redundant with {||} syntax.
+</f>
+</module>
+
+
+<module prefixes="x pxp pxpx xpxp">
 <f name="json">
 Parses a string as JSON.<br/>
 If the string is an url the JSON is loaded from there (i.e. be aware of possible security issues when using it. jn:parse-json from xquery_json / JSONiq will only parse it and fail on urls)
@@ -12,7 +29,7 @@ Serializes a value as JSON, i.e. converts the value to JSON and converts that to
 This applies the regex $regex to $string and returns only the matching part. This returns basically what the program grep would return. <br/>
 If the $match argument is provided, only the $match-th submatch will be returned. This can be a sequence of several integers.<br/>
 If flags contains *, all occurrences are returned.<br>
-Otherwise the regex and flags parameters behave identical to the parameters of fn:matches and fn:replace.
+Otherwise the regex and flags parameters behave identical to the parameters of <a>fn:matches</a> and <a>fn:replace</a>.
 
 </f>
 <f name="css" args="($css as xs:string)"> 
@@ -34,7 +51,7 @@ Runs a certain program and returns its stdout result as string.
 Reads a line from stdin
 <br/>(Xidel only)
 </f>
-<f name="deep-text">
+<f name="deep-text" deprecated="true">
 This is the concatenated plain text of the every tag inside the current text. <br/>
 You can also pass a separator like <code>deep-text(' ')</code> to separate text of different nodes.
 </f>
@@ -45,7 +62,7 @@ This is the HTML content of a node, like innerHTML in javascript.
 This is the same as inner-html, but includes the opening/closing tags of the node itself
 </f>
 <f name="inner-xml">
-This is the XML content of a node, similar to inner-html() or innerHTML in JavaScript
+This is the XML content of a node, similar to <a>x:inner-html()</a> or innerHTML in JavaScript
 </f>
 <f name="outer-xml">
 Like outer-html(), but XML-serialized
@@ -87,22 +104,22 @@ For multipart encoded data, the value parameters do not have to be strings, but 
 </f>
 <f name="resolve-html">
 Resolves every value in the $relative sequence to an HTTP request with an absolute URL/URI, using $base as reference base URI.<br/>
-Atomic values (e.g. strings) are resolved as simple URIs similar to resolve-uri.<br/>
+Atomic values (e.g. strings) are resolved as simple URIs similar to <a>fn:resolve-uri</a>.<br/>
 For HTML elements that refer to other resources (e.g. &lt;a href=...> or &lt;img src=...>) it returns the absolute URI of that resource. For &lt;form> elements it returns the same object as the form function. For all other HTML elements it interprets the text content as relative string URI.<br/>
 If $base is not a node it treated as simple absolute URI. If $base is a node, the function uses the base URI of the document that contains the node.<br/>
 </f>
 <f name="uri-encode" args="($uri-part as xs:string?)">
-Encodes a string for a URI. Exactly the same as fn:encode-for-uri but with a simpler name.
+Encodes a string for a URI. Exactly the same as <a>fn:encode-for-uri</a> but with a simpler name.
 </f>
 <f name="uri-decode" args="($uri-part as xs:string?)">
 Decodes an URI string. The reverse of uri-encode (but no roundtrip guarantee) 
 </f>
-<f name="is-nth" args="($i as xs:integer, $a as xs:integer, $b as xs:integer)">
+  <f name="is-nth" args="($i as xs:integer, $a as xs:integer, $b as xs:integer)" internal="true">
 Returns true iff the equation i = a * n + b can be solved by an non-negative integer n. (This is used to implement the CSS functions like nth-child ) 
 </f>
 <f name="request-combine">
-This function can be used to modify the object returned by x:form. (preliminary)
-The second parameter behaves like that parameter of x:form.
+This function can be used to modify the object returned by <a>x:form</a>. (preliminary)
+The second parameter behaves like that parameter of <a>x:form</a>.
 </f>
 <f name="object" deprecated="true">
  This creates an object with name $var. Default values can be passed as sequence of name/value pairs. <br/>
@@ -176,7 +193,7 @@ Converts an integer to a string in a certain base.
 <br/>(Xidel only)
 </f>
 <f name="product">
-Calculates the product of a sequence, similar to fn:sum. 
+Calculates the product of a sequence, similar to <a>fn:sum</a>. 
 </f>
 <f name="request">
 Sends an HTTP request. The request parameters are the same as the value accepted by --follow.<br/>
@@ -184,13 +201,16 @@ It returns a JSON object with properties "url", "headers", "raw" corresponding t
 <br/>(Xidel only)
 </f>
 <f name="cps">
-Abbreviation for fn:string-to-codepoints and fn:codepoints-to-string
+Abbreviation for <a>fn:string-to-codepoints</a> and <a>fn:codepoints-to-string</a>.
 </f>
 <f name="type-of" deprecated="true">
 Debugging function
 </f>
-<f name="split-equal" deprecated="true">
-Debugging function
+<f name="split-equal" internal="true">
+Compares strings like the @class attribute.
 </f>
-
+<f name="lines" internal="true">
+Splits a text into lines.
+</f>
+</module>
 </functions>
