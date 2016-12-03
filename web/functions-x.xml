@@ -1,0 +1,196 @@
+<functions>
+<f name="json">
+Parses a string as JSON.<br/>
+If the string is an url the JSON is loaded from there (i.e. be aware of possible security issues when using it. jn:parse-json from xquery_json / JSONiq will only parse it and fail on urls)
+<br/>(available in Xidel and the xquery_json unit)
+</f>
+<f name="serialize-json">
+Serializes a value as JSON, i.e. converts the value to JSON and converts that to a string. 
+<br/>(available in Xidel and the xquery_json unit)
+</f>
+<f name="extract" args="($string as xs:string, $regex as xs:string [, $match as xs:integer *,[$flags as xs:string]])">
+This applies the regex $regex to $string and returns only the matching part. This returns basically what the program grep would return. <br/>
+If the $match argument is provided, only the $match-th submatch will be returned. This can be a sequence of several integers.<br/>
+If flags contains *, all occurrences are returned.<br>
+Otherwise the regex and flags parameters behave identical to the parameters of fn:matches and fn:replace.
+
+</f>
+<f name="css" args="($css as xs:string)"> 
+This returns the nodes below the context node matched by the specified CSS 3 selector.<br/>
+You can use this to combine CSS and XPath, like in <code>css("a.aclass")/@href</code>.
+</f>
+<f name="join" args="($sequence, [$separator])">
+This is basically the same as string-join, but can be used for non-string values.
+E.g. join((1,2,3)) returns the string "1 2 3".
+</f>
+<f name="eval" args="($query as xs:string)">
+This will evaluate a string as an XPath/XQuery expression
+</f>
+<f name="system">
+Runs a certain program and returns its stdout result as string. 
+<br/>(Xidel only)
+</f>
+<f name="read">
+Reads a line from stdin
+<br/>(Xidel only)
+</f>
+<f name="deep-text">
+This is the concatenated plain text of the every tag inside the current text. <br/>
+You can also pass a separator like <code>deep-text(' ')</code> to separate text of different nodes.
+</f>
+<f name="inner-html">
+This is the HTML content of a node, like innerHTML in javascript.  
+</f>
+<f name="outer-html">
+This is the same as inner-html, but includes the opening/closing tags of the node itself
+</f>
+<f name="inner-xml">
+This is the XML content of a node, similar to inner-html() or innerHTML in JavaScript
+</f>
+<f name="outer-xml">
+Like outer-html(), but XML-serialized
+</f>
+
+<f name="parse-date" args="($input as xs:string, $format as xs:string) as xs:date">
+Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format. (see parse-dateTime)
+</f>
+<f name="parse-time" args="($input as xs:string, $format as xs:string) as xs:time">
+Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format (see parse-dateTime)
+</f>
+<f name="parse-dateTime" args="($input as xs:string, $format as xs:string) as xs:dateTime">
+Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format, using ymdhnsz (e.g. "yyyy-mm-dd"), not a XQuery 3.0 picture string.
+</f>
+
+<f name="form" args="($form as node()*[, $override as item()*])">
+This creates the request corresponding to a HTML form. The request includes the value of all input/select/textarea descendants of the first parameter.<br/>
+You can use the second parameter to give a sequence of values replacing the default values of the form elements.<br/>
+A value is either a string, e.g. "name=value&name2=..." which has to be url encoded and is splitted at the &-separators by this function to override each parameter separately. (so the order of the name=value pairs is changed to the order of the input elements in the form). For example <code>form(//form[1], "foo=bar&xyz=123")</code> returns a request for the first form,
+with the foo and xyz input fields overridden by bar and 123. <br/>
+Or a JSON-like object <code>{"name": "value", ...}</code>, in which the properties must not be url encodeded (i.e. the form method url encodes each property) and in which each property overrides the corresponding input field. For example <code>form(//form[1], {"foo": "bar", "xyz": 123})</code> <br/><br/>
+
+It returns a JSON object with these properties:
+<ul>
+<li>url: The url the form should be send to (includes the encoded data for a GET request)</li>
+<li>method: POST or GET</li>
+<li>post: Encoded post data</li>
+<li>headers: Sequence of additional headers</li>
+</ul>
+<br/>
+
+Depending on the enctype attribute of the HTML form, this function will either return url encoded or multipart encoded post data.<br/> For latter, also a Content-Type header with the specific boundary is added.<br/>
+For multipart encoded data, the value parameters do not have to be strings, but can be JSON-objects. They can have these properties:
+<ul><li>file: to upload a file.</li>
+<li>value: for a string value.</li>
+<li>filename: to set the filename field of the Content-Disposition header.</li>
+<li>type: Becomes a Content-Type header</li>
+<li>headers: An arbitrary sequence of headers</li>
+</f>
+<f name="resolve-html">
+Resolves every value in the $relative sequence to an HTTP request with an absolute URL/URI, using $base as reference base URI.<br/>
+Atomic values (e.g. strings) are resolved as simple URIs similar to resolve-uri.<br/>
+For HTML elements that refer to other resources (e.g. &lt;a href=...> or &lt;img src=...>) it returns the absolute URI of that resource. For &lt;form> elements it returns the same object as the form function. For all other HTML elements it interprets the text content as relative string URI.<br/>
+If $base is not a node it treated as simple absolute URI. If $base is a node, the function uses the base URI of the document that contains the node.<br/>
+</f>
+<f name="uri-encode" args="($uri-part as xs:string?)">
+Encodes a string for a URI. Exactly the same as fn:encode-for-uri but with a simpler name.
+</f>
+<f name="uri-decode" args="($uri-part as xs:string?)">
+Decodes an URI string. The reverse of uri-encode (but no roundtrip guarantee) 
+</f>
+<f name="is-nth" args="($i as xs:integer, $a as xs:integer, $b as xs:integer)">
+Returns true iff the equation i = a * n + b can be solved by an non-negative integer n. (This is used to implement the CSS functions like nth-child ) 
+</f>
+<f name="request-combine">
+This function can be used to modify the object returned by x:form. (preliminary)
+The second parameter behaves like that parameter of x:form.
+</f>
+<f name="object" deprecated="true">
+ This creates an object with name $var. Default values can be passed as sequence of name/value pairs. <br/>
+  A alternative syntax is {} 
+</f>
+<f name="garbage-collect">
+Frees unused memory. Always call it as <code>garbage-collect()[0]</code>, or it might garbage collect its own return value and crash.
+</f>
+<f name="get">
+Returns the value of a global variable.
+</f>
+<f name="get-property" deprecated="true">
+Returns the property with the given name of an object. <br/>
+Deprecated, now the JSONiq syntax $obj($name) should be used.
+</f>
+<f name="match" args="($pattern as item(), $node as node()+) ">
+Performs pattern matching between the pattern $pattern (see <a href="http://www.benibela.de/documentation/internettools/extendedhtmlparser.THtmlTemplateParser.html">pattern/template documentation</a>) 
+and the nodes, and returns a list or an object of matched values.<br/>
+For example <code><![CDATA[ match(<a>{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>)]]></code> returns <code><![CDATA[<a>FOO</a>]]></code>, and <code><![CDATA[match(<a>*{{.}}</a>, <x><a>FOO</a><a>BAR</a></x>)]]></code> returns <code><![CDATA[(<a>FOO</a>, <a>BAR</a>)]]>.</code><br/>
+It is also possible to use named variables in the pattern, in which case an object is returned, e.g: <code><![CDATA[ match(<x><a>{{first:=.}}</a><a>{{second:=.}}</a></x>, <x><a>FOO</a><a>BAR</a></x>)]]></code> returns an object with two properties "first" and "bar", containing respectively <![CDATA[  <a>FOO</a> and <a>BAR</a>]]>.<br/>
+
+These properties can be accessed like <code><![CDATA[ match(<x><a>{{first:=.}}</a><a>{{second:=.}}</a></x>, <x><a>FOO</a><a>BAR</a></x>).first]]></code>.<br/>
+Multiple values assigned to the same variable are merged into a single sequence, e.g. <code><![CDATA[ match(<x><a>{{res:=.}}</a><a>{{res:=.}}</a></x>, <x><a>FOO</a><a>BAR</a></x>)]]></code> returns an object with a single property res with value <code><![CDATA[(<a>FOO</a>, <a>BAR</a>) ]]></code>.<br/>
+ 
+If unnamed and named variables are mixed, the unnamed variables are treated like variables with the name _result. <br/>
+The pattern can be a node or a string. Written as string the above example would be <code><![CDATA[  match("<a>{.}</a>", <x><a>FOO</a><a>BAR</a></x>)]]></code>.<br/>
+You can pass multiple patterns and nodes, in which case each pattern is applied to each node, and the result of all matching calls is returned in a single sequence.<br/>
+If the pattern cannot be matched, an error is raised. 
+</f>
+<f name="transform">
+This function can perform an arbitrary transformation of a document, by calling the transformer-function <code>$f</code> for every descendant node and replacing the node with the value returned by the function.<br>
+For example <code>transform(/, function($x) { if (name($x) = "a") then <a>{$x/@*, <b>{$x/node()}</b>}</a> else $x } )</code>
+will make every link bold.<br>
+If $root is omitted, the context item . is used.<br>
+If $options("always-recurse") is true, all values returned by $f are also transformed with further calls of $f.<br/>
+Preliminary, behavior might change in future versions. E.g. it might be renamed to map-nodes 
+</f>
+<f name="binary-to-string">
+Converts $data to a string using the given $encoding
+</f>
+<f name="string-to-hexBinary">
+Returns a hex binary representation of $data with the given $encoding	
+</f>
+<f name="string-to-base64Binary">
+Returns a base64 binary representation of $data with the given $encoding
+</f>
+<f name="random">
+Returns a random number
+</f>
+<f name="random-seed">
+Initializes the random number generator
+</f>
+<f name="sleep">
+Sleeps for a certain amount of milliseconds.
+</f>
+
+<f name="argc">
+Returns the number of command line arguments.
+<br/>(Xidel only)
+</f>
+<f name="argv">
+Returns a certain command line argument.
+<br/>(Xidel only)
+</f>
+<f name="integer">
+Converts a string to an integer. It accepts base-prefixes like 0x or 0b, e.g 0xABCDEF
+<br/>(Xidel only)
+</f>
+<f name="integer-to-base">
+Converts an integer to a string in a certain base.
+<br/>(Xidel only)
+</f>
+<f name="product">
+Calculates the product of a sequence, similar to fn:sum. 
+</f>
+<f name="request">
+Sends an HTTP request. The request parameters are the same as the value accepted by --follow.<br/>
+It returns a JSON object with properties "url", "headers", "raw" corresponding to the Xidel default variables listed below. The property "type" contains the content-type, and either "json" or "doc" a JSON or X/HTML document.
+<br/>(Xidel only)
+</f>
+<f name="cps">
+Abbreviation for fn:string-to-codepoints and fn:codepoints-to-string
+</f>
+<f name="type-of" deprecated="true">
+Debugging function
+</f>
+<f name="split-equal" deprecated="true">
+Debugging function
+</f>
+
+</functions>
