@@ -1,4 +1,5 @@
 xquery version "3.0-xidel";
+declare variable $path := file:current-dir();
 declare function colorize-args($args){
   if (not(starts-with($args, "("))) then ("(", <i>{replace($args, "65535", "unlimited")}</i>, ")")
   else extract($args, "[$][^ ]+|,|[-a-zA-Z:0-9]+([(][-a-zA-Z:{}/.0-9*]*[)])?[?+*]?|  *|.", 0, "*") ! (
@@ -9,11 +10,20 @@ declare function colorize-args($args){
     else .
   )
 };
+declare function cached-doc($url, $cache){
+  let $cache := $path || "/cache/"||$cache return (
+    if (not(file:exists($cache)) ) then (file:create-dir($cache), file:write-text($cache, replace(unparsed-text($url), 'xmlns="http://www\.w3\.org/1999/xhtml', '' ))) else (), 
+    doc($cache)
+  )
+};
 <html>
+<meta charset="utf-8"/>
 <title>Xidel / Internet Tools function list</title>
 <style>{'
   p { padding-left: 4em } 
   .content { padding-left: 4em; padding-top:1em } 
+  .content p{padding-left: 0}
+  div.examples { padding-left: 2em; padding-top: 1em; padding-bottom: 2em}
   .deprecated { text-decoration: line-through; padding-top: 3em }
   .deprecated::before { content: "Deprecated. Do not use."; text-decoration: none; display: inline-block; position: relative; top: -2em; height: 0px; width: 0px; overflow-wrap: unset; white-space: nowrap; overflow: visible}
   .internal { text-decoration: line-through; padding-top: 3em }
@@ -44,8 +54,23 @@ let $custom-content := function($prefix, $f) {
     })}</div> 
   ) else ()
 }
+let $xpathspecurl := "https://www.w3.org/TR/xpath-functions-30/"
+let $xpathspec := cached-doc($xpathspecurl, "xpathfunctions.xml")//a[starts-with(@id, "func-")]
+let $xpathresolve := function($n) { x:transform($n, function($n){
+  if (name($n) = "a" and not(contains($n/@href, "://") )) then <a href="{resolve-uri($n/@href, $xpathspecurl)}">{$n/node()}</a>
+  else $n
+}) }
+let $xpathspecsnippet := function($id, $class) { 
+  let $dl := $xpathspec[@id = $id]/../../dl,
+      $examples := $dl/dt[. = "Examples"]/following-sibling::dd[1]/node()!$xpathresolve(.)
+  return
+  <div class="content">{$dl/dd[1]/p[1]/node()!$xpathresolve(.)} See the XPath/XQuery <a href="https://www.w3.org/TR/xpath-functions-30/#{$id}" rel="nofollow">{$class} function reference</a>. {if ($examples) then (<div class="examples"><b>Examples:</b><br/>{$examples}</div>) else ()}</div>
+}
+let $expathfilespecurl := "http://expath.org/spec/file"
+let $expathfile := cached-doc($expathfilespecurl || "/1.0.xml", "expath-file.xml")
+let $expathfilefunctions := $expathfile//div2
 let $jsoniqurl := "http://www.jsoniq.org/docs/JSONiqExtensionToXQuery/html-single/index.html"
-let $jsoniq := (if (not(file:exists("jsoniq.html")) ) then file:write-text("jsoniq.html", unparsed-text($jsoniqurl)) else (), doc("jsoniq.html"))
+let $jsoniq := cached-doc($jsoniqurl, "jsoniq.html")
 let $jsoniq-toc := $jsoniq/css(".toc a")
 let $jsoniq-targets := {| $jsoniq//a[@id]/{@id: .}  |}
 let $jsoniq-content := function($prefixname) {
@@ -55,25 +80,26 @@ let $jsoniq-content := function($prefixname) {
        See <a href="{$jsoniqurl}{$id}" rel="nofollow">JSONiq reference</a>.</p> 
 }
 let $modules := {
+  "http://www.w3.org/2005/xpath-functions": {"order": 0, "name": "Standard XPath/XQuery functions", "prefix": "fn",   "content": function($f) { $xpathspecsnippet("func-"||$f/@name, "") }, "license": "w3c"},
+  "http://www.w3.org/2005/xpath-functions/math": {"order": 1, "name": "Standard XPath/XQuery mathematical functions", "prefix": "math", "unit": "xquery_module_math", "content": function($f) { $xpathspecsnippet("func-math-"||$f/@name, "math") }, "license": "w3c"},
+  "http://www.w3.org/2001/XMLSchema": {"order": 9, "name": "Standard type constructors", "prefix": "xs",
+    "content": function($f) { <p>Casts a value to the XML Schema  <a href="https://www.w3.org/TR/xmlschema11-2/#{$f/@name}" rel="nofollow">type {$f/@name/string()}</a>.</p> }},
+
+
+  "http://jsoniq.org/functions": {"order": 12, "name": "JSONiq base functions", "prefix": "jn", "unit": "xquery_json", "content": function($f){ $jsoniq-content("jn:" || $f/@name) }, "license": "jsoniq"},
+  "http://jsoniq.org/function-library": {"order": 13, "name": "JSONiq library functions", "prefix": "jnlib", "unit": "xquery_json", 
+    "content": function($f){ $jsoniq-content("libjn:" || $f/@name)  }, "license": "jsoniq"},
+
   "http://expath.org/ns/file": {"order": 17, "name": "EXPath Module File", "prefix": "file", "unit": "xquery_module_file",
     "content": function($f) {
       let $name := $f/@name
-      return <p>See <a href="http://expath.org/spec/file#{if (ends-with($name, "separator") or $name = ("temp-dir", "base-dir", "current-dir")) then "pr" else "fn"}.{$name}" rel="nofollow">EXPath specification</a>.</p> }},
-
-  "http://jsoniq.org/functions": {"order": 12, "name": "JSONiq base functions", "prefix": "jn", "unit": "xquery_json", "content": function($f){ $jsoniq-content("jn:" || $f/@name) }},
-  "http://jsoniq.org/function-library": {"order": 13, "name": "JSONiq library functions", "prefix": "jnlib", "unit": "xquery_json", 
-    "content": function($f){ $jsoniq-content("libjn:" || $f/@name)  }},
+      let $id := (if (matches($name, "separator|^(temp-dir|base-dir|current-dir|exists|last-modified|size)$|is-")) then "pr." else "fn.") || $name
+      return <p>{($expathfilefunctions[@id=$id]/gitem[label="Rules"]//p)[1]/node()} See <a href="{$expathfilespecurl}#{$id}" rel="nofollow">EXPath file specification</a>.</p> }, "license": "w3ccla"},
 
   ".benibela.de": {"order": 24, "name": "Extension functions (primary)", "prefix": ("pxp", "x")},
   "http://www.benibela.de/2012/pxp/extensions": {"order": 25, "name": "Extension functions in old namespace", "prefix": "pxp"},
-  "http://pxp.benibela.de": {"order": 26, "name": "Extension functions (secondary)", "prefix": "x"},
+  "http://pxp.benibela.de": {"order": 26, "name": "Extension functions (secondary)", "prefix": "x"}
   
-  "http://www.w3.org/2005/xpath-functions": {"order": 0, "name": "Standard XPath/XQuery functions", "prefix": "fn", 
-    "content": function($f) { <p>See XPath/XQuery <a href="https://www.w3.org/TR/xpath-functions-30/#func-{$f/@name}" rel="nofollow">function reference</a>.</p> }},
-  "http://www.w3.org/2005/xpath-functions/math": {"order": 1, "name": "Standard XPath/XQuery mathematical functions", "prefix": "math", "unit": "xquery_module_math", 
-    "content": function($f) { <p>See <a href="https://www.w3.org/TR/xpath-functions-30/#func-math-{$f/@name}" rel="nofollow">math function reference</a>.</p> }},
-  "http://www.w3.org/2001/XMLSchema": {"order": 9, "name": "Standard type constructors", "prefix": "xs",
-    "content": function($f) { <p>Casts a value to the XML Schema  <a href="https://www.w3.org/TR/xmlschema11-2/#{$f/@name}" rel="nofollow">type {$f/@name/string()}</a>.</p> }}
 }
 let $functions := /f
 return (
@@ -90,7 +116,7 @@ for $cat in (
   {"name": "Environment functions", "funcs": "available-environment-variables  environment-variable x:argc x:argv x:system x:read"},
   {"name": "URI encoding functions", "funcs": "encode-for-uri escape-html-uri iri-to-uri resolve-uri file:resolve-path x:uri-decode x:uri-encode x:form x:resolve-html"},
   {"name": "Higher order functions", "funcs": "filter fold-left fold-right for-each for-each-pair x:transform"},
-  {"name": "Date time functions", "funcs": "adjust-date-to-timezone adjust-dateTime-to-timezone adjust-time-to-timezone current-date current-dateTime current-time dateTime day-from-date day-from-dateTime days-from-duration format-date format-dateTime format-time hours-from-dateTime hours-from-duration hours-from-time minutes-from-dateTime minutes-from-duration minutes-from-time month-from-date month-from-dateTime months-from-duration seconds-from-dateTime seconds-from-duration seconds-from-time year-from-date year-from-dateTime years-from-duration"}
+  {"name": "Date time functions", "funcs": "adjust-date-to-timezone adjust-dateTime-to-timezone adjust-time-to-timezone current-date current-dateTime current-time dateTime day-from-date day-from-dateTime days-from-duration format-date format-dateTime format-time hours-from-dateTime hours-from-duration hours-from-time minutes-from-dateTime minutes-from-duration minutes-from-time month-from-date month-from-dateTime months-from-duration seconds-from-dateTime seconds-from-duration seconds-from-time year-from-date year-from-dateTime years-from-duration x:parse-date x:parse-time x:parse-dateTime"}
 ) return 
 <li><b>{$cat("name")}</b>:<br/> {($cat("funcs")!tokenize(., " ")[.]!(<a href="#{if (contains(., ":")) then replace(., ":", "-") else "fn-" || . }">{.}</a>, ", "))[position()!=last()]}</li>
 }<li>More JSON and file functions: See corresponding module below</li></ul>,
@@ -132,7 +158,14 @@ return (
     $module("content")($f[1])
   ),
   
-  if ($prefix = ("jn", "jnlib")) then <span style="font-size: 75%">The JSONiq sections are taken from the JSONiq reference and are again licensed as CC-BY-SA.</span> else ()
+  switch ($module("license")) 
+    case "jsoniq" return <span style="font-size: 75%">The JSONiq sections are taken from the JSONiq reference and are again licensed as CC-BY-SA.</span> 
+    case "w3ccla" return ()
+    case "w3c" return (
+       <span style="font-size: 75%"><br/><br/>Copyright &#160;©&#160;2014&#160;<a href="http://www.w3.org/" rel="nofollow"><acronym title="World Wide Web Consortium">W3C</acronym></a><sup>®</sup>(<a href="http://www.csail.mit.edu/" rel="nofollow"><acronym title="Massachusetts Institute of Technology">MIT</acronym></a>, <a href="http://www.ercim.eu/"><acronym title="European Research Consortium for Informatics and Mathematics">ERCIM</acronym></a>,<a href="http://www.keio.ac.jp/" rel="nofollow">Keio</a>, <a href="http://ev.buaa.edu.cn/" rel="nofollow">Beihang</a>), This software or document includes material copied from or derived from XPath and XQuery Functions and Operators 3.0 (https://www.w3.org/TR/xpath-functions-30/).<br/>This document is a non-normative summary of XPath/XQuery and documentation of its implementation, the reader is not allowed to use it as technical specification for anything.</span>
+
+    )
+    default return ()
   
 ))
 }</body></html> 

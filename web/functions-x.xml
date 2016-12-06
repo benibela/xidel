@@ -69,14 +69,19 @@ Like outer-html(), but XML-serialized
 </f>
 
 <f name="parse-date" args="($input as xs:string, $format as xs:string) as xs:date">
-Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format. (see parse-dateTime)
+Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format. (see <a>x:parse-dateTime</a>)
 </f>
 <f name="parse-time" args="($input as xs:string, $format as xs:string) as xs:time">
-Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format (see parse-dateTime)
+Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format (see <a>x:parse-dateTime</a>)
 </f>
 <f name="parse-dateTime" args="($input as xs:string, $format as xs:string) as xs:dateTime">
 Reads a date/time from string with the given format. The 2nd parameter $format is a standard Pascal format, using ymdhnsz (e.g. "yyyy-mm-dd"), not a XQuery 3.0 picture string.
 </f>
+
+<f name="parse-html">
+Parses an HTML document similar to <a>fn:parse-xml</a>. If the string is invalid HTML, it might be partially repaired by inserted missing tags.
+</f>
+
 
 <f name="form" args="($form as node()*[, $override as item()*])">
 This creates the request corresponding to a HTML form. The request includes the value of all input/select/textarea descendants of the first parameter.<br/>
@@ -151,7 +156,7 @@ If the pattern cannot be matched, an error is raised.
 </f>
 <f name="transform">
 This function can perform an arbitrary transformation of a document, by calling the transformer-function <code>$f</code> for every descendant node and replacing the node with the value returned by the function.<br>
-For example <code>transform(/, function($x) { if (name($x) = "a") then <a>{$x/@*, <b>{$x/node()}</b>}</a> else $x } )</code>
+For example <code><![CDATA[transform(/, function($x) { if (name($x) = "a") then <a>{$x/@*, <b>{$x/node()}</b>}</a> else $x } )]]></code>
 will make every link bold.<br>
 If $root is omitted, the context item . is used.<br>
 If $options("always-recurse") is true, all values returned by $f are also transformed with further calls of $f.<br/>
