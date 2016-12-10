@@ -19,6 +19,7 @@ declare function cached-doc($url, $cache){
 <html>
 <meta charset="utf-8"/>
 <title>Xidel / Internet Tools function list</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <style>{'
   p { padding-left: 4em } 
   .content { padding-left: 4em; padding-top:1em } 
@@ -31,6 +32,7 @@ declare function cached-doc($url, $cache){
     
   code.f { margin-left: 1em; display: block; padding-top: 2em } 
   code.f2 { margin-left: 1em; display: block} 
+  pre { white-space: pre-wrap;  word-wrap: break-word; word-break: keep-all  } 
   span.var { color: green }
   span.keyword { text-weight: bold; color: blue}
   span.type { font-style: italic; color: red}
