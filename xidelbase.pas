@@ -3563,7 +3563,7 @@ begin
 
   mycmdLine.declareString('stdin-encoding', 'Character encoding of stdin', 'utf-8');
 
-  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json', 'auto');
+  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json, json-strict', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
 
