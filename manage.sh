@@ -73,6 +73,14 @@ linux32)
         fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
         ;;
 
+linuxarm)
+        compile lazCompileLinuxArm xidel
+        if [ $action -lt 2 ]; then exit; fi
+        tar -vczf xidel-$VERSION.linuxarm.tar.gz xidel readme.txt changelog install.sh
+        fileUpload xidel-$VERSION.linuxarm.tar.gz "$UPLOAD_PATH"        
+        #fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
+        ;;
+
 win32)
         compile lazCompileWin32 
         if [ $action -lt 2 ]; then exit; fi
