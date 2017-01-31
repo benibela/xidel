@@ -856,6 +856,7 @@ TProcessingContext = class(TDataProcessing)
   proxy: string;
   printReceivedHeaders: boolean;
   errorHandling: string;
+  loadCookies, saveCookies: string;
 
   silent, printPostData: boolean;
 
@@ -1238,6 +1239,10 @@ var
 begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
   if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
+  if (parent.loadCookies <> '') then begin
+    internet.cookies.loadFromFile(parent.loadCookies);
+    parent.loadCookies := ''; //only need to load them once?
+  end;
   escapedURL := url;
   if not rawURL then escapedURL := urlHexEncode(url, [#32..#126]); //    fn:escape-html-uri
   parent.printStatus('**** Retrieving ('+method+'): '+escapedURL+' ****');
@@ -1816,6 +1821,8 @@ begin
     //reader.read('method', method); moved to
     reader.read('print-received-headers', printReceivedHeaders);
     reader.read('error-handling', errorHandling);
+    reader.read('load-cookies', loadCookies);
+    reader.read('save-cookies', saveCookies);
   end;
 
   if reader.read('output-encoding', tempstr) then setOutputEncoding(tempstr); //allows object returned by extract to change the output-encoding
@@ -2153,6 +2160,9 @@ begin
     if result = nil then result := res
     else result.merge(res);
   end;
+
+
+  if (saveCookies <> '') and (internet <> nil) then internet.cookies.saveToFile(saveCookies);
 
   next.free;
 end;
@@ -3536,6 +3546,8 @@ begin
     mycmdline.addAbbreviation('F');
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
     mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b"). Can be used multiple times like --post.'); mycmdline.addAbbreviation('H');
+    mycmdLine.declareString('load-cookies', 'Load cookies from file');
+    mycmdLine.declareString('save-cookies', 'Save cookies to file');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 1xx=retry,200=accept,3xx=redirect,4xx=abort,5xx=skip');
     mycmdLine.declareFlag('raw-url', 'Do not escape the url (preliminary)');
