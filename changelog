@@ -1,6 +1,11 @@
 
 Some important changes:
 
+--------Xidel 0.9.7 --------
+- fix system(), file:exists, file:move (override), file:path-to-uri on Windows
+- Cookie handling follows RFC 6265 rather than sending all cookies to all servers.
+- further minor bug fixes
+
 --------Xidel 0.9.6 --------
 (2016-11-20)
 * add function x:request for HTTP or follow-like requests inside a query
