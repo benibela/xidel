@@ -3877,21 +3877,27 @@ end;
 
 
 function xqfSystem(argc: SizeInt; args: PIXQValue): IXQValue;
+const BUF_SIZE = 4096;
 var
   proc: TProcess;
   temps: string;
+  builder: TStrBuilder;
+  Buffer: array[1..BUF_SIZE] of byte;
+  count: LongInt;
 begin
   if cgimode or not allowFileAccess then exit(xqvalue('Are you trying to hack an OSS project? Shame on you!'));
   requiredArgCount(argc, 1);
   proc := TProcess.Create(nil);
   proc.CommandLine := args[0].toString;
+  builder.init(@temps);
   try
-    proc.Options := proc.Options + [poUsePipes, poWaitOnExit];
+    proc.Options := proc.Options + [poUsePipes] - [poWaitOnExit];
     proc.Execute;
-    if proc.Output.NumBytesAvailable > 0 then begin
-      setlength(temps, proc.Output.NumBytesAvailable);
-      proc.Output.Read(temps[1], length(temps));
-    end else temps := '';
+    repeat
+      count := proc.Output.Read(buffer{%H-}, BUF_SIZE);
+      builder.add(@buffer[1], count);
+    until count = 0;
+    builder.final;
     result := xqvalue(temps);
   finally
     proc.free;
