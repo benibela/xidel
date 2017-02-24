@@ -1244,7 +1244,7 @@ begin
     parent.loadCookies := ''; //only need to load them once?
   end;
   escapedURL := url;
-  if not rawURL then escapedURL := urlHexEncode(url, [#32..#126]); //    fn:escape-html-uri
+  if not rawURL then escapedURL := TInternetAccess.urlEncodeData(url, ueXPathHTML4);
   parent.printStatus('**** Retrieving ('+method+'): '+escapedURL+' ****');
   if parent.printPostData and (data <> '') then parent.printStatus(data);
   result := TDataObject.create('', escapedURL);
