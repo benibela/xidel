@@ -94,8 +94,9 @@ It returns a JSON object with these properties:
 <ul>
 <li>url: The url the form should be send to (includes the encoded data for a GET request)</li>
 <li>method: POST or GET</li>
-<li>post: Encoded post data</li>
+<li>post: Percent-encoded post data</li>
 <li>headers: Sequence of additional headers</li>
+<li>charset: Charset of the percent-encoding (if it is not UTF-8). This is usually not used for anything, but without this property you could not know what the data actually means.</li>
 </ul>
 <br/>
 
