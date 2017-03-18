@@ -37,7 +37,7 @@ function pushhg(){
 
 function compile(){
   getVersion
-  eval $1 xidel
+  eval $1 xidel "$2"
   echo > xidelbuilddata.inc  
 }
 
@@ -48,6 +48,8 @@ function xidelCompileAndroidArm(){
   /opt/lazarus/lazbuild -d --bm=androidarm xidel.lpi || (echo "FAILED!"; exit)
   #arm-linux-androideabi-strip --strip-all xidel
 }
+
+
 
 case "$1" in
 web)
@@ -82,10 +84,16 @@ linuxarm)
         ;;
 
 win32)
-        compile lazCompileWin32 
+        compile lazCompileWin32 --build-mode=win32
         if [ $action -lt 2 ]; then exit; fi
         zip -v xidel-$VERSION.win32.zip xidel.exe changelog readme.txt
         fileUpload xidel-$VERSION.win32.zip "$UPLOAD_PATH"
+        ;;
+win32synapse|win32openssl)
+        compile lazCompileWin32 --build-mode=win32synapse
+        if [ $action -lt 2 ]; then exit; fi
+        zip -v xidel-$VERSION-openssl.win32.zip xidel.exe changelog readme.txt
+        fileUpload xidel-$VERSION-openssl.win32.zip "$UPLOAD_PATH"
         ;;
 
 androidarm)
@@ -105,6 +113,7 @@ release)
         ./manage.sh linux32
         ./manage.sh linux64        
         ./manage.sh win32
+        ./manage.sh win32synapse
         ./manage.sh mirror
         ;;
         
