@@ -897,7 +897,7 @@ private
   procedure loadDataForQueryPreParse(const data: IData);
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
   function evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
-  procedure httpReact (sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data:string; var reaction: TInternetAccessReaction);
+  procedure httpReact (sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data:TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
 end;
 
 type EInvalidArgument = Exception;
@@ -2271,8 +2271,8 @@ begin
   else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
 end;
 
-procedure TProcessingContext.httpReact(sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data: string;
-  var reaction: TInternetAccessReaction);
+procedure TProcessingContext.httpReact(sender: TInternetAccess; var method: string; var url: TDecodedUrl;
+  var data: TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
 begin
   stupidHTTPReactionHackFlag := 0;
   case TInternetAccess.reactFromCodeString(errorHandling, sender.lastHTTPResultCode, reaction) of
