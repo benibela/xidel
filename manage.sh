@@ -140,7 +140,7 @@ src)
         cp ~/components/pascal/import/flre/README.md ~/components/pascal/import/flre/COPYING* $SRCDIR/components/pascal/import/flre
         cp ~/components/pascal/import/flre/src/*.pas $SRCDIR/components/pascal/import/flre/src
         
-        tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hg xidel-$VERSION-src
+        tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hgtags --exclude=.hg xidel-$VERSION-src
         fileUpload xidel-$VERSION.src.tar.gz "$UPLOAD_PATH"
         ;;
 

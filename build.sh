@@ -5,7 +5,7 @@ cd programs/internet/xidel 2> /dev/null #if this fails we are already in the cor
 function addpaths() {
   paths="$paths $(find $1 -type d  | while read -r f; do 
     for t in $f/*.pas $f/*.pp $f/*.o $f/*.ppu ; do
-      [ -e "$t" ] && echo -Fu$f/*; 
+      [ -e "$t" ] && echo -Fu$f; 
       break
     done
     for t in $f/*.inc; do
