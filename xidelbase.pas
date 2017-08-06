@@ -3895,7 +3895,7 @@ begin
     proc.Execute;
     repeat
       count := proc.Output.Read(buffer{%H-}, BUF_SIZE);
-      builder.add(@buffer[1], count);
+      builder.append(@buffer[1], count);
     until count = 0;
     builder.final;
     result := xqvalue(temps);
