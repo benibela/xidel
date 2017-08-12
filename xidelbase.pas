@@ -3882,8 +3882,27 @@ var
   proc: TProcess;
   temps: string;
   builder: TStrBuilder;
-  Buffer: array[1..BUF_SIZE] of byte;
-  count: LongInt;
+  Buffer:  array[1..BUF_SIZE] of byte;
+  count, totalcount: LongInt;
+
+  procedure readPipes;
+  begin
+    count := min(proc.Output.NumBytesAvailable, BUF_SIZE);
+    totalcount := count;
+    if count > 0 then begin
+      count := proc.Output.Read(buffer{%H-}, count);
+      builder.append(@buffer[1], count);
+    end;
+    if proc.Stderr <> nil then begin
+      count := min(proc.Stderr.NumBytesAvailable, BUF_SIZE);
+      totalcount += count;
+      if count > 0 then begin
+        count := proc.Stderr.Read(buffer{%H-}, count);
+        //builder.append(@buffer[1], count);
+      end;
+    end;
+  end;
+
 begin
   if cgimode or not allowFileAccess then exit(xqvalue('Are you trying to hack an OSS project? Shame on you!'));
   requiredArgCount(argc, 1);
@@ -3893,10 +3912,13 @@ begin
   try
     proc.Options := proc.Options + [poUsePipes] - [poWaitOnExit];
     proc.Execute;
-    repeat
-      count := proc.Output.Read(buffer{%H-}, BUF_SIZE);
-      builder.append(@buffer[1], count);
-    until count = 0;
+    while proc.Running do begin
+      readPipes;
+      if totalcount = 0 then sleep(100);
+    end;
+    while (proc.Output.NumBytesAvailable > 0)
+          or (Assigned(proc.Stderr) and (proc.Stderr.NumBytesAvailable > 0)) do
+        readPipes;
     builder.final;
     result := xqvalue(temps);
   finally
