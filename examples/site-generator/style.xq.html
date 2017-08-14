@@ -1,0 +1,21 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>{$file/title/node()}</title>
+{$file/head/node()}
+<style>#navigation {{ float: left; }} #content {{ padding-left: 15em; }} </style>
+</head>
+
+<body>
+  <h1>{$file/title/node()}</h1>
+  <div id="navigation"> Navigation: <ul>{
+    for $file in $global/fileinfo 
+    return <li>{
+      $file/<a href="{@base}.html">{title/node()}</a>,
+      if ($file is $fileinfo) then "  <--" else ()
+    }</li>
+  }</ul></div>
+  <div id="content"> {$file/content/node()}</div>
+
+</body>
+</html>
