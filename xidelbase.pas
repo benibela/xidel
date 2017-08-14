@@ -34,7 +34,7 @@ var cgimode: boolean = false;
     allowFileAccess: boolean = true;
     xqueryDefaultCollation: string = '';
     mycmdline: TCommandLineReader;
-    defaultUserAgent: string = 'Mozilla/3.0 (compatible; Xidel)';
+    defaultUserAgent: string = 'Mozilla/5.0 (compatible; Xidel)';
 
     majorVersion: integer = 0;
     minorVersion: integer = 9;
