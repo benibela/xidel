@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
@@ -138,7 +138,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--load-cookies /tmp/xidelcookies  http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw"/>
+        <CommandLineParams Value="--user-agent &quot;FIRST&quot; -e 'parse-xml(x:request({&quot;url&quot;: &quot;http://www.videlibri.de/cgi-bin/xidelecho.pl&quot;, &quot;xx&quot;: &quot;yy&quot;, &quot;headers&quot;: (&quot;User-Agent&quot;,&quot;User-Agent: second&quot;)})/raw)' --xml"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
