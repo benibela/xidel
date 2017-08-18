@@ -540,18 +540,9 @@ var
   codepage: Integer;
   str: String;
 begin
-  codepage := -1;
-  str:=UpperCase(e);
-  case str of
-    'UTF-8', 'UTF8': codepage := CP_UTF8;
-    'CP1252', 'ISO-8859-1', 'LATIN1', 'ISO-8859-15': codepage := 1252;
-    'UTF-16BE', 'UTF16BE': codepage := CP_UTF16BE;
-    'UTF16', 'UTF-16', 'UTF-16LE', 'UTF16LE': codepage := CP_UTF16;
-    'UTF-32BE', 'UTF32BE': codepage := CP_UTF32BE;
-    'UTF32', 'UTF-32', 'UTF-32LE', 'UTF32LE': codepage := CP_UTF32;
-    'OEM': codepage := CP_OEMCP;
-    'INPUT': ;//none
-    else if strBeginsWith(str, 'CP') then codepage := StrToIntDef(strAfter(str, 'CP'), -1)
+  codepage := strEncodingFromName(e);
+  if codepage = CP_NONE then begin
+    if striEqual(codepage, 'input') then codepage := -1
     else writeln(stderr, 'Unknown encoding: ',e)
   end;
   result := codepage;
@@ -3457,7 +3448,7 @@ end;
 
 
 function encodingName(e: TSystemCodePage): string;
-begin
+begin            xx
   case e of
     CP_ASCII: result := 'US-ASCII';
     CP_ACP, CP_OEMCP, CP_NONE, CP_UTF8: result := 'UTF-8';
