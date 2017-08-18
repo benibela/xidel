@@ -542,7 +542,7 @@ var
 begin
   codepage := strEncodingFromName(e);
   if codepage = CP_NONE then begin
-    if striEqual(codepage, 'input') then codepage := -1
+    if striEqual(e, 'input') then codepage := -1
     else writeln(stderr, 'Unknown encoding: ',e)
   end;
   result := codepage;
@@ -3448,16 +3448,15 @@ end;
 
 
 function encodingName(e: TSystemCodePage): string;
-begin            xx
+begin
   case e of
-    CP_ASCII: result := 'US-ASCII';
-    CP_ACP, CP_OEMCP, CP_NONE, CP_UTF8: result := 'UTF-8';
-    CP_UTF7: result := 'UTF-7';
-    CP_WINDOWS1252, CP_LATIN1: result := 'ISO-8859-1';
-    28592..28605: result := 'ISO-8859-' + inttostr(e - 28590);
-    CP_UTF16BE, CP_UTF16: result := 'UTF-16';
+    CP_UTF16BE, CP_UTF16: result := 'UTF-16'; //XML does not need BE/LE in name
     CP_UTF32BE, CP_UTF32: result := 'UTF-32';
-    else result := 'windows-' + inttostr(e);
+    else begin
+      result := CodePageToCodePageName(e);
+      if result = '' then
+        result := 'cp-' + inttostr(e);
+    end;
   end;
 end;
 
