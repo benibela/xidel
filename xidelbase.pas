@@ -4135,42 +4135,12 @@ begin
 end;
 
 
-var
-  oldUnicode2AnsiMoveProc : procedure(source:punicodechar;var dest:RawByteString;cp : TSystemCodePage;len:SizeInt);
-  oldAnsi2UnicodeMoveProc : procedure(source:pchar;cp : TSystemCodePage;var dest:unicodestring;len:SizeInt);
-
-procedure myUnicode2AnsiMoveProc(source:punicodechar;var dest:RawByteString;cp : TSystemCodePage;len:SizeInt);
-begin
-  case cp of
-    CP_UTF32, CP_UTF32BE,
-    CP_UTF16, CP_UTF16BE,
-    CP_UTF8,
-    CP_WINDOWS1252, CP_LATIN1: strUnicode2AnsiMoveProc(source, dest, cp, len);
-    else oldUnicode2AnsiMoveProc(source, dest, cp, len);
-  end;
-end;
-
-procedure myAnsi2UnicodeMoveProc(source:pchar;cp : TSystemCodePage;var dest:unicodestring;len:SizeInt);
-begin
-  case cp of
-    CP_UTF32, CP_UTF32BE,
-    CP_UTF16, CP_UTF16BE,
-    CP_UTF8,
-    CP_WINDOWS1252, CP_LATIN1: strAnsi2UnicodeMoveProc(source, cp, dest, len);
-    else oldAnsi2UnicodeMoveProc(source, cp, dest, len);
-  end;
-end;
-
 var pxp,pxpx: TXQNativeModule;
-
 
 initialization
   SetMultiByteConversionCodePage(CP_UTF8);
   SetMultiByteRTLFileSystemCodePage(CP_UTF8);
-  oldUnicode2AnsiMoveProc := widestringmanager.Unicode2AnsiMoveProc;
-  oldAnsi2UnicodeMoveProc := widestringmanager.Ansi2UnicodeMoveProc;
-  widestringmanager.Unicode2AnsiMoveProc := @myUnicode2AnsiMoveProc;
-  widestringmanager.Ansi2UnicodeMoveProc := @myAnsi2UnicodeMoveProc;
+  registerFallbackUnicodeConversion;
 
   pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
   pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
