@@ -3,7 +3,7 @@ Xidel as static site generator
 
 Xidel can be used to generate static web pages using XQuery.
 
-The great thing about XQuery is that a standard XQuery expression looks just like a HTML page template. For example
+The great thing about XQuery is that a standard XQuery expression looks just like an HTML page template. For example
 
     <html><body>
       <div>{$content}</div>
@@ -16,7 +16,7 @@ This works in any XQuery processor, but it is processor specific how to call the
 Storing the content: *.xml
 -------------------------
 
-We store the content in XML files. They have the advantage that you can write all the content just as you would write it in a HTML file, but you can also use additional, user-defined tags.
+We store the content in XML files. They have the advantage that you can write all the content just as you would write it in an HTML file, but you can also use additional, user-defined tags.
 
 For every page the final website should have, we have one XML file with the content.  In this example, index.xml and page2.xml, which become index.html and page2.html on the generated site (see _publish directory). Here each of those files has one `<content>` element, which contains the content, and `<title>`, `<head>` elements with meta information.
 
