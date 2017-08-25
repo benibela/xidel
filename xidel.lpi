@@ -138,7 +138,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="--user-agent &quot;FIRST&quot; -e 'parse-xml(x:request({&quot;url&quot;: &quot;http://www.videlibri.de/cgi-bin/xidelecho.pl&quot;, &quot;xx&quot;: &quot;yy&quot;, &quot;headers&quot;: (&quot;User-Agent&quot;,&quot;User-Agent: second&quot;)})/raw)' --xml"/>
+        <CommandLineParams Value="/tmp/xx.html -f '//a/resolve-html(.)'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
