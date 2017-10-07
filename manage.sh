@@ -109,6 +109,7 @@ cgi)    lazCompileLinux64 xidelcgi
         ;;
 
 release)
+	find lib -name "*.o" -delete -or -name "*.ppu" -delete
         ./manage.sh src
         ./manage.sh linux32
         ./manage.sh linux64        
