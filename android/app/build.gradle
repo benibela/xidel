@@ -44,6 +44,6 @@ android
 
 dependencies {
 /*  compile 'com.android.support:support-v4:23.+'*/
-  compile 'com.android.support:appcompat-v7:+'
+  compile 'com.android.support:appcompat-v7:25.+'
   compile fileTree(dir: 'libs', include: ['*.jar'])
 }
