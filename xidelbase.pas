@@ -288,7 +288,7 @@ begin
   w(LineEnding);
 end;
 
-var stacklen: integer;
+var stacklen: SizeInt;
     stack: TLongintArray;
 
 procedure wcolor(const s: string; color: TColorOptions);
