@@ -1,0 +1,29 @@
+language: generic
+sudo: required
+dist: trusty
+
+os:
+  - linux
+
+env:
+  matrix:
+    - FPC_VER=3.0.4
+    - FPC_VER=PAK
+
+install:
+  - if [[ $FPC_VER = PAK ]]; then sudo apt-get update -qq; sudo apt-get install -qq -y fpc; fi
+  - if [[ $FPC_VER = 3.0.4 ]]; then wget http://mirrors.iwi.me/lazarus/releases/Lazarus%20Linux%20amd64%20DEB/Lazarus%201.8.0RC5/fpc_3.0.4-rc1_amd64.deb; sudo dpkg --force-overwrite -i *.deb; fi
+  - mkdir import
+  - git clone https://github.com/benibela/flre.git import/flre; 
+  - svn checkout http://svn.code.sf.net/p/synalist/code/synapse/40/ import/synapse; 
+  - git clone https://github.com/benibela/rcmdline.git rcmdline
+  - git clone https://github.com/benibela/internettools.git internettools
+  - find
+
+script:
+  - ./build.sh -t
+
+notifications:
+  email:
+    on_success: false
+    on_failure: change
