@@ -92,8 +92,21 @@ function addpaths() {
   done < <(find "$1" -type d)
 }
 
+#the svn and source tarball contains xidel in programs/internet/xidel and dependencies in components/pascal
+#but someone might have checked out the git and installed dependencies elsewhere, so try to guess the local paths
+sourceroot=.
+sourcepath=.
+if [[ -f programs/internet/xidel/xidel.pas ]]; then sourcepath=programs/internet/xidel; sourceroot=../../..;
+elif [[ -f ./xidel.pas && -f ../../../programs/internet/xidel/xidel.pas ]]; then sourceroot=../../..; 
+elif [[ -f ./xidel.pas ]]; then echo -n 
+else
+  die "failed to find xidel.pas";
+fi
+
+cd $sourcepath
+
 paths=()
-addpaths ../../..
+addpaths $sourceroot
 
 touch xidelbuilddata.inc
 
