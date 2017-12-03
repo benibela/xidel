@@ -16,7 +16,7 @@
       <Language Value=""/>
       <CharSet Value=""/>
     </VersionInfo>
-    <BuildModes Count="4">
+    <BuildModes Count="5">
       <Item1 Name="default" Default="True"/>
       <Item2 Name="win32">
         <CompilerOptions>
@@ -128,6 +128,43 @@
           </Other>
         </CompilerOptions>
       </Item4>
+      <Item5 Name="debug">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="xidel"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="../../../components/pascal/import/synapse;../../../components/pascal/internet;../../../components/pascal/data;../../../components/pascal/system;../../../components/pascal/import/regexpr/source;../../../components/pascal/import/utf8tools"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Parsing>
+            <SyntaxOptions>
+              <IncludeAssertionCode Value="True"/>
+            </SyntaxOptions>
+          </Parsing>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Checks>
+              <IOChecks Value="True"/>
+              <RangeChecks Value="True"/>
+              <OverflowChecks Value="True"/>
+              <StackChecks Value="True"/>
+            </Checks>
+            <Optimizations>
+              <OptimizationLevel Value="2"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <UseHeaptrc Value="True"/>
+              <TrashVariables Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+          </Linking>
+        </CompilerOptions>
+      </Item5>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -186,11 +223,6 @@
     <Linking>
       <LinkSmart Value="True"/>
     </Linking>
-    <Other>
-      <OtherDefines Count="1">
-        <Define0 Value="USE_SYNAPSE_WRAPPER"/>
-      </OtherDefines>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="4">
