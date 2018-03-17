@@ -523,7 +523,11 @@ tests/test.sh regression_multipage3b -e '<action><page url="http://videlibri.sou
 tests/test.sh regression_htmlparse  --input-format html '<ol><li>a<li>b<li>c</ol>' -e '//ol/li'
 
 tests/test.sh variableActions  [ '<a/>' --template-file tests/variable.actions ] '<b/>' --xquery '$first || ":" || $second '
-
+tests/test.sh variableActions  --template-file tests/variable.actions --xquery '$first || ":" || $second '
+tests/test.sh moreActions1  --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res'
+tests/test.sh moreActions2  -e '"init"||get("res")' --template-action ac2 --template-file tests/more.actions --xquery '"res:" || $res'
+tests/test.sh moreActionsLocalPattern  --template-action local --template-file tests/more.actions --xquery '"res:" || $res'
+tests/test.sh moreActions -e '"init"||get("res")' --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res, for $i in ("ac2", "local", "ac1", "ac2") return ( x:call-action($i), "res:"||$res)' #variables set by call-action are reordered before the extract print, since the values of the extract are only known after the for has finished
 
 echo
 echo Results: 

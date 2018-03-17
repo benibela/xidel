@@ -840,6 +840,7 @@ TExtraction = class(TDataProcessing)
  extractExclude, extractInclude: TStringArray;
  extractKind: TExtractionKind;
 
+ templateUrl: string;
  templateActions: TStringArray;
 
  defaultName: string;
@@ -1800,18 +1801,21 @@ procedure TExtraction.readOptions(reader: TOptionReaderWrapper);
 var
   tempstr: string;
 begin
-  reader.read('extract', extract);  //todo. option: extract-file
-  if not cgimode and strBeginsWith(extract, '@') then extract := strLoadFromFileChecked(strCopyFrom(extract, 2));
-  extract:=trim(extract);
-  if reader.read('extract-exclude', tempstr) then extractExclude := strSplit(tempstr, ',', false);
-  if reader.read('extract-include', tempstr) then extractInclude := strSplit(tempstr, ',', false);
-  if reader.read('extract-kind', tempstr) then if extract <> '' then extractKind := extractKindFromString(tempstr);
+  if extract = '' then begin
+    reader.read('extract', extract);  //todo. option: extract-file
+    if not cgimode and strBeginsWith(extract, '@') then extract := strLoadFromFileChecked(strCopyFrom(extract, 2));
+    extract:=trim(extract);
+    if reader.read('extract-exclude', tempstr) then extractExclude := strSplit(tempstr, ',', false);
+    if reader.read('extract-include', tempstr) then extractInclude := strSplit(tempstr, ',', false);
 
-  if reader.read('template-file', tempstr)  then begin
-    extract := strLoadFromFileChecked(tempstr);
-    extractKind := ekMultipage;
+    if reader.read('template-file', tempstr)  then begin
+      templateUrl := tempstr;
+      extract := strLoadFromFileChecked(tempstr);
+      extractKind := ekMultipage;
+    end;
   end;
   if reader.read('template-action', tempstr) then templateActions := strSplit(tempstr, ',', false);
+  if (extractKind = ekAuto) and reader.read('extract-kind', tempstr) then if extract <> '' then extractKind := extractKindFromString(tempstr);
 
   reader.read('default-variable-name', defaultName);
   reader.read('print-type-annotations', printTypeAnnotations);
@@ -2624,9 +2628,11 @@ begin
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
       multipage.onPageProcessed:=@pageProcessed;
+      if parent.silent then multipage.onLog := nil else multipage.onLog := @multipage.selfLog;
       multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
       multipagetemp := TMultiPageTemplate.create();
-      multipagetemp.loadTemplateFromString(extract);
+      if extract = '' then raise Exception.Create('Multipage-action-template is empty');
+      multipagetemp.loadTemplateFromString(extract, ExtractFileName(templateUrl), ExtractFileDir(templateUrl));
       multipage.setTemplate(multipagetemp);
       multipage.perform(templateActions);
     end

@@ -1,0 +1,7 @@
+<actions>
+  <action> <s>res := "default"</s> </action>
+  <action id="ac1"> <s>res := "v1"</s> </action>
+  <action id="ac2"> <s>res := "v2"</s> </action>
+  <action id="local"> <page url="tests/a.xml" templateFile="more.local.pattern"/> </action>
+  <action id="remote"> <page url="http://www.videlibri.de/xidelecho.php?abc=def"/> </action>
+</actions>
