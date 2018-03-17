@@ -222,7 +222,9 @@ var htmlparser:THtmlTemplateParserBreaker;
     multipage: TTemplateReaderBreaker;
     multipagetemp: TMultiPageTemplate;
     currentRoot: TTreeNode;
-
+    {$ifdef windows}
+    backgroundColor: integer;
+    {$endif}
 procedure setTerminalColor(err: boolean; color: TMyConsoleColors);
 {$ifdef unix}
 const colorCodes: array[TMyConsoleColors] of string = (
@@ -251,10 +253,95 @@ begin
     {$endif}
     {$ifdef windows}
     if err then handle := StdErrorHandle else handle := StdOutputHandle;
-    SetConsoleTextAttribute(handle, colorCodes[color]);
+    SetConsoleTextAttribute(handle, colorCodes[color] or backgroundColor);
     {$endif}
     lastConsoleColor := color;
   end;
+end;
+
+function setTextEncoding(var t: TextFile; e: string): integer;
+var
+  codepage: Integer;
+  str: String;
+begin
+  codepage := strEncodingFromName(e);
+  if codepage = CP_NONE then begin
+    if striEqual(e, 'input') then codepage := -1
+    else writeln(stderr, 'Unknown encoding: ',e)
+  end;
+  result := codepage;
+  if codepage <> -1 then
+    SetTextCodePage(t, codepage);
+end;
+
+procedure setOutputEncoding(e: string);
+var
+  codepage: Integer;
+begin
+  codepage := setTextEncoding(output, e);
+  if codepage <> -1 then begin
+    hasOutputEncoding := oeConvert;
+    //SetTextCodePage(StdErr, codepage);
+  end else begin
+    hasOutputEncoding := oePassRaw;
+    SetTextCodePage(Output, CP_ACP); //all our strings claim to be ACP (=UTF8) so there should be no conversion?
+    //SetTextCodePage(StdErr, CP_ACP);
+  end;
+end;
+
+procedure initTerminalAndColoring;
+{$ifdef windows}
+var
+  consoleBuffer: TConsoleScreenBufferInfo;
+{$endif}
+begin
+  case mycmdline.readString('color') of
+    'auto': colorizing := cAuto;
+    'never': colorizing := cNever;
+    'always': colorizing := cAlways;
+    'json': colorizing := cJSON;
+    'xml': colorizing := cXML;
+    else raise EInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
+  end;
+  if not (colorizing in [cNever,cAlways]) or (hasOutputEncoding = oeAbsent) then begin
+    {$ifdef unix}
+    isStdinTTY := IsATTY(Input) <> 0;
+    isStdoutTTY := IsATTY(stdout) <> 0;
+    isStderrTTY := IsATTY(StdErr) <> 0;
+    {$endif}
+    {$ifdef windows}
+    isStdinTTY :=  getfiletype(StdInputHandle) = FILE_TYPE_CHAR;
+    isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
+    isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
+    {$endif}
+    if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
+    if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextEncoding(input, mycmdline.readString('stdin-encoding'));
+  end;
+
+  case colorizing of
+    cNever: begin
+      isStderrTTY := false; //todo, coloring should not change this variable (but it is only used for coloring. rename it?)
+      isStdoutTTY := false;
+    end;
+    cAlways: begin
+      isStdoutTTY := true;
+      isStderrTTY := true;
+    end;
+  end;
+  case colorizing of
+    cAuto, cAlways: begin
+      case outputFormat of
+        ofXMLWrapped, ofRawHTML, ofRawXML: colorizing := cXML;
+        ofJsonWrapped: colorizing := cJSON;
+      end;
+    end;
+  end;
+  {$ifdef windows}
+  if colorizing <> cNever then begin
+    GetConsoleScreenBufferInfo(StdOutputHandle, consoleBuffer);
+    backgroundColor := consoleBuffer.wAttributes and (BACKGROUND_RED or BACKGROUND_GREEN or BACKGROUND_BLUE or BACKGROUND_INTENSITY);
+  end;
+  {$endif}
 end;
 
 procedure w(const s: string);
@@ -538,35 +625,6 @@ begin
 end;
 
 
-function setTextEncoding(var t: TextFile; e: string): integer;
-var
-  codepage: Integer;
-  str: String;
-begin
-  codepage := strEncodingFromName(e);
-  if codepage = CP_NONE then begin
-    if striEqual(e, 'input') then codepage := -1
-    else writeln(stderr, 'Unknown encoding: ',e)
-  end;
-  result := codepage;
-  if codepage <> -1 then
-    SetTextCodePage(t, codepage);
-end;
-
-procedure setOutputEncoding(e: string);
-var
-  codepage: Integer;
-begin
-  codepage := setTextEncoding(output, e);
-  if codepage <> -1 then begin
-    hasOutputEncoding := oeConvert;
-    //SetTextCodePage(StdErr, codepage);
-  end else begin
-    hasOutputEncoding := oePassRaw;
-    SetTextCodePage(Output, CP_ACP); //all our strings claim to be ACP (=UTF8) so there should be no conversion?
-    //SetTextCodePage(StdErr, CP_ACP);
-  end;
-end;
 
 
 type
@@ -3693,47 +3751,7 @@ begin
 
   cmdlineWrapper.Free;
 
-  case mycmdline.readString('color') of
-    'auto': colorizing := cAuto;
-    'never': colorizing := cNever;
-    'always': colorizing := cAlways;
-    'json': colorizing := cJSON;
-    'xml': colorizing := cXML;
-    else raise EInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
-  end;
-  if not (colorizing in [cNever,cAlways]) or (hasOutputEncoding = oeAbsent) then begin
-    {$ifdef unix}
-    isStdinTTY := IsATTY(Input) <> 0;
-    isStdoutTTY := IsATTY(stdout) <> 0;
-    isStderrTTY := IsATTY(StdErr) <> 0;
-    {$endif}
-    {$ifdef windows}
-    isStdinTTY :=  getfiletype(StdInputHandle) = FILE_TYPE_CHAR;
-    isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
-    isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
-    {$endif}
-    if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
-    if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextEncoding(input, mycmdline.readString('stdin-encoding'));
-  end;
-
-  case colorizing of
-    cNever: begin
-      isStderrTTY := false; //todo, coloring should not change this variable (but it is only used for coloring. rename it?)
-      isStdoutTTY := false;
-    end;
-    cAlways: begin
-      isStdoutTTY := true;
-      isStderrTTY := true;
-    end;
-  end;
-  case colorizing of
-    cAuto, cAlways: begin
-      case outputFormat of
-        ofXMLWrapped, ofRawHTML, ofRawXML: colorizing := cXML;
-        ofJsonWrapped: colorizing := cJSON;
-      end;
-    end;
-  end;
+  initTerminalAndColoring;
 
 
 
