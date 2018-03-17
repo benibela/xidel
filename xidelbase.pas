@@ -209,6 +209,7 @@ end;
 
  TTemplateReaderBreaker = class(TMultipageTemplateReader)
    constructor create();
+   destructor destroy(); override;
    procedure setTemplate(atemplate: TMultiPageTemplate);
    procedure perform(actions: TStringArray);
    procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
@@ -2628,8 +2629,6 @@ begin
       multipagetemp.loadTemplateFromString(extract);
       multipage.setTemplate(multipagetemp);
       multipage.perform(templateActions);
-      multipage.setTemplate(nil);
-      multipagetemp.free;
     end
     else raise EXidelException.Create('Impossible');
   end;
@@ -2903,11 +2902,17 @@ begin
 end;
 
 
-constructor TTemplateReaderBreaker.create;
+constructor TTemplateReaderBreaker.create();
 begin
   queryCache := TXQMapStringObject.Create;
   queryCache.OwnsObjects := false;
   onLog:=@selfLog;
+end;
+
+destructor TTemplateReaderBreaker.destroy();
+begin
+  setTemplate(nil);
+  inherited destroy();
 end;
 
 procedure TTemplateReaderBreaker.setTemplate(atemplate: TMultiPageTemplate);
@@ -3304,7 +3309,6 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
   end;
 
 var
-  specialized: string;
   temps: String;
 begin
   if (name = 'follow') or (name = 'follow-file')             //follow always create new processing context
@@ -3341,26 +3345,20 @@ begin
     TCommandLineReaderBreaker(sender).removeVar('extract');
     TCommandLineReaderBreaker(sender).removeVar('download');
     closeAllMultiArgs;
-  end else if (name = 'extract') or (name = 'extract-file') or (name = 'template-file') or (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3')  then begin
-    specialized := '';
-    case name of
-      'extract-file':
-        if isStdin(value) then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
-        else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
-      'template-file': begin
-        TCommandLineReaderBreaker(sender).overrideVar('extract-kind', 'multipage');
-        TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
-      end;
-      'xpath', 'xquery', 'css', 'xpath2', 'xquery1', 'xpath3', 'xquery3': specialized:=name;
-    end;
-    if specialized <> '' then begin
-      TCommandLineReaderBreaker(sender).overrideVar('extract', value);
-      TCommandLineReaderBreaker(sender).overrideVar('extract-kind', specialized);
-    end;
-
-    TCommandLineReaderBreaker(sender).overrideVar(name, value);
+  end else if (name = 'extract') then begin
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
-    if specialized <> '' then TCommandLineReaderBreaker(sender).removeVar('extract-kind');
+  end else if (name = 'extract-file') then begin
+    if isStdin(value) then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
+    else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+    currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
+  end else if (name = 'template-file') then begin
+    currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
+    TCommandLineReaderBreaker(sender).removeVar('template-file');
+  end else if (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3')  then begin
+    TCommandLineReaderBreaker(sender).overrideVar('extract-kind', name);
+    TCommandLineReaderBreaker(sender).overrideVar('extract', value);
+    currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
+    TCommandLineReaderBreaker(sender).removeVar('extract-kind');
   end else if name = 'download' then begin
     TCommandLineReaderBreaker(sender).overrideVar(name, value);
     currentContext.readNewAction(TDownload.Create, cmdlineWrapper)
@@ -4125,6 +4123,14 @@ begin
   result := xqvalue(resstr);
 end;
 
+function xqfCallAction(argc: SizeInt; args: PIXQValue): IXQValue;
+begin
+  requiredArgCount(argc, 1);
+  result := xqvalue;
+  multipage.callAction(args[0].toString);
+end;
+
+
 procedure blockFileAccessFunctions;
 var fn, pxp, jn: TXQNativeModule;
     i: integer;
@@ -4164,5 +4170,6 @@ initialization
   pxpx.registerFunction('argv', @xqfArgv, ['($i as integer) as string']);
   pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer', '($arg as item(), $base as xs:integer) as xs:integer']);
   pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
+  pxpx.registerFunction('call-action', @xqfCallAction, ['($arg as xs:string) as empty-sequence()']);
 end.
 
