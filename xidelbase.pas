@@ -2917,11 +2917,8 @@ end;
 
 procedure TTemplateReaderBreaker.setTemplate(atemplate: TMultiPageTemplate);
 begin
-  if atemplate = nil then begin
-    atemplate.free;
-    template:=nil;
-    exit;
-  end;
+  if template <> nil then FreeAndNil(template);
+  if atemplate = nil then exit;
   inherited setTemplate(atemplate);
 end;
 
@@ -3309,7 +3306,7 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
   end;
 
 var
-  temps: String;
+  temps, tempurl: String;
 begin
   if (name = 'follow') or (name = 'follow-file')             //follow always create new processing context
      or ((name = '') and (value <> '[') and (value <> ']')   //plain data/url
@@ -3377,8 +3374,8 @@ begin
     i := pos('=', temps);
     if i = 0 then xpathparser.StaticContext.defaultElementTypeNamespace := TNamespace.create(temps, '')
     else begin
-      specialized := strSplitGet('=', temps);
-      xpathparser.StaticContext.namespaces.add(TNamespace.create(temps, specialized));
+      tempurl := strSplitGet('=', temps);
+      xpathparser.StaticContext.namespaces.add(TNamespace.create(temps, tempurl));
     end;
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
