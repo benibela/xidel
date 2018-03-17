@@ -3739,6 +3739,13 @@ begin
         ExitCode:=1;
       end;
     end;
+
+    if (length(baseContext.dataSources) > 0) and (baseContext.dataSources[high(baseContext.dataSources)] is TFollowToWrapper) then
+      with baseContext.dataSources[high(baseContext.dataSources)] as TFollowToWrapper do
+        if followTo is THTTPRequest then begin
+          if (THTTPRequest(followTo).data = '') and (mycmdline.readString('post') <> '') then writeln(stderr, '--post must be placed before urls.')
+          else if (THTTPRequest(followTo).method = 'GET')  and (mycmdline.readString('method') <> '') and (mycmdline.readString('method') <> 'GET') then writeln(stderr, '--method must be placed before urls.');
+        end;
   end;
 
 
