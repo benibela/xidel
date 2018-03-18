@@ -421,6 +421,9 @@ tests/test.sh moduleFuncImportRel -e 'import module namespace rename = "pseudo:/
 tests/test.sh moduleFuncImportRel --extract-file tests/subdir/test.xq
 tests/test.sh moduleFuncImportRel tests/subdir/test.xq
 
+tests/test.sh varlogBC -e 'x:clear-log(),a:=1,a:=2,b:=3,c:=4,x:clear-log("a"), t:=x:get-log(), u:=("a","b","c")!(.,x:get-log(.))'
+tests/test.sh varlogAC -e 'x:clear-log(),a:=1,a:=2,b:=3,c:=4,x:clear-log("b"), t:=x:get-log(), u:=("a","b","c")!(.,x:get-log(.))'
+tests/test.sh varlogAB -e 'x:clear-log(),a:=1,a:=2,b:=3,c:=4,x:clear-log("c"), t:=x:get-log(), u:=("a","b","c")!(.,x:get-log(.))'
 
 #interpreter tests
 tests/test.sh utf8  -e 'substring("äbcd",1,3)'

@@ -4179,6 +4179,55 @@ begin
   multipage.callAction(args[0].toString);
 end;
 
+function xqfClearLog(argc: SizeInt; args: PIXQValue): IXQValue;
+begin
+  result := xqvalue;
+  if argc = 0 then begin
+    htmlparser.variableChangeLog.clear;
+    htmlparser.oldVariableChangeLog.clear;
+  end else begin
+    htmlparser.variableChangeLog.remove(args[0].toString);
+    htmlparser.oldVariableChangeLog.remove(args[0].toString);
+  end;
+end;
+
+
+function xqfGetLog(argc: SizeInt; args: PIXQValue): IXQValue;
+var
+  name: String;
+  reslist: TXQVList;
+  procedure handleLog(log: TXQVariableChangeLog);
+  var
+    tempobj: TXQValueObject;
+    tempArray: TXQValueJSONArray;
+  begin
+    if name = '' then begin
+      for i := 0 to log.count - 1 do begin
+        tempobj := TXQValueObject.create();
+        tempobj.setMutable('name', log.getName(i));
+        tempobj.setMutable('value', log.get(i));
+        if log.getNamespace(i) <> '' then tempobj.setMutable('namespace', log.getNamespace(i));
+        reslist.add(tempobj);
+      end;
+    end else begin
+      for i := 0 to log.count - 1 do begin
+        if log.getName(i) <> name then continue;
+        tempArray := TXQValueJSONArray.create();
+        tempArray.add(log.get(i));
+        reslist.add(tempArray);
+      end;
+    end;
+    log.free;
+  end;
+
+begin
+  if argc = 1 then name := args[0].toString
+  else name := '';
+  reslist := TXQVList.create(htmlparser.oldVariableChangeLog.count + htmlparser.variableChangeLog.count);
+  handleLog(htmlparser.oldVariableChangeLog.condensed);
+  handleLog(htmlparser.variableChangeLog.condensed);
+  xqvalueSeqSqueezed(result, reslist);
+end;
 
 procedure blockFileAccessFunctions;
 var fn, pxp, jn: TXQNativeModule;
@@ -4220,5 +4269,7 @@ initialization
   pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer', '($arg as item(), $base as xs:integer) as xs:integer']);
   pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
   pxpx.registerFunction('call-action', @xqfCallAction, ['($arg as xs:string) as empty-sequence()']);
+  pxpx.registerFunction('clear-log', @xqfClearLog, ['() as empty-sequence()', '($var as xs:string) as empty-sequence()']);
+  pxpx.registerFunction('get-log', @xqfGetLog, ['() as item()*', '($var as xs:string) as item()*']);
 end.
 

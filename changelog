@@ -4,7 +4,9 @@ Some important changes:
 --------Xidel 0.9.7 --------
 - fix system(), file:exists, file:move (override), file:path-to-uri on Windows
 - Cookie handling follows RFC 6265 rather than sending all cookies to all servers.
-- further minor bug fixes
+- add t:siblings-header/siblings elements to pattern matcher to match certain element siblings regardless of their ordering (e.g. table columns).
+- add functions x:call-action, x:get-log, x:clear-log to give programatical access to multipage templates and variable changelog.
+- further minor bug fixes and performance improvements
 
 --------Xidel 0.9.6 --------
 (2016-11-20)

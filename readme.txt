@@ -200,8 +200,6 @@ Important extensions are:
     eval("xpath") This will evaluate the string "xpath" as an XPath/XQuery expression
     system("..")  Runs a certain program and returns its stdout result as string
     read()        Reads a line from stdin
-    deep-text()   This is the concatenated plain text of the every tag inside the current text. 
-                  You can also pass a separator like deep-text(' ') to separate text of different nodes.
     inner-html()  This is the HTML content of node ., like innerHTML in javascript.  
     outer-html()  This is the same as inner-html, but includes the node itself
     inner-xml()   This is the XML content of node, similar to inner-html()
@@ -229,6 +227,8 @@ Important extensions are:
                     <a>FOO</a> and <a>BAR</a>.
                   The template can be a node or a string. Written as string the above example would be
                     match("<a>{.}</a>", <x><a>FOO</a><a>BAR</a></x>).
+    x:call-action($name)
+                  Calls the action of a multipage template.
     transform(node, transformer-function)
                   This function can perform an arbitrary transformation of a document, by calling the 
                   transformer-function for every descendant node and replacing the node with the value returned by the function.
@@ -247,6 +247,12 @@ Important extensions are:
                   Converts a string to an integer. It accepts base-prefixes like 0x or 0b, e.g 0xABCDEF
     x:integer-to-base($i, $base)
                   Converts an integer to a certain base
+    x:clear-log([$name]) 
+                  Removes variables.
+    x:get($name, [$default])
+                  Gets the value of a variable, or $default if the variable does not exist.
+    x:get-log([$name]) 
+                  Gets every value a variable had.
                  
     Additional functions without prefix are in the pxp: namespace, which is also set as default namespace.
 

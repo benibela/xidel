@@ -1,0 +1,12 @@
+a := 1
+a := 2
+b := 3
+t := {"name": "a", "value": 1}
+{"name": "a", "value": 2}
+{"name": "b", "value": 3}
+u := a
+[1]
+[2]
+b
+[3]
+c

@@ -28,7 +28,7 @@ Serializes a value as JSON, i.e. converts the value to JSON and converts that to
 <f name="extract" args="($string as xs:string, $regex as xs:string [, $match as xs:integer *,[$flags as xs:string]])">
 This applies the regex $regex to $string and returns only the matching part. This returns basically what the program grep would return. <br/>
 If the $match argument is provided, only the $match-th submatch will be returned. This can be a sequence of several integers.<br/>
-If flags contains *, all occurrences are returned.<br>
+If flags contains *, all occurrences are returned.<br/>
 Otherwise the regex and flags parameters behave identical to the parameters of <a>fn:matches</a> and <a>fn:replace</a>.
 
 </f>
@@ -86,7 +86,7 @@ Parses an HTML document similar to <a>fn:parse-xml</a>. If the string is invalid
 <f name="form" args="($form as node()*[, $override as item()*])">
 This creates the request corresponding to a HTML form. The request includes the value of all input/select/textarea descendants of the first parameter.<br/>
 You can use the second parameter to give a sequence of values replacing the default values of the form elements.<br/>
-A value is either a string, e.g. "name=value&name2=..." which has to be url encoded and is splitted at the &-separators by this function to override each parameter separately. (so the order of the name=value pairs is changed to the order of the input elements in the form). For example <code>form(//form[1], "foo=bar&xyz=123")</code> returns a request for the first form,
+A value is either a string, e.g. "name=value&amp;name2=..." which has to be url encoded and is splitted at the &amp;-separators by this function to override each parameter separately. (so the order of the name=value pairs is changed to the order of the input elements in the form). For example <code>form(//form[1], "foo=bar&amp;xyz=123")</code> returns a request for the first form,
 with the foo and xyz input fields overridden by bar and 123. <br/>
 Or a JSON-like object <code>{"name": "value", ...}</code>, in which the properties must not be url encodeded (i.e. the form method url encodes each property) and in which each property overrides the corresponding input field. For example <code>form(//form[1], {"foo": "bar", "xyz": 123})</code> <br/><br/>
 
@@ -106,7 +106,7 @@ For multipart encoded data, the value parameters do not have to be strings, but 
 <li>value: for a string value.</li>
 <li>filename: to set the filename field of the Content-Disposition header.</li>
 <li>type: Becomes a Content-Type header</li>
-<li>headers: An arbitrary sequence of headers</li>
+<li>headers: An arbitrary sequence of headers</li></ul>
 </f>
 <f name="resolve-html">
 Resolves every value in the $relative sequence to an HTTP request with an absolute URL/URI, using $base as reference base URI.<br/>
@@ -156,10 +156,10 @@ You can pass multiple patterns and nodes, in which case each pattern is applied 
 If the pattern cannot be matched, an error is raised. 
 </f>
 <f name="transform">
-This function can perform an arbitrary transformation of a document, by calling the transformer-function <code>$f</code> for every descendant node and replacing the node with the value returned by the function.<br>
+This function can perform an arbitrary transformation of a document, by calling the transformer-function <code>$f</code> for every descendant node and replacing the node with the value returned by the function.<br/>
 For example <code><![CDATA[transform(/, function($x) { if (name($x) = "a") then <a>{$x/@*, <b>{$x/node()}</b>}</a> else $x } )]]></code>
-will make every link bold.<br>
-If $root is omitted, the context item . is used.<br>
+will make every link bold.<br/>
+If $root is omitted, the context item . is used.<br/>
 If $options("always-recurse") is true, all values returned by $f are also transformed with further calls of $f.<br/>
 Preliminary, behavior might change in future versions. E.g. it might be renamed to map-nodes 
 </f>
@@ -218,5 +218,17 @@ Compares strings like the @class attribute.
 <f name="lines" internal="true">
 Splits a text into lines.
 </f>
+<f name="call-action" args="($name as xs:string) as empty-sequence()">
+Calls the action of a multipage template.
+</f>
+<f name="get-log" args="([$var as xs:string]) as item()*">
+Gets all values of all variables, or all values of a single variable. <br/>
+For all variables it returns a sequence of objects with name and value of the variable as properties.<br/>
+For a single variable it returns a sequence of arrays, each array representing one assignment to the variable. (since the assignment might be a sequence, and a sequence of sequences does not exist)
+</f>
+<f name="clear-log" args="([$var as xs:string]) as empty-sequence()">
+Removes all values of all variables, or a single variable. 
+</f>
+
 </module>
 </functions>
