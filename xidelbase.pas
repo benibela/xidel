@@ -840,7 +840,7 @@ TExtraction = class(TDataProcessing)
  extractExclude, extractInclude: TStringArray;
  extractKind: TExtractionKind;
 
- templateUrl: string;
+ extractBaseUri: string;
  templateActions: TStringArray;
 
  defaultName: string;
@@ -1803,13 +1803,17 @@ var
 begin
   if extract = '' then begin
     reader.read('extract', extract);  //todo. option: extract-file
-    if not cgimode and strBeginsWith(extract, '@') then extract := strLoadFromFileChecked(strCopyFrom(extract, 2));
+    if not cgimode and strBeginsWith(extract, '@') then begin
+      extractBaseUri := strCopyFrom(extract, 2);
+      extract := strLoadFromFileChecked(extractBaseUri);
+    end;
+
     extract:=trim(extract);
     if reader.read('extract-exclude', tempstr) then extractExclude := strSplit(tempstr, ',', false);
     if reader.read('extract-include', tempstr) then extractInclude := strSplit(tempstr, ',', false);
 
     if reader.read('template-file', tempstr)  then begin
-      templateUrl := tempstr;
+      extractBaseUri := tempstr;
       extract := strLoadFromFileChecked(tempstr);
       extractKind := ekMultipage;
     end;
@@ -2605,7 +2609,8 @@ begin
       xpathparser.ParsingOptions.StringEntities:=xqseDefault;
 
       parent.loadDataForQueryPreParse(data);
-      if extractQueryCache = nil then
+      if extractQueryCache = nil then begin
+        if extractBaseUri <> '' then xpathparser.StaticContext.baseURI := fileNameExpandToURI(extractBaseUri);
         case extractKind of
           ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
           ekXPath2: extractQueryCache := xpathparser.parseXPath2(extract, xpathparser.StaticContext);
@@ -2613,6 +2618,7 @@ begin
           ekXPath3: extractQueryCache := xpathparser.parseXPath3(extract, xpathparser.StaticContext);
           ekXQuery3: extractQueryCache := xpathparser.parseXQuery3(extract, xpathparser.StaticContext);
         end;
+      end;
       parent.loadDataForQuery(data, extractQueryCache);
       if termContainsVariableDefinition(extractQueryCache.Term) then begin
         THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
@@ -2632,7 +2638,7 @@ begin
       multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
       multipagetemp := TMultiPageTemplate.create();
       if extract = '' then raise Exception.Create('Multipage-action-template is empty');
-      multipagetemp.loadTemplateFromString(extract, ExtractFileName(templateUrl), ExtractFileDir(templateUrl));
+      multipagetemp.loadTemplateFromString(extract, ExtractFileName(extractBaseUri), ExtractFileDir(extractBaseUri));
       multipage.setTemplate(multipagetemp);
       multipage.perform(templateActions);
     end
@@ -2942,7 +2948,7 @@ begin
   writeln(stderr, logged);
 end;
 
-function loadModuleFromAtUrl(const at: string): IXQuery; forward;
+function loadModuleFromAtUrl(const at, base: string): IXQuery; forward;
 
 procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
 begin
@@ -3320,7 +3326,7 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
     i := pos('=', value);
     if i > 0 then prefix := strSplitGet('=', value)
     else prefix := '';
-    q := loadModuleFromAtUrl(value);
+    q := loadModuleFromAtUrl(value, xpathparser.StaticContext.baseURI);
     if q = nil then raise Exception.Create('Failed to load module ' + value);
     xpathparser.registerModule(q);
     namespace := (q as TXQuery).getStaticContext.moduleNamespace;
@@ -3370,7 +3376,7 @@ begin
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
   end else if (name = 'extract-file') then begin
     if isStdin(value) then TCommandLineReaderBreaker(sender).overrideVar('extract', '-')
-    else TCommandLineReaderBreaker(sender).overrideVar('extract', strLoadFromFileChecked(value));
+    else TCommandLineReaderBreaker(sender).overrideVar('extract', '@' + value);
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
   end else if (name = 'template-file') then begin
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
@@ -3506,27 +3512,32 @@ end;
 
 var baseContext: TProcessingContext;
 
-function loadModuleFromAtUrl(const at: string): IXQuery;
+function loadModuleFromAtUrl(const at, base: string): IXQuery;
 var d: IData;
   ft: TFollowTo;
+  url, oldBaseUri: String;
 begin
+  url := strResolveURI(at, base);
   try
-    ft := TFollowTo.createFromRetrievalAddress(at);
+    ft := TFollowTo.createFromRetrievalAddress(url);
     d := ft.retrieve(baseContext, 0);
     ft.free;
   except
     exit(nil);
   end;
-  result := xpathparser.parseXQuery3(d.rawData)
+  oldBaseUri := xpathparser.StaticContext.baseURI;
+  xpathparser.StaticContext.baseURI := url;
+  result := xpathparser.parseXQuery3(d.rawData);
+  xpathparser.StaticContext.baseURI := oldBaseUri;
 end;
 
-procedure importModule(pseudoSelf: tobject; sender: TXQueryEngine; const namespace: string; const at: array of string);
+procedure importModule(pseudoSelf: tobject; sender: TXQueryEngine; context: TXQStaticContext; const namespace: string; const at: array of string);
 var
   q: IXQuery;
 begin
   if xpathparser.findModule(namespace) <> nil then exit;
   for i := 0 to high(at) do begin
-    q := loadModuleFromAtUrl(at[i]);
+    q := loadModuleFromAtUrl(at[i], context.baseURI);
     if q <> nil then begin
       xpathparser.registerModule(q);
       exit
@@ -3759,6 +3770,7 @@ begin
         SetLength(baseContext.actions, 1);
         baseContext.actions[0] := TExtraction.create;
         TExtraction(baseContext.actions[0]).extract := strLoadFromFileChecked(ParamStr(1));
+        TExtraction(baseContext.actions[0]).extractBaseUri := ParamStr(1);
         baseContext.silent := true;
       end else begin
         writeln(stderr, 'No actions given.');
