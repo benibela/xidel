@@ -1,5 +1,7 @@
 init
 res := AAA
+res := v1
+res := v2
 res:v1
 res:v2
 res:AAA

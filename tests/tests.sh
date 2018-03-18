@@ -420,6 +420,12 @@ tests/test.sh moduleFuncImportRel --module tests/module2.xqm -e '$foobar2:def'
 tests/test.sh moduleFuncImportRel -e 'import module namespace rename = "pseudo://test-module2" at "tests/module2.xqm"; $rename:def'
 tests/test.sh moduleFuncImportRel --extract-file tests/subdir/test.xq
 tests/test.sh moduleFuncImportRel tests/subdir/test.xq
+tests/test.sh moduleFuncImportGlobalMut --module tests/module2.xqm -e 'foobar2:setglobal()'
+tests/test.sh moduleFuncImportGlobalMut -e 'import module namespace rename = "pseudo://test-module2" at "tests/module2.xqm"; rename:setglobal()'
+tests/test.sh moduleFuncImportGlobalMut2 --module tests/module2.xqm -e 'foobar2:setglobal(), "xx:" || $newglobal'
+tests/test.sh moduleFuncImportGlobalMut2 -e 'import module namespace rename = "pseudo://test-module2" at "tests/module2.xqm"; rename:setglobal(), "xx:" || $newglobal'
+tests/test.sh moduleFuncImportGlobalMut3 --module tests/module2.xqm -e 'xxx := foobar2:setglobal()'
+tests/test.sh moduleFuncImportGlobalMut3 -e 'import module namespace rename = "pseudo://test-module2" at "tests/module2.xqm"; xxx := rename:setglobal()'
 
 tests/test.sh varlogBC -e 'x:clear-log(),a:=1,a:=2,b:=3,c:=4,x:clear-log("a"), t:=x:get-log(), u:=("a","b","c")!(.,x:get-log(.))'
 tests/test.sh varlogAC -e 'x:clear-log(),a:=1,a:=2,b:=3,c:=4,x:clear-log("b"), t:=x:get-log(), u:=("a","b","c")!(.,x:get-log(.))'
@@ -539,6 +545,7 @@ tests/test.sh moreActions1  --template-action ac1 --template-file tests/more.act
 tests/test.sh moreActions2  -e '"init"||get("res")' --template-action ac2 --template-file tests/more.actions --xquery '"res:" || $res'
 tests/test.sh moreActionsLocalPattern  --template-action local --template-file tests/more.actions --xquery '"res:" || $res'
 tests/test.sh moreActions -e '"init"||get("res")' --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res, for $i in ("ac2", "local", "ac1", "ac2") return ( x:call-action($i), "res:"||$res)' #variables set by call-action are reordered before the extract print, since the values of the extract are only known after the for has finished
+
 
 echo
 echo Results: 

@@ -2558,6 +2558,7 @@ end;
 procedure TExtraction.pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 begin
   printExtractedVariables(parser, false);
+  THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
 end;
 
 
@@ -2578,6 +2579,7 @@ function TExtraction.process(data: IData): TFollowToList;
 
 var
   value: IXQValue;
+  oldvarlogcount: Integer;
 begin
   //set flags when first processed
   if isStdin(extract) then extract:=strReadFromStdin;
@@ -2620,12 +2622,15 @@ begin
         end;
       end;
       parent.loadDataForQuery(data, extractQueryCache);
+      THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
       if termContainsVariableDefinition(extractQueryCache.Term) then begin
-        THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
         parent.evaluateQuery(extractQueryCache, data, true);
         printExtractedVariables(htmlparser, true);
       end else begin
+        oldvarlogcount := htmlparser.variableChangeLog.count;
         value := parent.evaluateQuery(extractQueryCache, data, true);
+        if oldvarlogcount <> htmlparser.variableChangeLog.count then
+          printExtractedVariables(htmlparser, true); //still print variables when some where set when we do not expect it, because termContainsVariableDefinition failed to find the assignment (e.g. through a function call)
         writeBeginGroup;
         printExtractedValue(value, false);
         writeEndGroup;
@@ -3516,6 +3521,8 @@ function loadModuleFromAtUrl(const at, base: string): IXQuery;
 var d: IData;
   ft: TFollowTo;
   url, oldBaseUri: String;
+  visitor: TXQTerm_VisitorFindWeirdGlobalVariableDeclarations;
+  term: TXQTerm;
 begin
   url := strResolveURI(at, base);
   try
@@ -3529,6 +3536,16 @@ begin
   xpathparser.StaticContext.baseURI := url;
   result := xpathparser.parseXQuery3(d.rawData);
   xpathparser.StaticContext.baseURI := oldBaseUri;
+
+
+  visitor := TXQTerm_VisitorFindWeirdGlobalVariableDeclarations.Create;
+  visitor.findNestedVariables := true;
+  visitor.listVars := true;
+  term := result.getTerm;
+  visitor.simpleTermVisit(@term, nil);
+  for i := 0 to high(visitor.vars) do with visitor.vars[i] do TXQueryEngineBreaker(xpathparser).addAWeirdGlobalVariable(namespace, value);
+  visitor.free;
+  result.getTerm;
 end;
 
 procedure importModule(pseudoSelf: tobject; sender: TXQueryEngine; context: TXQStaticContext; const namespace: string; const at: array of string);
