@@ -2942,7 +2942,7 @@ begin
   writeln(stderr, logged);
 end;
 
-
+function loadModuleFromAtUrl(const at: string): IXQuery; forward;
 
 procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
 begin
@@ -3310,6 +3310,24 @@ procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: 
       else htmlparser.variableChangeLog.add(trim(temps), strCopyFrom(value, equalSign+1));
     end;
   end;
+  procedure importModule(value: string);
+  var
+    q: IXQuery;
+    namespace: INamespace;
+    i: integer;
+    prefix: String;
+  begin
+    i := pos('=', value);
+    if i > 0 then prefix := strSplitGet('=', value)
+    else prefix := '';
+    q := loadModuleFromAtUrl(value);
+    if q = nil then raise Exception.Create('Failed to load module ' + value);
+    xpathparser.registerModule(q);
+    namespace := (q as TXQuery).getStaticContext.moduleNamespace;
+    if xpathparser.staticContext.importedModules = nil then xpathparser.staticContext.importedModules := TXQMapStringObject.Create;
+    if prefix = '' then prefix := namespace.getPrefix;
+    xpathparser.staticContext.importedModules.AddObject(prefix, q as txquery);
+  end;
 
 var
   temps, tempurl: String;
@@ -3383,6 +3401,8 @@ begin
       tempurl := strSplitGet('=', temps);
       xpathparser.StaticContext.namespaces.add(TNamespace.create(temps, tempurl));
     end;
+  end else if name = 'module' then begin
+    importModule(value);
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
@@ -3486,23 +3506,29 @@ end;
 
 var baseContext: TProcessingContext;
 
+function loadModuleFromAtUrl(const at: string): IXQuery;
+var d: IData;
+  ft: TFollowTo;
+begin
+  try
+    ft := TFollowTo.createFromRetrievalAddress(at);
+    d := ft.retrieve(baseContext, 0);
+    ft.free;
+  except
+    exit(nil);
+  end;
+  result := xpathparser.parseXQuery3(d.rawData)
+end;
 
 procedure importModule(pseudoSelf: tobject; sender: TXQueryEngine; const namespace: string; const at: array of string);
 var
-  ft: TFollowTo;
-  d: IData;
+  q: IXQuery;
 begin
   if xpathparser.findModule(namespace) <> nil then exit;
   for i := 0 to high(at) do begin
-    d := nil;
-    try
-      ft := TFollowTo.createFromRetrievalAddress(at[i]);
-      d := ft.retrieve(baseContext, 0);
-      ft.free;
-    except
-    end;
-    if d <> nil then begin
-      xpathparser.registerModule(xpathparser.parseXQuery3(d.rawData));
+    q := loadModuleFromAtUrl(at[i]);
+    if q <> nil then begin
+      xpathparser.registerModule(q);
       exit
     end;
   end;
@@ -3568,7 +3594,8 @@ begin
   mycmdLine.declareString('xpath3', 'Abbreviation for --extract-kind=xpath3 --extract=...');
   mycmdLine.declareString('xquery3', 'Abbreviation for --extract-kind=xquery3 --extract=...');
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
-  mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions are allowed with comma separated values)');
+  mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions separated by commas)');
+  mycmdLine.declareFile('module', 'Imports an xpath/xquery module');
 
   mycmdLine.beginDeclarationCategory('Follow options:');
 
