@@ -416,8 +416,11 @@ tests/test.sh moduleFuncImport --module tests/module.xq -e '$foobar:abc'
 tests/test.sh moduleFuncImport2 -e 'import module namespace rename = "pseudo://test-module" at "tests/module.xq"; ()' -e 'rename:test()'
 tests/test.sh moduleFuncImport2 --module tests/module.xq -e 'foobar:test()'
 tests/test.sh moduleFuncImport2 --module rename=tests/module.xq -e 'rename:test()'
+tests/test.sh moduleFuncImport2 --module tests/module.xq -e 'import module namespace rename = "pseudo://test-module" at "tests/module.xq"; ()' -e 'rename:test()'
+tests/test.sh moduleFuncImport2 --module xyz=tests/module.xq -e 'import module "pseudo://test-module"; ()' -e 'foobar:test()'
 tests/test.sh moduleFuncImportRel --module tests/module2.xqm -e '$foobar2:def'
 tests/test.sh moduleFuncImportRel -e 'import module namespace rename = "pseudo://test-module2" at "tests/module2.xqm"; $rename:def'
+tests/test.sh moduleFuncImportRel --module xyz=tests/module2.xqm -e 'import module namespace rename = "pseudo://test-module2" at "tests/module2.xqm"; $rename:def'
 tests/test.sh moduleFuncImportRel --extract-file tests/subdir/test.xq
 tests/test.sh moduleFuncImportRel tests/subdir/test.xq
 tests/test.sh moduleFuncImportGlobalMut --module tests/module2.xqm -e 'foobar2:setglobal()'
