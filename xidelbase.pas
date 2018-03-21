@@ -224,7 +224,7 @@ var htmlparser:THtmlTemplateParserBreaker;
     multipagetemp: TMultiPageTemplate;
     currentRoot: TTreeNode;
     {$ifdef windows}
-    backgroundColor: integer;
+    backgroundColor, consoleTextAttributes: integer;
     {$endif}
 procedure setTerminalColor(err: boolean; color: TMyConsoleColors);
 {$ifdef unix}
@@ -3947,6 +3947,7 @@ begin
 
   if outputfooter <> '' then wcolor(outputFooter, colorizing)
   else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
+  {$ifdef windows}if colorizing <> cNever then SetConsoleTextAttribute(StdOutputHandle, consoleTextAttributes); {$endif}
 
   mycmdLine.free;
   tracer.free;
