@@ -339,8 +339,9 @@ begin
   end;
   {$ifdef windows}
   if colorizing <> cNever then begin
-    GetConsoleScreenBufferInfo(StdOutputHandle, consoleBuffer);
-    backgroundColor := consoleBuffer.wAttributes and (BACKGROUND_RED or BACKGROUND_GREEN or BACKGROUND_BLUE or BACKGROUND_INTENSITY);
+    GetConsoleScreenBufferInfo(StdOutputHandle, @consoleBuffer);
+    consoleTextAttributes := consoleBuffer.wAttributes;
+    backgroundColor := consoleTextAttributes and (BACKGROUND_RED or BACKGROUND_GREEN or BACKGROUND_BLUE or BACKGROUND_INTENSITY);
   end;
   {$endif}
 end;
