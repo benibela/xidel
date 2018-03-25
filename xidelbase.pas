@@ -2639,6 +2639,7 @@ begin
       end;
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
+      xpathparser.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
       multipage.onPageProcessed:=@pageProcessed;
       if parent.silent then multipage.onLog := nil else multipage.onLog := @multipage.selfLog;
       multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
@@ -4192,10 +4193,15 @@ begin
 end;
 
 function xqfCallAction(argc: SizeInt; args: PIXQValue): IXQValue;
+var
+  oldEntites: TXQParsingOptionsStringEntities;
 begin
   requiredArgCount(argc, 1);
   result := xqvalue;
+  oldEntites := htmlparser.QueryEngine.ParsingOptions.StringEntities;
+  htmlparser.QueryEngine.ParsingOptions.StringEntities := xqseIgnoreLikeXPath;
   multipage.callAction(args[0].toString);
+  htmlparser.QueryEngine.ParsingOptions.StringEntities := oldEntites;
 end;
 
 function xqfClearLog(argc: SizeInt; args: PIXQValue): IXQValue;
