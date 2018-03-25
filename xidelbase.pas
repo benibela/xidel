@@ -2759,28 +2759,30 @@ begin
       end else begin
         first := true;
         writeItem('{', cJSON);
-        setlength(tempUsed, vars.count);
-        FillChar(tempUsed[0], sizeof(tempUsed[0])*length(tempUsed), 0);
-        for i:=0 to vars.count-1 do begin
-          if tempUsed[i] then continue;
-          if acceptName(vars.Names[i]) then begin
-            if not first then wcolor(', ' + LineEnding, cJSON);
-            first := false;
-            writeVarName(jsonStrEscape(vars.Names[i]) + ': ', cJSON);
-            values := vars.getAll(vars.Names[i]);
-            if values.getSequenceCount = 1 then printExtractedValue(values, true)
-            else begin
-              wcolor('[', cJSON);
-              printExtractedValue(values.get(1), true);
-              for j:=2 to values.getSequenceCount do begin
-                wcolor(', ', cJSON);
-                printExtractedValue(values.get(j), true);
+        if vars.count > 0 then begin
+          setlength(tempUsed, vars.count);
+          FillChar(tempUsed[0], sizeof(tempUsed[0])*length(tempUsed), 0);
+          for i:=0 to vars.count-1 do begin
+            if tempUsed[i] then continue;
+            if acceptName(vars.Names[i]) then begin
+              if not first then wcolor(', ' + LineEnding, cJSON);
+              first := false;
+              writeVarName(jsonStrEscape(vars.Names[i]) + ': ', cJSON);
+              values := vars.getAll(vars.Names[i]);
+              if values.getSequenceCount = 1 then printExtractedValue(values, true)
+              else begin
+                wcolor('[', cJSON);
+                printExtractedValue(values.get(1), true);
+                for j:=2 to values.getSequenceCount do begin
+                  wcolor(', ', cJSON);
+                  printExtractedValue(values.get(j), true);
+                end;
+                wcolor(']', cJSON);
               end;
-              wcolor(']', cJSON);
             end;
+            for j := i + 1 to vars.count-1 do
+              if vars.Names[i] = vars.Names[j] then tempUsed[j] := true;
           end;
-          for j := i + 1 to vars.count-1 do
-            if vars.Names[i] = vars.Names[j] then tempUsed[j] := true;
         end;
         wcolor(LineEnding + '}', cJSON);
     end;
