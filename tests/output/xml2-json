@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+[
+  1,
+  2,
+  3,
+  {
+    &quot;a&quot;: 123,
+    &quot;b&quot;: &quot;c&lt;&amp;&gt;&quot;,
+    &quot;d&lt;&amp;&gt;&quot;: 456
+  }
+]
+</xml>

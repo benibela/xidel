@@ -273,6 +273,8 @@ tests/test.sh xmlw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml-wrap
 tests/test.sh jsonw-json --printed-json-format compact -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format json-wrapped 
 tests/test.sh bash-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format bash
 
+tests/test.sh xml2-json -e '[1,2,3,{"a": 123,"b":"c<&>", "d<&>": 456}]' --output-format xml
+tests/test.sh xmlw2-json -e '[1,2,3,{"a": 123,"b":"c<&>", "d<&>": 456}]' --output-format xml-wrapped 
 
 tests/test.sh bash-escape1 --xquery '"1&#xA;2"' --output-format bash
 tests/test.sh bash-escape2 --xquery '"1&#xD;2"' --output-format bash

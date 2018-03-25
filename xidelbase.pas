@@ -2711,6 +2711,7 @@ var
   values: IXQValue;
   j: Integer;
   isShown: Boolean;
+  tempName: String;
 begin
   writeBeginGroup;
   jsonItselfAssigned := false;
@@ -2801,12 +2802,17 @@ begin
         wcolor('</seq>' + LineEnding, cXML);
       end else begin
         wcolor(LineEnding + '<object>' + LineEnding, cXML);
-        for i:=0 to vars.count-1 do
-           if acceptName(vars.Names[i])  then begin
-             wcolor('<'+vars.Names[i] + '>', cXML);
-             printExtractedValue(vars.Values[i], true);
-             wcolor('</'+vars.Names[i] + '>'+LineEnding, cXML);
-           end;
+        for i:=0 to vars.count-1 do begin
+          if not acceptName(vars.Names[i]) then continue;
+          tempName := vars.Names[i];
+          if TXSSchema.isValidNCName(tempName) then wcolor('<'+tempName + '>', cXML)
+          else begin
+            wcolor('<_ key="'+xmlStrEscape(tempName, true) + '">', cXML);
+            tempName := '_';
+          end;
+          printExtractedValue(vars.Values[i], true);
+          wcolor('</'+tempName + '>'+LineEnding, cXML);
+        end;
         wcolor('</object>'+LineEnding, cXML);
       end;
     end;

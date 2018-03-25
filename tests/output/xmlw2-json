@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seq>
+<e><seq><e>1</e><e>2</e><e>3</e><e><object><a>123</a><b>c&lt;&amp;&gt;</b><_ key="d&lt;&amp;&gt;">456</_></object></e></seq></e>
+</seq>
