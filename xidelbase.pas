@@ -955,6 +955,9 @@ private
   procedure httpReact (sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data:TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
 end;
 
+var globalCurrentExtraction: TExtraction;
+
+
 type EInvalidArgument = Exception;
 
 constructor TFollowToXQVObject.create(const abasedata: IData; const av: IXQValue);
@@ -1778,6 +1781,7 @@ end;
 constructor TExtraction.create;
 begin
   printVariables:=[pvCondensedLog];
+  if globalCurrentExtraction = nil then globalCurrentExtraction := self;
 end;
 
 function extractKindFromString(v: string): TExtractionKind;
@@ -2596,6 +2600,7 @@ begin
   if hasOutputEncoding <> oePassRaw then htmlparser.OutputEncoding := CP_UTF8
   else htmlparser.OutputEncoding := CP_NONE;
   globalDefaultInputFormat := inputFormat;
+  globalCurrentExtraction := self;
 
   case extractKind of
     ekPatternHTML, ekPatternXML: begin
@@ -4206,6 +4211,14 @@ var
 begin
   requiredArgCount(argc, 1);
   result := xqvalue;
+
+
+  if htmlparser.variableChangeLog.count > 0 then begin
+     assert(globalCurrentExtraction <> nil);
+     globalCurrentExtraction.printExtractedVariables(htmlparser, false);
+     THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
+  end;
+
   oldEntites := htmlparser.QueryEngine.ParsingOptions.StringEntities;
   htmlparser.QueryEngine.ParsingOptions.StringEntities := xqseIgnoreLikeXPath;
   multipage.callAction(args[0].toString);
