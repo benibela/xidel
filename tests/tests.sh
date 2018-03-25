@@ -549,6 +549,9 @@ tests/test.sh moreActions2  -e '"init"||get("res")' --template-action ac2 --temp
 tests/test.sh moreActionsLocalPattern  --template-action local --template-file tests/more.actions --xquery '"res:" || $res'
 tests/test.sh moreActions -e '"init"||get("res")' --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res, for $i in ("ac2", "local", "ac1", "ac2") return ( x:call-action($i), "res:"||$res)' #variables set by call-action are reordered before the extract print, since the values of the extract are only known after the for has finished
 
+tests/test.sh eval  --xquery 'let $a := 123 return eval("declare function local:abc(){0};456",{"language": "xquery"})'
+tests/test.sh eval  --xquery 'declare variable $outer := 456; let $a := 123 return eval("declare function local:abc(){0};$outer",{"language": "xquery"})'
+
 
 echo
 echo Results: 
