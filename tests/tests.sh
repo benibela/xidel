@@ -546,11 +546,11 @@ tests/test.sh regression_htmlparse  --input-format html '<ol><li>a<li>b<li>c</ol
 
 tests/test.sh variableActions  [ '<a/>' --template-file tests/variable.actions ] '<b/>' --xquery '$first || ":" || $second '
 tests/test.sh variableActions  --template-file tests/variable.actions --xquery '$first || ":" || $second '
-tests/test.sh moreActions1  --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res'
+tests/test.sh moreActions1  --template-action ac1,acmissing? --template-file tests/more.actions --xquery '"res:" || $res'
 tests/test.sh moreActions2  -e '"init"||get("res")' --template-action ac2 --template-file tests/more.actions --xquery '"res:" || $res'
 tests/test.sh moreActionsLocalPattern  --template-action local --template-file tests/more.actions --xquery '"res:" || $res'
 tests/test.sh moreActions -e '"init"||get("res")' --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res, for $i in ("ac2", "local", "ac1", "ac2") return ( x:call-action($i), "res:"||$res)' #variables set by call-action are reordered before the extract print, since the values of the extract are only known after the for has finished
-tests/test.sh moreActions3  --template-file tests/more.actions  -e 't:=123,x:call-action("local"),u:=456'
+tests/test.sh moreActions3  --template-file tests/more.actions  -e 't:=123,x:call-action("local"),x:call-action("foo?"),u:=456,h:=x:has-action("foo"),h:=x:has-action("ac2")'
 
 tests/test.sh eval  --xquery 'let $a := 123 return eval("declare function local:abc(){0};456",{"language": "xquery"})'
 tests/test.sh eval  --xquery 'declare variable $outer := 456; let $a := 123 return eval("declare function local:abc(){0};$outer",{"language": "xquery"})'

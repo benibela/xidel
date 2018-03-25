@@ -221,6 +221,9 @@ Splits a text into lines.
 <f name="call-action" args="($name as xs:string) as empty-sequence()">
 Calls the action of a multipage template.
 </f>
+<f name="has-action" args="($name as xs:string) as xs:boolean">
+Returns if a certain action is defined in the multipage template.
+</f>
 <f name="get-log" args="([$var as xs:string]) as item()*">
 Gets all values of all variables, or all values of a single variable. <br/>
 For all variables it returns a sequence of objects with name and value of the variable as properties.<br/>

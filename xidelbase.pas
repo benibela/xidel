@@ -4225,6 +4225,12 @@ begin
   htmlparser.QueryEngine.ParsingOptions.StringEntities := oldEntites;
 end;
 
+function xqfHasAction(argc: SizeInt; args: PIXQValue): IXQValue;
+begin
+  requiredArgCount(argc, 1);
+  result := xqvalue(multipage.findAction(args[0].toString) <> nil);
+end;
+
 function xqfClearLog(argc: SizeInt; args: PIXQValue): IXQValue;
 begin
   result := xqvalue;
@@ -4315,6 +4321,7 @@ initialization
   pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer', '($arg as item(), $base as xs:integer) as xs:integer']);
   pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
   pxpx.registerFunction('call-action', @xqfCallAction, ['($arg as xs:string) as empty-sequence()']);
+  pxpx.registerFunction('has-action', @xqfHasAction, ['($arg as xs:string) as xs:boolean']);
   pxpx.registerFunction('clear-log', @xqfClearLog, ['() as empty-sequence()', '($var as xs:string) as empty-sequence()']);
   pxpx.registerFunction('get-log', @xqfGetLog, ['() as item()*', '($var as xs:string) as item()*']);
 end.
