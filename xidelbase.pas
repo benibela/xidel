@@ -2968,6 +2968,7 @@ begin
   writeln(stderr, logged);
 end;
 
+var modulePaths: TStringArray;
 function loadModuleFromAtUrl(const at, base: string): IXQuery; forward;
 
 procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
@@ -3429,6 +3430,8 @@ begin
     end;
   end else if name = 'module' then begin
     importModule(value);
+  end else if name = 'module-path' then begin
+    arrayAdd(modulePaths, value);
   end else if (name = '') or (name = 'data') then begin
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
@@ -3539,14 +3542,19 @@ var d: IData;
   visitor: TXQTerm_VisitorFindWeirdGlobalVariableDeclarations;
   term: TXQTerm;
 begin
-  url := strResolveURI(at, base);
-  try
-    ft := TFollowTo.createFromRetrievalAddress(url);
-    d := ft.retrieve(baseContext, 0);
-    ft.free;
-  except
-    exit(nil);
+  d := nil;
+  for i := -1 to high(modulePaths) do begin
+    if i = -1 then url := strResolveURI(at, base)
+    else url := modulePaths[i] + DirectorySeparator + at;
+    try
+      ft := TFollowTo.createFromRetrievalAddress(url);
+      d := ft.retrieve(baseContext, 0);
+      ft.free;
+    except
+    end;
+    if d <> nil then break;
   end;
+  if d = nil then exit(nil);
   oldBaseUri := xpathparser.StaticContext.baseURI;
   xpathparser.StaticContext.baseURI := url;
   result := xpathparser.parseXQuery3(d.rawData);
@@ -3639,6 +3647,7 @@ begin
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
   mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions separated by commas)');
   mycmdLine.declareFile('module', 'Imports an xpath/xquery module');
+  mycmdLine.declareString('module-path', 'Search path for modules');
 
   mycmdLine.beginDeclarationCategory('Follow options:');
 
