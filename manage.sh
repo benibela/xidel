@@ -43,9 +43,9 @@ function compile(){
 
 function xidelCompileAndroidArm(){
   rm xidel  
-  #fpc -Tandroid -Parm -MObjFPC -Scghi -CX -Crt -O3 -g -gl -XX -l -vewnhibq -Filib/arm-android -Fu../../../components/pascal/import/synapse -Fu../../../components/pascal/internet -Fu../../../components/pascal/data -Fu../../../components/pascal/system -Fu../../../components/pascal/import/regexpr/source -Fu../../../components/pascal/import/utf8tools -Fu../../../components/pascal/lib/arm-android -Fu/opt/lazarus/packager/units/arm-android -Fu. -FUlib/arm-android -dUSE_SYNAPSE_WRAPPER -Cg xidel.pas
+  #fpc -Tandroid -Parm -MObjFPC -Scghi -CX -Crt -O3 -g -gl -XX -l -vewnhibq -Filib/arm-android -Fu../../../components/pascal/import/synapse -Fu../../../components/pascal/internet -Fu../../../components/pascal/data -Fu../../../components/pascal/system -Fu../../../components/pascal/import/regexpr/source -Fu../../../components/pascal/import/utf8tools -Fu../../../components/pascal/lib/arm-android -Fu~/opt/lazarus/packager/units/arm-android -Fu. -FUlib/arm-android -dUSE_SYNAPSE_WRAPPER -Cg xidel.pas
   #we cannot compile dependencies, as they default to Java based internet access instead Synapse
-  /opt/lazarus/lazbuild -d --bm=androidarm xidel.lpi || (echo "FAILED!"; exit)
+  lazbuild -d --bm=androidarm xidel.lpi || (echo "FAILED!"; exit)
   #arm-linux-androideabi-strip --strip-all xidel
 }
 
@@ -109,13 +109,17 @@ cgi)    lazCompileLinux64 xidelcgi
         ;;
 
 release)
-	find lib -name "*.o" -delete -or -name "*.ppu" -delete
+        find lib -name "*.o" -delete -or -name "*.ppu" -delete
+        cp xidel oldxidel
         ./manage.sh src
         ./manage.sh linux32
         ./manage.sh linux64        
         ./manage.sh win32
         ./manage.sh win32synapse
+        ./manage.sh linuxarm
+        ./manage.sh androidarm
         ./manage.sh mirror
+        mv oldxidel xidel
         ;;
         
 hg)     pushhg

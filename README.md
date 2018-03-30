@@ -24,3 +24,16 @@ The language can be explicitly chosen. For example
 returns all links, the target URI of each link or the text of all links alphabetically.
 
 There are more examples on the above page with binaries, the github wiki and in the directory examples.
+
+Screenshots
+-----------
+
+<p align="center">
+
+<img src="http://www.videlibri.de/img/xidel-linux.png" alt="Xidel on Linux">
+
+<img src="http://www.videlibri.de/img/xidel-windows-blue.png" alt="Xidel on Windows">
+
+</p>
+
+

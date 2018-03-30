@@ -92,7 +92,7 @@ function addpaths() {
   done < <(find "$1" -type d)
 }
 
-#the svn and source tarball contains xidel in programs/internet/xidel and dependencies in components/pascal
+#sourceforge and the source tarball contain xidel in programs/internet/xidel and dependencies in components/pascal
 #but someone might have checked out the git and installed dependencies elsewhere, so try to guess the local paths
 sourceroot=.
 sourcepath=.

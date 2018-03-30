@@ -185,7 +185,7 @@
         <PackageName Value="internettools"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="2">
       <Unit0>
         <Filename Value="xidel.pas"/>
         <IsPartOfProject Value="True"/>
@@ -194,10 +194,6 @@
         <Filename Value="xidelbase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit1>
-      <Unit2>
-        <Filename Value="../../../components/pascal/data/xquery_module_file.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -210,11 +206,15 @@
       <OtherUnitFiles Value="../../../components/pascal/import/synapse;../../../components/pascal/internet;../../../components/pascal/data;../../../components/pascal/system;../../../components/pascal/import/regexpr/source;../../../components/pascal/import/utf8tools"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
       <Checks>
         <RangeChecks Value="True"/>
-        <StackChecks Value="True"/>
       </Checks>
       <Optimizations>
         <OptimizationLevel Value="2"/>
