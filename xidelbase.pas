@@ -3846,9 +3846,6 @@ begin
 
   cmdlineWrapper.Free;
 
-  initTerminalAndColoring;
-
-
 
   outputHeader := mycmdline.readString('output-declaration') + mycmdline.readString('output-header');
   if (outputHeader <> '') and not mycmdline.existsProperty('output-header') then outputHeader += LineEnding;
@@ -3889,6 +3886,8 @@ begin
     end;
     else raise EInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
+
+  initTerminalAndColoring;
 
   if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') {or mycmdline.readFlag('trace-context-variables') }then begin
     tracer := TXQTracer.Create;
