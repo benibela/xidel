@@ -3541,19 +3541,23 @@ var d: IData;
   url, oldBaseUri: String;
   visitor: TXQTerm_VisitorFindWeirdGlobalVariableDeclarations;
   term: TXQTerm;
+  oldSilent: Boolean;
 begin
   d := nil;
+  oldSilent := baseContext.silent;
   for i := -1 to high(modulePaths) do begin
     if i = -1 then url := strResolveURI(at, base)
     else url := modulePaths[i] + DirectorySeparator + at;
     try
       ft := TFollowTo.createFromRetrievalAddress(url);
+      baseContext.silent := true; //always load silent (probably should make it honor --silent option, but this function is called before options are read)
       d := ft.retrieve(baseContext, 0);
       ft.free;
     except
     end;
     if d <> nil then break;
   end;
+  baseContext.silent := oldSilent;
   if d = nil then exit(nil);
   oldBaseUri := xpathparser.StaticContext.baseURI;
   xpathparser.StaticContext.baseURI := url;
