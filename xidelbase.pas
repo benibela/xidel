@@ -1870,7 +1870,10 @@ end;
 
 procedure TProcessingContext.printStatus(s: string);
 begin
-  if not silent then writeln(stderr, s);
+  if not silent then begin
+    if not firstItem then writeln(stderr);
+    writeln(stderr, s);
+  end;
 end;
 
 procedure TProcessingContext.readOptions(reader: TOptionReaderWrapper);
