@@ -10,8 +10,8 @@ gzip -9 -n -c meta/xidel.1 > $builddir/usr/share/man/man1/xidel.1.gz
 cp meta/debian/copyright $builddir/usr/share/doc/xidel/copyright
 
 mkdir -p $builddir/usr/share/lintian/overrides/
-cat <<<'usr/bin/xidel: program-not-linked-against-libc
-usr/bin/xidel: hardening-no-relro
+cat <<<'xidel binary: program-not-linked-against-libc
+xidel binary: hardening-no-relro
 ' > $builddir/usr/share/lintian/overrides/xidel
 
 version=$(./xidel --version | head -1 | grep -oE "[0-9.]+")
