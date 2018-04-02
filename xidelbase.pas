@@ -202,7 +202,7 @@ THtmlTemplateParserBreaker = class(THtmlTemplateParser)
   procedure parseHTMLSimple(const data: IData);
   procedure closeVariableLog;
 
-  procedure parseDoc(sender: TXQueryEngine; html,uri,contenttype: string; var node: TTreeNode);
+  procedure parseDoc({%H-}sender: TXQueryEngine; html,uri,contenttype: string; var node: TTreeNode);
 end;
 
  { TTemplateReaderBreaker }
@@ -212,7 +212,7 @@ end;
    destructor destroy(); override;
    procedure setTemplate(atemplate: TMultiPageTemplate);
    procedure perform(actions: TStringArray);
-   procedure selfLog(sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
+   procedure selfLog({%H-}sender: TMultipageTemplateReader; logged: string; debugLevel: integer);
 
  end;
 
@@ -263,7 +263,6 @@ end;
 function setTextEncoding(var t: TextFile; e: string): integer;
 var
   codepage: Integer;
-  str: String;
 begin
   codepage := strEncodingFromName(e);
   if codepage = CP_NONE then begin
@@ -753,7 +752,7 @@ TDirectDataRequest = class(TFollowTo)
   data: string;
   constructor create(adata: string);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
+  function retrieve({%H-}parent: TProcessingContext; arecursionLevel: integer): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
   //procedure replaceVariables;  do not replace vars in direct data
 end;
@@ -762,7 +761,7 @@ end;
 
 TStdinDataRequest = class(TFollowTo)
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
+  function retrieve({%H-}parent: TProcessingContext; arecursionLevel: integer): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
@@ -772,7 +771,7 @@ TFollowToProcessedData = class(TFollowTo)
   data: IData;
   constructor create(d: IData);
   function clone: TFollowTo; override;
-  function retrieve(parent: TProcessingContext; arecursionLevel: integer): IData; override;
+  function retrieve({%H-}parent: TProcessingContext; arecursionLevel: integer): IData; override;
   function equalTo(ft: TFollowTo): boolean; override;
 end;
 
@@ -817,7 +816,7 @@ TDataProcessing = class
   parent: TProcessingContext;
   function process(data: IData): TFollowToList; virtual; abstract;
 
-  procedure readOptions(reader: TOptionReaderWrapper); virtual;
+  procedure readOptions({%H-}reader: TOptionReaderWrapper); virtual;
   procedure initFromCommandLine(cmdLine: TCommandLineReader); virtual;
   procedure mergeWithObject(obj: TXQValueObject); virtual;
 
@@ -870,7 +869,7 @@ TExtraction = class(TDataProcessing)
 private
  currentFollowList: TFollowToList;
  currentData: IData;
- procedure pageProcessed(unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
+ procedure pageProcessed({%H-}unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
 end;
 
 
@@ -952,7 +951,7 @@ private
   procedure loadDataForQueryPreParse(const data: IData);
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
   function evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
-  procedure httpReact (sender: TInternetAccess; var method: string; var url: TDecodedUrl; var data:TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
+  procedure httpReact (sender: TInternetAccess; var {%H-}method: string; var {%H-}url: TDecodedUrl; var {%H-}data:TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
 end;
 
 var globalCurrentExtraction: TExtraction;
@@ -976,7 +975,8 @@ var
   temp: TProcessingContext;
   fl: TFollowToList;
 begin
-  if parent = nil then exit(nil);
+  result := nil;
+  if parent = nil then exit();
   temp := TProcessingContext.Create();
   fl := TFollowToList.Create;
   temp.assignOptions(parent); //do not copy actions/data sources. they would apply to basedata, not to dest
@@ -1191,7 +1191,7 @@ end;
 
 function TDownload.process(data: IData): TFollowToList;
 var
-  temp, realUrl: String;
+  realUrl: String;
   j: LongInt;
   realPath: String;
   realFile: String;
@@ -1674,18 +1674,14 @@ end;
 
 procedure TFollowToList.merge(dest: IXQValue; basedata: IData; parent: TProcessingContext);
 var x: IXQValue;
-    temp: TProcessingContext;
     tempv: TXQValue;
-    n: TTreeNode;
     keys: TStringList;
     isPureDataSource: Boolean;
     i: Integer;
-    oldCount: Integer;
 
 begin
   if dest.kind <> pvkSequence then
     dest := xpathparser.evaluateXPath2('pxp:resolve-html(., $url)', dest);
-  oldCount := count;
   case dest.kind of
     pvkUndefined: exit;
     pvkObject: begin
@@ -2136,7 +2132,7 @@ var next, res: TFollowToList;
     if follow <> '' then begin
       if res = nil then res := TFollowToList.Create;
 
-      htmlparser.OutputEncoding := eUTF8; //todo correct encoding?
+      htmlparser.OutputEncoding := CP_UTF8; //todo correct encoding?
 
       followKind := self.followKind;
       globalDefaultInputFormat := followInputFormat;
@@ -2238,7 +2234,6 @@ end;
 
 function translateDeprecatedStrings(expr: string): string;
 var
-  regex: TWrappedRegExpr;
   a: array[0..2] of IXQValue;
 begin
   if mycmdline.readFlag('deprecated-string-options') then begin
@@ -2461,7 +2456,6 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
 
 var
   i: Integer;
-  temp: TXQValueObject;
   x: IXQValue;
 begin
   case outputFormat of
@@ -2573,7 +2567,6 @@ end;
 function TExtraction.process(data: IData): TFollowToList;
   function termContainsVariableDefinition(term: TXQTerm): boolean;
   var
-    i: Integer;
     visitor: TXQTerm_VisitorFindWeirdGlobalVariableDeclarations;
   begin
     if term = nil then exit(false);
@@ -2974,7 +2967,7 @@ end;
 var modulePaths: TStringArray;
 function loadModuleFromAtUrl(const at, base: string): IXQuery; forward;
 
-procedure traceCall(pseudoSelf: tobject; sender: TXQueryEngine; value, info: IXQValue);
+procedure traceCall({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; value, info: IXQValue);
 begin
   if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
   writeln(stderr, value.toXQuery());
@@ -3286,7 +3279,7 @@ begin
     commandLineLastHeader := TCommandLineReaderBreaker(mycmdline).readString('header');
 end;
 
-procedure variableInterpret(pseudoself, sender: TObject; var name, value: string; const args: TStringArray; var argpos: integer);
+procedure variableInterpret({%H-}pseudoself, {%H-}sender: TObject; var name, value: string; const {%H-}args: TStringArray; var {%H-}argpos: integer);
 begin
   if strBeginsWith(name, 'xmlns:') then begin
     value := strCopyFrom(name, length('xmlns:') + 1) + '=' + value;
@@ -3312,7 +3305,7 @@ begin
   Result := oldValue;
 end;
 
-procedure variableRead(pseudoself: TObject; sender: TObject; const name, value: string);
+procedure variableRead({%H-}pseudoself: TObject; sender: TObject; const name, value: string);
   procedure closeAllMultiArgs;
   begin
     closeMultiArgs(commandLineStackLastPostData, '&');
@@ -3578,7 +3571,7 @@ begin
   result.getTerm;
 end;
 
-procedure importModule(pseudoSelf: tobject; sender: TXQueryEngine; context: TXQStaticContext; const namespace: string; const at: array of string);
+procedure importModule({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; context: TXQStaticContext; const namespace: string; const at: array of string);
 var
   q: IXQuery;
 begin
@@ -3616,10 +3609,10 @@ begin
   if cgimode or (not allowFileAccess) then blockFileAccessFunctions;
 
   //normalized formats (for use in unittests)
-  DecimalSeparator:='.';
-  ThousandSeparator:=#0;
-  ShortDateFormat:='YYYY-MM-DD';
-  LongDateFormat:='YYYY-MM-DD';
+  DecimalSeparator{%H-}:='.';
+  ThousandSeparator{%H-}:=#0;
+  ShortDateFormat{%H-}:='YYYY-MM-DD';
+  LongDateFormat{%H-}:='YYYY-MM-DD';
   SetExceptionMask([exInvalidOp, exDenormalized, {exZeroDivide,} exOverflow, exUnderflow, exPrecision]);
   registerModuleMath;
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
@@ -4034,19 +4027,19 @@ begin
   end;
 end;
 
-function xqfRead(argc: SizeInt; args: PIXQValue): IXQValue;
+function xqfRead({%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
 var s: string;
 begin
   ReadLn(s);
   result := TXQValueString.create(baseSchema.untypedAtomic, s);
 end;
 
-function xqfArgc(argc: SizeInt; args: PIXQValue): IXQValue;
+function xqfArgc({%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
 begin
   result := xqvalue(paramcount);
 end;
 
-function xqfArgv(argc: SizeInt; args: PIXQValue): IXQValue;
+function xqfArgv({%H-}argc: SizeInt; args: PIXQValue): IXQValue;
 begin
   result := xqvalue(ParamStr(args[0].toInt64));
 end;
@@ -4106,20 +4099,20 @@ begin
   end;
 end;
 
-function xqFunctionJSONSafe(const context: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
+function xqFunctionJSONSafe(const {%H-}context: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
 var jn: TXQNativeModule;
 begin
   jn := TXQueryEngine.findNativeModule('http://jsoniq.org/functions');
   result := jn.findBasicFunction('parse-json', argc).func(argc,args);
 end;
 
-function xqFunctionBlocked(const context: TXQEvaluationContext; argc: SizeInt; args: PIXQValue): IXQValue;
+function xqFunctionBlocked(const context: TXQEvaluationContext; {%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
 begin
   ignore(context);
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
   result := nil;
 end;
-function xqFunctionBlockedSimple(argc: SizeInt; args: PIXQValue): IXQValue;
+function xqFunctionBlockedSimple({%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
 begin
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
   result := nil;
@@ -4204,7 +4197,7 @@ begin
   if negative then result := '-' + result;
 end;
 
-function xqfIntegerToBase(argc: SizeInt; args: PIXQValue): IXQValue;
+function xqfIntegerToBase({%H-}argc: SizeInt; args: PIXQValue): IXQValue;
 var
   base: Int64;
   resstr: RawByteString;
