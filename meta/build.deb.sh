@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 umask 0022
 builddir=/tmp/xideldebbuild
 rm -rf $builddir/
