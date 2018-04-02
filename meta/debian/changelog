@@ -1,8 +1,12 @@
 xidel (0.9.8) stretch; urgency=low
 
-  * The 0.9.8 release brings a new cookie handling that does not share cookies between unrelated servers, pattern matching between siblings elements, more flexible module loading, functions to use multipage templates and variable changelog dynamically, as well as minor bug fixes and performance improvements
+  * The 0.9.8 release brings a new cookie handling that does not share cookies 
+    between unrelated servers, pattern matching between siblings elements, 
+    more flexible module loading, functions to use multipage templates 
+    and variable changelog dynamically, 
+    as well as minor bug fixes and performance improvements
 
- -- Benito van der Zander <benito@benibela.de>  Sun, 02 Apr 2018 17:00:00 +0200
+ -- Benito van der Zander <benito@benibela.de>  Mon, 02 Apr 2018 17:00:00 +0200
 
 del (0.9.6) natty; urgency=low
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+umask 0022
 builddir=/tmp/xideldebbuild
 rm -rf $builddir/
 mkdir -p $builddir/DEBIAN $builddir/usr/bin $builddir/usr/share/doc/xidel $builddir/usr/share/man/man1/
@@ -7,6 +8,11 @@ cp -r meta/debian/control meta/debian/conffiles $builddir/DEBIAN/
 gzip -9 -n -c meta/debian/changelog > $builddir/usr/share/doc/xidel/changelog.gz
 gzip -9 -n -c meta/xidel.1 > $builddir/usr/share/man/man1/xidel.1.gz
 cp meta/debian/copyright $builddir/usr/share/doc/xidel/copyright
+
+mkdir -p $builddir/usr/share/lintian/overrides/
+cat <<<'usr/bin/xidel: program-not-linked-against-libc
+usr/bin/xidel: hardening-no-relro
+' > $builddir/usr/share/lintian/overrides/xidel
 
 version=$(./xidel --version | head -1 | grep -oE "[0-9.]+")
 sed -Ee "s/Version:.*/Version: $version/" -i $builddir/DEBIAN/control
