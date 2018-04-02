@@ -16,7 +16,7 @@
 #
 
 Name:           xidel
-Version:        0.9.6
+Version:        0.9.8
 Release:        1
 Summary:        A tool for querying local and remote XML/HTML/JSON data
 

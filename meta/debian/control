@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 7.0.50~), fpc
 Standards-Version: 3.9.1
 Homepage: http://www.videlibri.de/xidel.html
 Architecture: any
-Version: 0.9.6
+Version: 0.9.8
 Depends: libc6
 Recommends: libssl-dev, libcrypto++8 | libcrypto++9
 Description: Command line tool to process HTML/XML/JSON locally or from online sources

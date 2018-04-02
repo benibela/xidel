@@ -116,7 +116,7 @@ release)
         ./manage.sh linux64        
         ./manage.sh win32
         ./manage.sh win32synapse
-        ./manage.sh linuxarm
+        #./manage.sh linuxarm
         ./manage.sh androidarm
         ./manage.sh mirror
         mv oldxidel xidel
