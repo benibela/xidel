@@ -158,13 +158,33 @@ downloadTable)
     else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
   fi;
 
-   xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( if (contains($n, "win")) then "Windows: " else if (contains($n, "linux")) then "Universal Linux: " else if (contains($n, ".deb")) then "Debian: " else if (contains($n, "src")) then "Source:" else "", if (contains($n, "32") or contains($n, "386")) then "32 Bit" else if (contains($n, "64"))then "64 Bit" else ""  )   };   
+   xidel --dot-notation=on http://sourceforge.net/projects/videlibri/files/Xidel/Xidel%20$VERSION/  --extract-kind=xquery  -e '(x"The following Xidel downloads are available on the <a href=&quot;{$url}&quot;>sourceforge download page</a>: <br><br>")' -e 'declare function verboseName($n){ concat ( 
+      if (contains($n, "win")) then "Windows: " 
+      else if (contains($n, "linux")) then "Universal Linux: " 
+      else if (contains($n, ".deb")) then "Debian: " 
+      else if (contains($n, "src")) then "Source:" 
+      else if (contains($n, "androidarm")) then "Android ARM:" 
+      else "", 
+      if (contains($n, "32") or contains($n, "386")) then "32 Bit" 
+      else if (contains($n, "64"))then "64 Bit" else "",
+      if (contains($n, "openssl")) then " (needs OpenSSL)"
+      else "")
+         };   
+         declare function ordering($n) {
+           if (contains($n, "win")) then "A"
+           else if (contains($n, "linux")) then "B"
+           else if (contains($n, ".deb")) then "C"
+           else if (contains($n, "arm")) then "D"
+           else "E"
+         };
                            <table class="downloadTable">
-                           <tr><th>Operating System</th><th>Filename</th><th>Size</th></tr>
+                           <tr><th>Operating System</th><th>Filename</th><th>Size</th><th>SHA-1</th></tr>
                            { for <TABLE id="files_list"><t:loop><TR class="file"><TH>
                              {link := {"verboseName": verboseName(.), "url": resolve-uri(.) || "/download", "name": ./data()}}</TH><td/><td>{link.size := .}</td></TR></t:loop></TABLE> in (/) 
-                             order by $link.verboseName descending 
-                             return <tr><td>{$link.verboseName}</td><td><a href="{$link.url}">{$link.name}</a></td><td>{$link.size/text()}</td></tr>}
+                             order by ordering($link.name)||$link.verboseName
+                             return <tr><td>{$link.verboseName}</td><td><a href="{$link.url}">{$link.name}</a></td><td>{$link.size/text()}</td>
+                             <td>{if (file:exists($link.name)) then extract(system("sha1sum "||$link.name), " *[0-9A-Fa-f]+") else ""}</td>
+                             </tr>}
                            <tr><td>Mac 10.8</td><td colspan="2"><a href="https://www.evernote.com/shard/s69/sh/ff1e78f3-a369-4855-b18f-6184ce789c45/f3511927d0fb356ce883835f2eb712e0">externally prebuilt version</a> and compile instructions.</td></tr>
                            </table>'     --printed-node-format xml > /tmp/downloadTable.html;
   
