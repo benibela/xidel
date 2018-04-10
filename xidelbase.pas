@@ -224,7 +224,9 @@ var htmlparser:THtmlTemplateParserBreaker;
     multipagetemp: TMultiPageTemplate;
     currentRoot: TTreeNode;
     {$ifdef windows}
-    backgroundColor, consoleTextAttributes: integer;
+    backgroundColor: integer = 0;
+    stdoutTextAttributes: integer = 0;
+    stderrTextAttributes: integer = 0;
     {$endif}
 procedure setTerminalColor(err: boolean; color: TMyConsoleColors);
 {$ifdef unix}
@@ -338,9 +340,15 @@ begin
   end;
   {$ifdef windows}
   if colorizing <> cNever then begin
-    GetConsoleScreenBufferInfo(StdOutputHandle, @consoleBuffer);
-    consoleTextAttributes := consoleBuffer.wAttributes;
-    backgroundColor := consoleTextAttributes and (BACKGROUND_RED or BACKGROUND_GREEN or BACKGROUND_BLUE or BACKGROUND_INTENSITY);
+    if isStderrTTY and GetConsoleScreenBufferInfo(StdErrorHandle, @consoleBuffer) then begin;
+      stderrTextAttributes := consoleBuffer.wAttributes;
+      backgroundColor := stderrTextAttributes and (BACKGROUND_RED or BACKGROUND_GREEN or BACKGROUND_BLUE or BACKGROUND_INTENSITY);
+    end;
+
+    if isStdoutTTY and GetConsoleScreenBufferInfo(StdOutputHandle, @consoleBuffer) then begin;
+      stdoutTextAttributes := consoleBuffer.wAttributes;
+      backgroundColor := stdoutTextAttributes and (BACKGROUND_RED or BACKGROUND_GREEN or BACKGROUND_BLUE or BACKGROUND_INTENSITY);
+    end;
   end;
   {$endif}
 end;
@@ -3970,7 +3978,13 @@ begin
 
   if outputfooter <> '' then wcolor(outputFooter, colorizing)
   else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
-  {$ifdef windows}if colorizing <> cNever then SetConsoleTextAttribute(StdOutputHandle, consoleTextAttributes); {$endif}
+  {$ifdef windows}if colorizing <> cNever then begin
+    if (stdoutTextAttributes <> 0) and isStdoutTTY then
+      SetConsoleTextAttribute(StdOutputHandle, stdoutTextAttributes);
+    if (stderrTextAttributes <> 0) and isStderrTTY then
+      SetConsoleTextAttribute(StdErrorHandle, stderrTextAttributes);
+  end;
+  {$endif}
 
   mycmdLine.free;
   tracer.free;
