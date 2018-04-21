@@ -147,6 +147,7 @@ src)
         
         tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hgtags --exclude=.hg xidel-$VERSION-src
         fileUpload xidel-$VERSION.src.tar.gz "$UPLOAD_PATH"
+        cp /tmp/xidel-$VERSION.src.tar.gz .
         ;;
 
 
@@ -178,12 +179,12 @@ downloadTable)
            else "E"
          };
                            <table class="downloadTable">
-                           <tr><th>Operating System</th><th>Filename</th><th>Size</th><th>SHA-1</th></tr>
+                           <tr><th>Operating System</th><th>Filename</th><th>Size</th><th>SHA-256</th></tr>
                            { for <TABLE id="files_list"><t:loop><TR class="file"><TH>
                              {link := {"verboseName": verboseName(.), "url": resolve-uri(.) || "/download", "name": ./data()}}</TH><td/><td>{link.size := .}</td></TR></t:loop></TABLE> in (/) 
                              order by ordering($link.name)||$link.verboseName
                              return <tr><td>{$link.verboseName}</td><td><a href="{$link.url}">{$link.name}</a></td><td>{$link.size/text()}</td>
-                             <td>{if (file:exists($link.name)) then extract(system("sha1sum "||$link.name), " *[0-9A-Fa-f]+") else ""}</td>
+                             <td>{if (file:exists($link.name)) then extract(system("sha256sum "||$link.name), " *[0-9A-Fa-f]+") else ""}</td>
                              </tr>}
                            <tr><td>Mac 10.8</td><td colspan="2"><a href="https://www.evernote.com/shard/s69/sh/ff1e78f3-a369-4855-b18f-6184ce789c45/f3511927d0fb356ce883835f2eb712e0">externally prebuilt version</a> and compile instructions.</td></tr>
                            </table>'     --printed-node-format xml > /tmp/downloadTable.html;
