@@ -223,6 +223,8 @@ var htmlparser:THtmlTemplateParserBreaker;
     multipage: TTemplateReaderBreaker;
     multipagetemp: TMultiPageTemplate;
     currentRoot: TTreeNode;
+    xidelOutputFile: TextFile;
+    xidelOutputFileName: string;
     {$ifdef windows}
     backgroundColor: integer = 0;
     stdoutTextAttributes: integer = 0;
@@ -249,9 +251,9 @@ begin
   if err and not isStderrTTY then exit;
   if not err and not isStdoutTTY then exit;
   if color <> lastConsoleColor then begin
-    if err then Flush(stderr) else flush(StdOut);
+    if err then Flush(stderr) else flush(xidelOutputFile);
     {$ifdef unix}
-    if err then f := stderr else f := stdout;
+    if err then f := stderr else f := xidelOutputFile;
     write(f, colorCodes[color]);
     {$endif}
     {$ifdef windows}
@@ -361,7 +363,7 @@ var
 begin
   if s = '' then exit;
   {$IFDEF FPC_HAS_CPSTRING}
-  write(s);
+  write(xidelOutputFile, s);
   {$ELSE}
   fpc 3 is required now
   if (outputEncoding = eUTF8) or (outputEncoding = eUnknown) then write(s)
@@ -856,6 +858,7 @@ TExtraction = class(TDataProcessing)
  printTypeAnnotations,  hideVariableNames: boolean;
  printedNodeFormat: TTreeNodeSerialization;
  printedJSONFormat: (jisDefault, jisPretty, jisCompact);
+ inplaceOverride: boolean;
 
  inputFormat: TInputFormat;
 
@@ -878,6 +881,7 @@ private
  currentFollowList: TFollowToList;
  currentData: IData;
  procedure pageProcessed({%H-}unused: TMultipageTemplateReader; parser: THtmlTemplateParser);
+ procedure prepareForOutput(const data: IData);
 end;
 
 
@@ -1857,6 +1861,8 @@ begin
   end;
 
   reader.read('input-format', inputFormat);
+
+  reader.read('in-place', inplaceOverride);
 end;
 
 procedure TExtraction.setVariables(v: string);
@@ -2381,6 +2387,32 @@ begin
   end;
 end;
 
+procedure setOutputFileName(n: string);
+begin
+  if xidelOutputFileName = n then exit;
+  if xidelOutputFileName <> '' then begin
+    if outputfooter <> '' then wcolor(outputFooter, colorizing)
+    else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
+    flush(xidelOutputFile);
+    if not striBeginsWith(xidelOutputFileName, 'stdout:') then CloseFile(xidelOutputFile);
+  end;
+
+  xidelOutputFileName := n;
+  if striBeginsWith(xidelOutputFileName, 'http://') or striBeginsWith(xidelOutputFileName, 'https://') then
+    raise Exception.Create('Cannot output to webpage')
+  else if striBeginsWith(xidelOutputFileName, 'stdout:') then begin
+    xidelOutputFile := StdOut;
+  end else begin
+    xidelOutputFileName := strRemoveFileURLPrefix(xidelOutputFileName);
+    colorizing := cNever;
+    AssignFile(xidelOutputFile, xidelOutputFileName);
+    Rewrite(xidelOutputFile);
+  end;
+
+  if outputHeader <> '' then wcolor(outputHeader, colorizing);
+  if outputFormat in [ofJsonWrapped, ofXMLWrapped] then needRawWrapper;
+end;
+
 function bashStrEscape(s: string): string;
 begin
   if not strContains(s, #13) and not strContains(s, #10) then
@@ -2571,6 +2603,12 @@ begin
   THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
 end;
 
+procedure TExtraction.prepareForOutput(const data: IData);
+begin
+  if inplaceOverride then setOutputFileName(data.baseUri)
+  else if xidelOutputFileName = '' then setOutputFileName('stdout:///');
+end;
+
 
 function TExtraction.process(data: IData): TFollowToList;
   function termContainsVariableDefinition(term: TXQTerm): boolean;
@@ -2614,6 +2652,7 @@ begin
       else htmlparser.TemplateParser.parsingModel := pmStrict;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
       htmlparser.parseHTML(data); //todo: full url is abs?
+      prepareForOutput(data);
       pageProcessed(nil,htmlparser);
     end;
     ekXPath2, ekXPath3, ekCSS, ekXQuery1, ekXQuery3: begin
@@ -2633,6 +2672,7 @@ begin
       end;
       parent.loadDataForQuery(data, extractQueryCache);
       THtmlTemplateParserBreaker(htmlparser).closeVariableLog;
+      prepareForOutput(data);
       if termContainsVariableDefinition(extractQueryCache.Term) then begin
         parent.evaluateQuery(extractQueryCache, data, true);
         printExtractedVariables(htmlparser, true);
@@ -2656,6 +2696,7 @@ begin
       if extract = '' then raise Exception.Create('Multipage-action-template is empty');
       multipagetemp.loadTemplateFromString(extract, ExtractFileName(extractBaseUri), ExtractFileDir(extractBaseUri));
       multipage.setTemplate(multipagetemp);
+      prepareForOutput(data);
       multipage.perform(templateActions);
     end
     else raise EXidelException.Create('Impossible');
@@ -3719,6 +3760,7 @@ begin
   mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json, json-strict', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
+  mycmdLine.declareFlag('in-place', 'Override the input file');
 
 
   mycmdLine.beginDeclarationCategory('Debug options:');
@@ -3902,9 +3944,6 @@ begin
 
   if assigned(onPreOutput) then onPreOutput(guessExtractionKind(mycmdline.readString('extract')));
 
-  if outputHeader <> '' then wcolor(outputHeader, colorizing);
-  if outputFormat in [ofJsonWrapped, ofXMLWrapped] then needRawWrapper;
-
 
   htmlparser.TemplateParser.repairMissingEndTags:=false;
   htmlparser.TemplateParser.repairMissingStartTags:=false;
@@ -3976,8 +4015,7 @@ begin
           writeItem('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
   end;
 
-  if outputfooter <> '' then wcolor(outputFooter, colorizing)
-  else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
+  setOutputFileName('');
   {$ifdef windows}if colorizing <> cNever then begin
     if (stdoutTextAttributes <> 0) and isStdoutTTY then
       SetConsoleTextAttribute(StdOutputHandle, stdoutTextAttributes);
