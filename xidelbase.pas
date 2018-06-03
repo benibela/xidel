@@ -164,6 +164,7 @@ var //output options
     outputFormat: TOutputFormat;
     windowsCmdPercentageEscape: string;
     hasOutputEncoding: (oeAbsent,oeConvert,oePassRaw) = oeAbsent;
+    outputEncoding: TSystemCodePage;
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
     {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
@@ -264,34 +265,27 @@ begin
   end;
 end;
 
-function setTextEncoding(var t: TextFile; e: string): integer;
-var
-  codepage: Integer;
+function strEncodingFromNameXidel(const e: string): integer;
 begin
-  codepage := strEncodingFromName(e);
-  if codepage = CP_NONE then begin
-    if striEqual(e, 'input') then codepage := -1
-    else writeln(stderr, 'Unknown encoding: ',e)
-  end;
-  result := codepage;
-  if codepage <> -1 then
-    SetTextCodePage(t, codepage);
+  result := strEncodingFromName(e);
+  if result = CP_NONE then
+    writeln(stderr, 'Unknown encoding: ',e)
 end;
 
 procedure setOutputEncoding(e: string);
-var
-  codepage: Integer;
 begin
-  codepage := setTextEncoding(output, e);
-  if codepage <> -1 then begin
+  if e <> 'input' then begin
     hasOutputEncoding := oeConvert;
-    //SetTextCodePage(StdErr, codepage);
+    outputEncoding := strEncodingFromNameXidel(e);
   end else begin
     hasOutputEncoding := oePassRaw;
-    SetTextCodePage(Output, CP_ACP); //all our strings claim to be ACP (=UTF8) so there should be no conversion?
-    //SetTextCodePage(StdErr, CP_ACP);
+    outputEncoding := CP_ACP; //all our strings claim to be ACP (=UTF8) so there should be no conversion?
   end;
+  if xidelOutputFileName <> '' then
+    SetTextCodePage(xidelOutputFile, outputEncoding);
 end;
+
+procedure setOutputFileName(n: string); forward;
 
 procedure initTerminalAndColoring;
 {$ifdef windows}
@@ -319,7 +313,7 @@ begin
     isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
     {$endif}
     if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
-    if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextEncoding(input, mycmdline.readString('stdin-encoding'));
+    if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextCodePage(input, strEncodingFromNameXidel(mycmdline.readString('stdin-encoding')));
   end;
 
   case colorizing of
@@ -1255,6 +1249,7 @@ begin
         ifHTML, ifXML, ifXMLStrict: color := cXML;
         ifJSON, ifJSONStrict: color := cJSON;
       end;
+    if xidelOutputFileName = '' then setOutputFileName('stdout:///');
     wcolor(data.rawdata, color);
     exit;
   end;
@@ -2408,6 +2403,10 @@ begin
     AssignFile(xidelOutputFile, xidelOutputFileName);
     Rewrite(xidelOutputFile);
   end;
+  if hasOutputEncoding <> oeAbsent then
+    SetTextCodePage(xidelOutputFile, outputEncoding);
+
+  if n = '' then exit;
 
   if outputHeader <> '' then wcolor(outputHeader, colorizing);
   if outputFormat in [ofJsonWrapped, ofXMLWrapped] then needRawWrapper;
