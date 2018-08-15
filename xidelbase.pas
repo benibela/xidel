@@ -3633,6 +3633,10 @@ begin
   end;
 end;
 
+procedure OnWarningDeprecated({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; warning: string);
+begin
+  writeln(stderr, warning);
+end;
 
 function encodingName(e: TSystemCodePage): string;
 begin
@@ -3794,6 +3798,7 @@ begin
   contextStack[0] := baseContext;
 
   xpathparser := htmlparser.QueryEngine;
+  xpathparser.OnWarningDeprecated := TXQWarningEvent(procedureToMethod(TProcedure(@onWarningDeprecated)));
   if xpathparser.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
   xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
   xpathparser.StaticContext.namespaces.add(TNamespace.create(XMLNamespaceURL_XQTErrors, 'err'));
