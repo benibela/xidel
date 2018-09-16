@@ -1791,12 +1791,12 @@ function extractKindFromString(v: string): TExtractionKind;
 begin
   case v of
     'auto': result := ekAuto;
-    'xpath': result :=ekXPath3;
-    'xquery': result :=ekXQuery3;
     'xpath2': result :=ekXPath2;
     'xquery1': result :=ekXQuery1;
-    'xpath3': result :=ekXPath3;
-    'xquery3': result :=ekXQuery3;
+    'xpath', 'xpath3', 'xpath3.1': result :=ekXPath3_1;
+    'xquery', 'xquery3', 'xquery3.1': result :=ekXQuery3_1;
+    'xpath3.0': result :=ekXPath3_0;
+    'xquery3.0': result :=ekXQuery3_0;
     'css': result :=ekCSS;
     'template', 'pattern', 'html-pattern': result :=ekPatternHTML;
     'xml-pattern': result := ekPatternXML;
@@ -2093,6 +2093,13 @@ begin
       TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded;
 end;
 
+const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingModel = (
+  xqpmXPath3_1,
+  xqpmXPath2, xqpmXPath3_0, xqpmXPath3_1,
+  xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1,
+  xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
+);
+
 
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
@@ -2164,11 +2171,8 @@ var next, res: TFollowToList;
         loadDataForQueryPreParse(data);
         if followQueryCache = nil then
           case followKind of
-            ekXQuery1: followQueryCache := xpathparser.parseXQuery1(follow, xpathparser.StaticContext);
-            ekXQuery3: followQueryCache := xpathparser.parseXQuery3(follow, xpathparser.StaticContext);
             ekCSS: followQueryCache := xpathparser.parseCSS3(follow);
-            ekXPath2: followQueryCache := xpathparser.parseXPath2(follow, xpathparser.StaticContext);
-            else{ekXPath3: }followQueryCache := xpathparser.parseXPath3(follow, xpathparser.StaticContext);
+            else followQueryCache := xpathparser.parseQuery(follow, EXTRACTION_KIND_TO_PARSING_MODEL[followKind], xpathparser.StaticContext);
           end;
         loadDataForQuery(data, followQueryCache);
         res.merge(evaluateQuery(followQueryCache, data), data, self);
@@ -2654,7 +2658,7 @@ begin
       prepareForOutput(data);
       pageProcessed(nil,htmlparser);
     end;
-    ekXPath2, ekXPath3, ekCSS, ekXQuery1, ekXQuery3: begin
+    ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
       xpathparser.StaticContext.BaseUri := fileNameExpandToURI(data.baseUri);
       xpathparser.ParsingOptions.StringEntities:=xqseDefault;
 
@@ -2663,10 +2667,7 @@ begin
         if extractBaseUri <> '' then xpathparser.StaticContext.baseURI := fileNameExpandToURI(extractBaseUri);
         case extractKind of
           ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
-          ekXPath2: extractQueryCache := xpathparser.parseXPath2(extract, xpathparser.StaticContext);
-          ekXQuery1: extractQueryCache := xpathparser.parseXQuery1(extract, xpathparser.StaticContext);
-          ekXPath3: extractQueryCache := xpathparser.parseXPath3(extract, xpathparser.StaticContext);
-          ekXQuery3: extractQueryCache := xpathparser.parseXQuery3(extract, xpathparser.StaticContext);
+          else extractQueryCache := xpathparser.parseQuery(extract, EXTRACTION_KIND_TO_PARSING_MODEL[extractKind], xpathparser.StaticContext);
         end;
       end;
       parent.loadDataForQuery(data, extractQueryCache);
@@ -3446,7 +3447,7 @@ begin
   end else if (name = 'template-file') then begin
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
     TCommandLineReaderBreaker(sender).removeVar('template-file');
-  end else if (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3')  then begin
+  end else if (name = 'css') or (name = 'xpath') or (name = 'xquery') or (name = 'xpath2') or (name = 'xquery1') or (name = 'xpath3') or (name = 'xquery3') or (name = 'xpath3.0') or (name = 'xquery3.0') or (name = 'xpath3.1') or (name = 'xquery3.1')  then begin
     TCommandLineReaderBreaker(sender).overrideVar('extract-kind', name);
     TCommandLineReaderBreaker(sender).overrideVar('extract', value);
     currentContext.readNewAction(TExtraction.Create, cmdlineWrapper);
@@ -3605,7 +3606,7 @@ begin
   if d = nil then exit(nil);
   oldBaseUri := xpathparser.StaticContext.baseURI;
   xpathparser.StaticContext.baseURI := url;
-  result := xpathparser.parseXQuery3(d.rawData);
+  result := xpathparser.parseQuery(d.rawData, xqpmXQuery3_1);
   xpathparser.StaticContext.baseURI := oldBaseUri;
 
 
@@ -3696,6 +3697,10 @@ begin
   mycmdLine.declareString('xquery1', 'Abbreviation for --extract-kind=xquery1 --extract=...');
   mycmdLine.declareString('xpath3', 'Abbreviation for --extract-kind=xpath3 --extract=...');
   mycmdLine.declareString('xquery3', 'Abbreviation for --extract-kind=xquery3 --extract=...');
+  mycmdLine.declareString('xpath3.0', 'Abbreviation for --extract-kind=xpath3.0 --extract=...');
+  mycmdLine.declareString('xquery3.0', 'Abbreviation for --extract-kind=xquery3.0 --extract=...');
+  mycmdLine.declareString('xpath3.1', 'Abbreviation for --extract-kind=xpath3.1 --extract=...');
+  mycmdLine.declareString('xquery3.1', 'Abbreviation for --extract-kind=xquery3.1 --extract=...');
   mycmdLine.declareFile('template-file', 'Abbreviation for --extract-kind=multipage --extract-file=...');
   mycmdLine.declareString('template-action', 'Select which action from the multipage template should be run (multiple actions separated by commas)');
   mycmdLine.declareFile('module', 'Imports an xpath/xquery module');
