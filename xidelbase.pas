@@ -2311,8 +2311,8 @@ end;
 function parseJSON(const data: IData): IXQValue;
 begin
   case data.inputFormat of //todo: cache?
-    ifJSON: result := xquery_json.parseJSON(data.rawData, [pjoAllowMultipleTopLevelItems, pjoLiberal, pjoAllowTrailingComma]);
-    ifJSONStrict: result := xquery_json.parseJSON(data.rawData, []);
+    ifJSON: result := TXQJsonParser.parse(data.rawData, [jpoAllowMultipleTopLevelItems, jpoLiberal, jpoAllowTrailingComma]);
+    ifJSONStrict: result := TXQJsonParser.parse(data.rawData, []);
     else result := xqvalue();
   end;
 end;
