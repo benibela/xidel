@@ -137,17 +137,17 @@ hg)     pushhg
         ;;
 
 mirror) 
-        pushhg
+        pushhg || true
         SF_PROJECT= 
         mirroredProject xidel
         syncHg $BASE/_hg.filemap
         ;;
 
 src)
-  getVersion 
-        pushhg
+        getVersion 
+        pushhg || true
         SRCDIR=/tmp/xidel-$VERSION-src
-        rm -R $SRCDIR
+        rm -R $SRCDIR || true
         cp -r $PUBLICHG $SRCDIR
         cd /tmp
         rm -Rvf $SRCDIR/programs/internet/VideLibri $SRCDIR/programs/internet/sourceforgeresponder/
@@ -158,7 +158,7 @@ src)
         
         tar -cvzf /tmp/xidel-$VERSION.src.tar.gz --exclude=.hgtags --exclude=.hg xidel-$VERSION-src
         fileUpload xidel-$VERSION.src.tar.gz "$UPLOAD_PATH"
-        cp /tmp/xidel-$VERSION.src.tar.gz .
+        #cp /tmp/xidel-$VERSION.src.tar.gz .
         ;;
 
 
