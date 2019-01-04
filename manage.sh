@@ -4,6 +4,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/../../../manageUtils.sh
 
+set -e
+
 function getVersion(){
   MINOR_VERSION=`grep -i minorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
   MAJOR_VERSION=`grep -i majorVersion xidelbase.pas | head -1 | grep -oE [0-9]+`
@@ -26,7 +28,7 @@ sfProject videlibri
 action=2
 
 BASE=$HGROOT/programs/internet/xidel
-
+exesuffix=
 
 function pushhg(){
 	VIDELIBRIBASE=$HGROOT/programs/internet/VideLibri
@@ -35,20 +37,34 @@ function pushhg(){
 	syncHg $VIDELIBRIBASE/_hg.filemap $HGROOT $PUBLICHG
 }
 
-function compile(){
+function lazcompile(){
   getVersion
-  eval $1 xidel "$2"
-  echo > xidelbuilddata.inc  
+  rm xidel$exesuffix || true
+  lazbuild "$@" xidel.lpi || lazbuild "$@" xidel.lpi || (echo "FAILED!"; exit)
+  echo > xidelbuilddata.inc   
 }
 
-function xidelCompileAndroidArm(){
-  rm xidel  
-  #fpc -Tandroid -Parm -MObjFPC -Scghi -CX -Crt -O3 -g -gl -XX -l -vewnhibq -Filib/arm-android -Fu../../../components/pascal/import/synapse -Fu../../../components/pascal/internet -Fu../../../components/pascal/data -Fu../../../components/pascal/system -Fu../../../components/pascal/import/regexpr/source -Fu../../../components/pascal/import/utf8tools -Fu../../../components/pascal/lib/arm-android -Fu~/opt/lazarus/packager/units/arm-android -Fu. -FUlib/arm-android -dUSE_SYNAPSE_WRAPPER -Cg xidel.pas
-  #we cannot compile dependencies, as they default to Java based internet access instead Synapse
-  lazbuild -d --bm=androidarm xidel.lpi || (echo "FAILED!"; exit)
-  #arm-linux-androideabi-strip --strip-all xidel
+function release(){
+  if [ $action -lt 2 ]; then exit; fi
+  packagesuffix=$1
+  case "$exesuffix" in
+    .exe) 
+       package=xidel-$VERSION.$packagesuffix.zip
+       zip -v $package xidel.exe changelog readme.txt 
+     ;;
+    *) 
+       package=xidel-$VERSION.$packagesuffix.tar.gz
+       tar -vczf $package xidel readme.txt changelog install.sh 
+     ;;
+  esac
+        
+  fileUpload $package "$UPLOAD_PATH"
 }
 
+function release-deb(){
+  if [ $action -lt 2 ]; then exit; fi
+  fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
+}
 
 
 case "$1" in
@@ -60,49 +76,43 @@ web)
 	;;
 	
 linux64)
-        compile lazCompileLinux64 
-        if [ $action -lt 2 ]; then exit; fi
-        tar -vczf xidel-$VERSION.linux64.tar.gz xidel readme.txt changelog install.sh
-        fileUpload xidel-$VERSION.linux64.tar.gz "$UPLOAD_PATH"
-        fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
+        lazcompile --os=linux --ws=nogui --cpu=x86_64 
+        release linux64
+        release-deb
         ;;
 
 linux32)
-        compile lazCompileLinux32 xidel
-        if [ $action -lt 2 ]; then exit; fi
-        tar -vczf xidel-$VERSION.linux32.tar.gz xidel readme.txt changelog install.sh
-        fileUpload xidel-$VERSION.linux32.tar.gz "$UPLOAD_PATH"
-        fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
+        lazcompile --os=linux --ws=nogui --cpu=i386
+        release linux32
+        release-deb
         ;;
 
 linuxarm)
-        compile lazCompileLinuxArm xidel
-        if [ $action -lt 2 ]; then exit; fi
-        tar -vczf xidel-$VERSION.linuxarm.tar.gz xidel readme.txt changelog install.sh
-        fileUpload xidel-$VERSION.linuxarm.tar.gz "$UPLOAD_PATH"        
-        #fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
+        lazcompile --os=linux --ws=nogui --cpu=arm
+        release linuxarm
         ;;
 
 win32)
-        compile lazCompileWin32 --build-mode=win32
-        if [ $action -lt 2 ]; then exit; fi
-        zip -v xidel-$VERSION.win32.zip xidel.exe changelog readme.txt
-        fileUpload xidel-$VERSION.win32.zip "$UPLOAD_PATH"
+        exesuffix=.exe
+        lazcompile --os=win32 --ws=win32 --cpu=i386 --build-mode=win32
+        release win32
         ;;
 win32synapse|win32openssl)
-        compile lazCompileWin32 --build-mode=win32synapse
-        if [ $action -lt 2 ]; then exit; fi
-        zip -v xidel-$VERSION-openssl.win32.zip xidel.exe changelog readme.txt
-        fileUpload xidel-$VERSION-openssl.win32.zip "$UPLOAD_PATH"
+        exesuffix=.exe
+        lazcompile --os=win32 --ws=win32 --cpu=i386 --build-mode=win32synapse
+        release openssl.win32
         ;;
 
 androidarm)
-        compile xidelCompileAndroidArm
-        if [ $action -lt 2 ]; then exit; fi
-        tar -vczf xidel-$VERSION.androidarm.tar.gz xidel readme.txt changelog install.sh
-        fileUpload xidel-$VERSION.androidarm.tar.gz "$UPLOAD_PATH"
-        #fileUpload $(./meta/build.deb.sh | tail -n 1) "$UPLOAD_PATH"
+        lazcompile -d --bm=androidarm
+        release androidarm
         ;;
+
+androidarm64)
+        lazcompile -d --bm=androidarm --cpu=aarch64
+        release androidarm64
+;;
+
 
 cgi)    lazCompileLinux64 xidelcgi
         webUpload xidelcgi  /../cgi-bin
@@ -114,10 +124,11 @@ release)
         ./manage.sh src
         ./manage.sh linux32
         ./manage.sh linux64        
+        ./manage.sh linuxarm
         ./manage.sh win32
         ./manage.sh win32synapse
-        #./manage.sh linuxarm
         ./manage.sh androidarm
+        ./manage.sh androidarm64
         ./manage.sh mirror
         mv oldxidel xidel
         ;;

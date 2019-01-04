@@ -1,6 +1,16 @@
 
 Some important changes:
 
+--------Xidel 0.9.9 --------
+(under development)
+- Steps towards XQuery 3.1: ? operator, => operator, map:/array: functions, string constructor
+- New functions: 
+    x:request-decode to parse the parameters of a HTTP request
+    inner-text to get the visible text from a HTML page
+    matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be removed)
+- --in-place option to override the input file with the output
+- <json> element in multipage templates  to download JSON data
+
 --------Xidel 0.9.8 --------
 (2018-04-02)
 - Cookie handling follows RFC 6265 rather than sending all cookies to all servers.
