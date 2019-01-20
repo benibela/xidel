@@ -57,7 +57,7 @@ procedure perform;
 
 implementation
 
-uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8 {$ifdef unix},termio{$endif};
+uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8 {$ifdef unix},termio{$endif}, xquery.internals.common, xquery.namespaces;
 //{$R xidelbase.res}
 
 ///////////////LCL IMPORT
