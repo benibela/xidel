@@ -2247,15 +2247,16 @@ end;
 
 function translateDeprecatedStrings(expr: string): string;
 var
-  a: array[0..2] of IXQValue;
+  regEx: TWrappedRegExpr;
 begin
   if mycmdline.readFlag('deprecated-string-options') then begin
-    a[0] := xqvalue(expr);
-    a[1] := xqvalue('([$][a-zA-Z0-9-]);');
-    a[2] := xqvalue('{$1}');
-    expr := xqFunctionReplace(3, @a[0]).toString;
-  end;
-  result := expr;
+    regEx:=wregexprParse('([$][a-zA-Z0-9-]);', []);
+    try
+      result := wregexprReplaceAll(regex, expr, '{$1}', false);
+    finally
+      wregexprFree(regEx);
+    end;
+  end else result := expr;
 end;
 
 class function TProcessingContext.replaceEnclosedExpressions(expr: string): string;
