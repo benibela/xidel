@@ -2400,7 +2400,7 @@ begin
   xidelOutputFileName := n;
   if striBeginsWith(xidelOutputFileName, 'http://') or striBeginsWith(xidelOutputFileName, 'https://') then
     raise Exception.Create('Cannot output to webpage')
-  else if striBeginsWith(xidelOutputFileName, 'stdout:') then begin
+  else if striBeginsWith(xidelOutputFileName, 'stdout:') or (xidelOutputFileName = '') then begin
     xidelOutputFile := StdOut;
   end else begin
     xidelOutputFileName := strRemoveFileURLPrefix(xidelOutputFileName);
