@@ -3793,6 +3793,7 @@ begin
   mycmdline.declareFlag('ignore-namespaces', 'Removes all namespaces from the input document');
   mycmdline.declareFlag('no-optimizations', 'Disables optimizations');
   mycmdline.declareFlag('deprecated-string-options', 'Replaces the old $foo; variables with the new {$foo} in arguments');
+  mycmdline.declareFlag('deprecated-trim-nodes', 'Removes all surrounding white space of all nodes.');
 
   mycmdLine.declareFlag('version','Print version number ('+getVersionString+')');
   mycmdLine.declareFlag('usage','Print help, examples and usage information');
@@ -3951,6 +3952,7 @@ begin
     //if tracer.contextVariables then tracer.varLog := TXQVariableChangeLog.create();
     XQOnGlobalDebugTracing := @tracer.globalTracing;
   end;
+  XQGlobalTrimNodes := mycmdline.readFlag('deprecated-trim-nodes');
 
   if assigned(onPreOutput) then onPreOutput(guessExtractionKind(mycmdline.readString('extract')));
 
