@@ -2401,8 +2401,10 @@ begin
   if striBeginsWith(xidelOutputFileName, 'http://') or striBeginsWith(xidelOutputFileName, 'https://') then
     raise Exception.Create('Cannot output to webpage')
   else if striBeginsWith(xidelOutputFileName, 'stdout:') or (xidelOutputFileName = '') then begin
-    xidelOutputFile := StdOut;
+    xidelOutputFile := output;
   end else begin
+    if cgimode or (not allowFileAccess) then
+      raise EXidelException.create('output file changing is not allowed in CGI mode');
     xidelOutputFileName := strRemoveFileURLPrefix(xidelOutputFileName);
     colorizing := cNever;
     AssignFile(xidelOutputFile, xidelOutputFileName);

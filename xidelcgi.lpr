@@ -216,7 +216,7 @@ begin
   rawpermalink := 'http://www.videlibri.de/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
 
 
-  flush(stdout);
+  flush(output);
 
 
 end;
