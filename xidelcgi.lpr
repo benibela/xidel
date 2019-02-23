@@ -4,7 +4,7 @@ program xidelsoap;
 
 uses
   xidelbase, simplehtmltreeparser,
-  rcmdlinecgi, {utf8tools, }sysutils, strutils, bbutils, extendedhtmlparser
+  rcmdlinecgi, {utf8tools, }sysutils, strutils, bbutils, extendedhtmlparser, xquery.internals.common
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
@@ -62,12 +62,14 @@ begin
   case kind of
     ekAuto: exit('auto');
     ekXPath2: exit('xpath2');
-    ekXPath3: exit('xpath3');
+    ekXPath3_0: exit('xpath3');
+    ekXPath3_1: exit('xpath3_1');
     ekPatternHTML: exit('html-pattern');
     ekPatternXML: exit('xml-pattern');
     ekCSS: exit('css');
     ekXQuery1: exit('xquery1');
-    ekXQuery3: exit('xquery3');
+    ekXQuery3_0: exit('xquery3');
+    ekXQuery3_1: exit('xquery3_1');
     else exit('auto');
   end;
 end;
