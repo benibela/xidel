@@ -1,5 +1,5 @@
 {
-Copyright (C) 2012 - 2017 Benito van der Zander (BeniBela)
+Copyright (C) 2012 - 2019 Benito van der Zander (BeniBela)
                           benito@benibela.de
                           www.benibela.de
 

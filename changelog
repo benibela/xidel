@@ -10,6 +10,7 @@ Some important changes:
     matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be removed)
 - --in-place option to override the input file with the output
 - <json> element in multipage templates  to download JSON data
+- default whitespace normalization is disabled by default
 
 --------Xidel 0.9.8 --------
 (2018-04-02)

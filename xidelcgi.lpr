@@ -1,4 +1,4 @@
-program xidelsoap;
+program xidelcgi;
 
 {$mode objfpc}{$H+}
 
