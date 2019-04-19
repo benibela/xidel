@@ -171,7 +171,7 @@
     </PublishOptions>
     <RunParams>
       <local>
-        <CommandLineParams Value="/tmp/xx.html -f '//a/resolve-html(.)'"/>
+        <CommandLineParams Value="-e '1 to 100'"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
         <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
@@ -179,7 +179,7 @@
       <Modes Count="1">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="/tmp/xx.html -f '//a/resolve-html(.)'"/>
+            <CommandLineParams Value="-e '1 to 100'"/>
             <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
             <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
           </local>
@@ -191,7 +191,7 @@
         <PackageName Value="internettools"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="xidel.pas"/>
         <IsPartOfProject Value="True"/>
@@ -200,6 +200,10 @@
         <Filename Value="xidelbase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="xidelcrt.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

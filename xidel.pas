@@ -35,7 +35,7 @@ uses //heaptrc,
      rcmdline, //<< if you don't have this command line parser unit, you can download it from www.benibela.de
      xquery_module_file
      {$ifdef USE_WININET_WRAPPER},w32internetaccess{$endif}
-     {$ifdef USE_SYNAPSE_WRAPPER},synapseinternetaccess{$endif}
+     {$ifdef USE_SYNAPSE_WRAPPER},synapseinternetaccess, xidelcrt{$endif}
      ;
 
 

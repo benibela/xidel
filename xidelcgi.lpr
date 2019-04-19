@@ -350,6 +350,7 @@ end;
 begin
   xidelbase.cgimode := true;
   xidelbase.allowInternetAccess := false;
+  xidelcrt.allowFileAccess := false;
   xidelbase.mycmdline := TCommandLineReaderCGI.create;
 
 
