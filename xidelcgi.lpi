@@ -40,7 +40,6 @@
       <Unit0>
         <Filename Value="xidelcgi.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="xidelcgi"/>
       </Unit0>
     </Units>
   </ProjectOptions>

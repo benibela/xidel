@@ -4,7 +4,7 @@ program xidelcgi;
 
 uses
   xidelbase, simplehtmltreeparser,
-  rcmdlinecgi, {utf8tools, }sysutils, strutils, bbutils, extendedhtmlparser, xquery.internals.common
+  rcmdlinecgi, {utf8tools, }sysutils, strutils, math, bbutils, extendedhtmlparser, xquery.internals.common, xidelcrt
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
@@ -30,7 +30,13 @@ const ExampleHTML: string = '<html><body>'#13#10+
 
     ExampleXPath: string = 'id("t2") / tbody / tr / td[1]';
 
-    ExampleXQuery: string = 'xquery version "1.0";'#13#10'declare function local:test($table as element()){'#13#10 +
+    ExampleXQuery1: string = 'xquery version "1.0";'#13#10'declare function local:test($table as element()){'#13#10 +
+                              '  $table / tbody / tr / td[1]'#13#10'};'#13#10+
+                              'local:test(id("t2"))';
+    ExampleXQuery3_0: string = 'xquery version "3.0";'#13#10'declare function local:test($table as element()){'#13#10 +
+                              '  $table / tbody / tr / td[1]'#13#10'};'#13#10+
+                              'local:test(id("t2"))';
+    ExampleXQuery3_1: string = 'xquery version "3.1";'#13#10'declare function local:test($table as element()){'#13#10 +
                               '  $table / tbody / tr / td[1]'#13#10'};'#13#10+
                               'local:test(id("t2"))';
 
@@ -54,7 +60,7 @@ var
 
 procedure w(const s: string);
 begin
-  writeln(s);
+  xidelcrt.wln(s);
 end;
 
 function extractKindToString(kind: TExtractionKind): string;
@@ -74,6 +80,46 @@ begin
   end;
 end;
 
+var
+  oldinoutfunc, oldflushfunc: CodePointer;
+
+Procedure HTMLEscapedFileWriteFunc(var t:TextRec);
+type
+  FileFunc = Procedure(var t : TextRec);
+  procedure writeEscaped;
+  var helper: TXHTMLStrBuilder;
+    buffer: string;
+    bufferptr, bufferend: PChar;
+    size: integer;
+  begin
+    helper.init(@buffer, 2*t.bufpos);
+    helper.appendHTMLText(@t.bufptr^[0], t.bufpos);
+    helper.final;
+    bufferptr := pchar(buffer);
+    bufferend := bufferptr + length(buffer);
+    while bufferptr < bufferend do begin
+      size := min(t.bufsize, bufferend - bufferptr);
+      move(bufferptr^, t.bufptr^, size);
+      t.bufpos := size;
+      FileFunc(oldinoutfunc)(t);
+      bufferptr += size;
+    end;
+  end;
+
+var
+  needescape: Boolean;
+  i: Integer;
+begin
+  needescape := false;
+  for i := 0 to t.bufpos - 1 do begin
+    needescape := t.bufptr^[i] in ['<','>','&'];
+    if needescape then break;
+  end;
+  //writeln(stderr, needescape, ' ', t.bufpos);
+  if not needescape then FileFunc(oldinoutfunc)(t)
+  else writeEscaped;
+end;
+
 type
 
 { TCommandLineReaderBreaker }
@@ -91,8 +137,10 @@ procedure printPre(extractionKind: TExtractionKind);
     if (t = mycmdline.readString('extract-kind')) and (mycmdline.readString('extract') <> '') then
       exit(mycmdline.readString('extract'));
     case t of
-    'xpath', 'xpath2', 'xpath3': exit(ExampleXPath);
-    'xquery', 'xquery1', 'xquery3': exit(ExampleXQuery);
+    'xpath', 'xpath2', 'xpath3', 'xpath3.0', 'xpath3.1': exit(ExampleXPath);
+    'xquery1': exit(ExampleXQuery1);
+    'xquery', 'xquery3', 'xquery3.0': exit(ExampleXQuery3_0);
+    'xquery3.1': exit(ExampleXQuery3_1);
     'css': exit(ExampleCSS);
     {'template', 'auto':} else exit(ExampleTemplate);
     end;
@@ -102,8 +150,8 @@ procedure printPre(extractionKind: TExtractionKind);
   begin
     result := '<input type="radio" name="extract-kind" value="'+t+'"';
     if (mycmdline.readString('extract-kind') = t) or
-       ((mycmdline.readString('extract-kind') = 'xpath') and (t = 'xpath2')) or
-       ((mycmdline.readString('extract-kind') = 'xquery') and (t = 'xquery1'))  then result += ' checked';
+       ((mycmdline.readString('extract-kind') = 'xpath') and (t = 'xpath3.0')) or
+       ((mycmdline.readString('extract-kind') = 'xquery') and (t = 'xquery3.0'))  then result += ' checked';
     result += ' onclick="changeexample('''+t+''', '''  +  StringsReplace(example(t), ['\', #13#10, '''', '&', '"',  '<', '>'], ['\\', '\n', '\''', '&amp', '&quot;', '&lt;', '&gt;'], [rfReplaceAll]) +  '''); update();"';
     result += '/> '+ n;
   end;
@@ -133,13 +181,16 @@ procedure printPre(extractionKind: TExtractionKind);
   end;
 
 begin
+  outputHeader := '';
+  setOutputFileName('stdout:///', mycmdline);
+
   if (mycmdline.readFlag('case-sensitive')) then
     xqueryDefaultCollation:='http://www.w3.org/2005/xpath-functions/collation/codepoint';
 
   if mycmdline.readFlag('raw') then begin
     case mycmdLine.readString('output-format') of
-      'xml', 'xml-wrapped': w('Content-Type: application/xml');
-      'html': w('Content-Type: text/html');
+      //'xml', 'xml-wrapped': w('Content-Type: application/xml');
+      //'html': w('Content-Type: text/html');
       'json', 'json-wrapped': w('Content-Type: application/json');
       {'adhoc':} else w('Content-Type: text/plain');
     end;
@@ -149,7 +200,6 @@ begin
     exit;
   end;
 
-
   if mycmdline.readString('extract-kind') <> 'auto' then firstExtractionKind := mycmdline.readString('extract-kind')
   else if mycmdline.readString('extract') <> '' then firstExtractionKind := extractKindToString(extractionKind)
   else firstExtractionKind:='';
@@ -158,12 +208,13 @@ begin
   w('Content-Type: text/html');
   w('');
 
-  w('<html><head>');
+  w('<!DOCTYPE html><html><head>');
   w('<title>Template / XPath 3.0 / XQuery 3.0 / CSS 3 Selector / JSONiq Online Tester</title>');
   w('<link rel="stylesheet" href="../codemirror/codemirror.css">');
   w('<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css">');
   w('<link rel="stylesheet" type="text/css" href="../cgi.css" />');
   w('<link rel="stylesheet" type="text/css" href="cgi.css" />');
+  w('<meta charset="utf-8" /> ');
   w('<script src="../cgi.js"></script>');
   w('<script src="cgi.js"></script>');
   w('</head><body onload="init()">');
@@ -172,12 +223,12 @@ begin
   w('<form method="POST" action="./xidelcgi">');
   w('<div id="html">'+select('input-format', 'HTML/XML-Input file', ['auto', 'html', 'xml', 'xml-strict'])
     + '<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
-  w('<div id="template">'+kind('template', 'Template')+kind('xpath3', 'XPath 3.0')+ kind('xpath2', '2.0')+kind('xquery3', 'XQuery 3.0')+kind('xquery1', '1')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
+  w('<div id="template">'+kind('template', 'Template')+kind('xpath3.0', 'XPath 3.0')+ kind('xpath2', '2.0')+kind('xquery3.0', 'XQuery 3.0')+kind('xquery1', '1')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
   w('<br><textarea name="extract" rows=18 cols=80 >');
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
-  w('<br><br><input type="submit"></input> '+checkbox('no-auto-update', 'disable auto refresh')+' <span >' {id="codemirrorspan"} + checkbox('no-highlighting', 'disable syntax highlighting') +'</span>');
+  w('<br><br><input type="submit"> '+checkbox('no-auto-update', 'disable auto refresh')+' <span >' {id="codemirrorspan"} + checkbox('no-highlighting', 'disable syntax highlighting') +'</span>');
   w('<br><span class="options"><b>Output Options</b>: ');
   w(  select('printed-node-format', 'Node format:', ['text', 'xml', 'html']) +  select('output-format', 'Output format:', ['adhoc', 'html', 'xml', 'xml-wrapped', 'json-wrapped', 'bash', 'cmd']));
   w(checkbox('print-type-annotations', 'Show types') + checkbox('hide-variable-names', 'Hide variable names') );
@@ -190,7 +241,9 @@ begin
     + checkbox('case-sensitive', 'case sensitive'));
   w('</span>');
 
-  w('</span></form>');
+  w('</span>');
+  w('<br>Work in progress: ' + kind('xpath3.1', 'XPath 3.1') + kind('xquery3.1', 'XQuery 3.1')+'<br>');
+  w('</form>');
 
  { w('<script src="../codemirror/codemirror.js"></script>');
   w('<script src="../codemirror/javascript/javascript.js"></script>');
@@ -216,9 +269,12 @@ begin
   rawpermalink := 'http://www.videlibri.de/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
 
 
-  flush(output);
+  flush(xidelOutputFile);
 
-
+  oldinoutfunc := TextRec(xidelOutputFile).inoutfunc;
+  oldflushfunc := TextRec(xidelOutputFile).flushfunc;
+  TextRec(xidelOutputFile).inoutfunc := @HTMLEscapedFileWriteFunc;
+  TextRec(xidelOutputFile).flushfunc := @HTMLEscapedFileWriteFunc;
 end;
 
 var compatibiltiyOptionsOn: array[1..3] of string =
@@ -244,10 +300,16 @@ begin
 end;
 
 begin
+  //this is not needed
+  flush(xidelOutputFile);
+  TextRec(xidelOutputFile).inoutfunc := oldinoutfunc;
+  TextRec(xidelOutputFile).flushfunc := oldflushfunc;
+
+  //rest of the page
   w('</textarea><br>');
   w('<a id="permalink" href="'+permalink+'">permalink</a>, ');
   w('<a id="rawpermalink" href="'+rawpermalink+'">result-only</a>');
-  w('</div>');
+  //w('</div>');
 
   w('<br><br><br><hr>');
 
@@ -277,18 +339,6 @@ begin
   w('activateCodeMirrors(); </script>');
 
   w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
-  w('<!-- Piwik -->');
-  w('<script type="text/javascript">');
-  w('var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.videlibri.de/piwik/" : "http://www.videlibri.de/piwik/");');
-  w('document.write(unescape("%3Cscript src=''" + pkBaseURL + "piwik.js'' type=''text/javascript''%3E%3C/script%3E"));');
-  w('</script><script type="text/javascript">');
-  w('try {');
-  w('var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 3);');
-  w('piwikTracker.trackPageView();');
-  w('piwikTracker.enableLinkTracking();');
-  w('} catch( err ) {}');
-  w('</script><noscript><p><img src="http://www.videlibri.de/piwik/piwik.php?idsite=3" style="border:0" alt="" /></p></noscript>');
-  w('<!-- End Piwik Tracking Code -->');
 
   {sl := tstringlist.create;
   cgi.AddResponseLn('reqvar:');
