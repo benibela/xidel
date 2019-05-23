@@ -9,8 +9,10 @@ Some important changes:
     inner-text to get the visible text from a HTML page
     matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be removed)
 - --in-place option to override the input file with the output
-- <json> element in multipage templates  to download JSON data
+- <json> element in multipage templates to download JSON data
 - default whitespace normalization is disabled by default
+- do not escape &#nbsp; in serializations
+- reduced memory usage
 
 --------Xidel 0.9.8 --------
 (2018-04-02)
