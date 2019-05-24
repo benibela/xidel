@@ -22,6 +22,7 @@ unit xidelbase;
 
 {$mode objfpc}{$H+}
 {$modeswitch advancedrecords}
+{$modeswitch typehelpers}
 
 interface
 
@@ -57,6 +58,24 @@ implementation
 
 uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8, xquery.internals.common, xquery.namespaces, xidelcrt;
 //{$R xidelbase.res}
+
+type TVariableChangeLogHelper = class helper for TXQVariableChangeLog
+  procedure setOverride(const n,v: string);
+  procedure setOverride(const n: string; const v: ixqvalue);
+end;
+procedure TVariableChangeLogHelper.setOverride(const n,v: string);
+begin
+  setOverride(n, xqvalue(v));
+end;
+procedure TVariableChangeLogHelper.setOverride(const n: string; const v: ixqvalue);
+var
+  i: Integer;
+begin
+  i := indexOf(n);
+  if i <0 then add(n, v)
+  else varstorage[i].value := v;
+end;
+
 
 ///////////////LCL IMPORT
 //uses lazutf8;
@@ -1783,13 +1802,13 @@ var next, res: TFollowToList;
 
     //printStatus(strFromPtr(self) + data.rawdata);
     //alreadyProcessed.Add(urls[0]+#1+post);
-    htmlparser.variableChangeLog.add('url', data.baseUri);
+    htmlparser.variableChangeLog.setOverride('url', data.baseUri);
     decoded := decodeURL(data.baseUri);
-    htmlparser.variableChangeLog.add('host', decoded.host + IfThen(decoded.port <> '' , ':' + decoded.port, ''));
-    htmlparser.variableChangeLog.add('path', decoded.path);
+    htmlparser.variableChangeLog.setOverride('host', decoded.host + IfThen(decoded.port <> '' , ':' + decoded.port, ''));
+    htmlparser.variableChangeLog.setOverride('path', decoded.path);
     data.inputFormat; //auto deteect format and convert json to utf-8
-    htmlparser.variableChangeLog.add('raw', data.rawData);
-    htmlparser.variableChangeLog.add('headers', makeHeaders);
+    htmlparser.variableChangeLog.setOverride('raw', data.rawData);
+    htmlparser.variableChangeLog.setOverride('headers', makeHeaders);
 
     if yieldDataToParent then begin
       if res = nil then res := TFollowToList.Create;
@@ -1977,7 +1996,7 @@ procedure TProcessingContext.loadDataForQueryPreParse(const data: IData);
 begin
   if data.inputFormat in [ifJSON,ifJSONStrict] then begin //we need to set json before parsing, or it fails
     //this used htmlparser.VariableChangelog.get('raw') rather than data. why??
-    htmlparser.VariableChangelog.add('json',  parseJSON(data));
+    htmlparser.VariableChangelog.setOverride('json',  parseJSON(data));
     currentRoot := nil;
   end;
 end;
@@ -2286,7 +2305,7 @@ begin
         writeBeginGroup;
         printExtractedValue(value, false);
         writeEndGroup;
-        htmlparser.oldVariableChangeLog.add(defaultName, value);
+        htmlparser.oldVariableChangeLog.setOverride(defaultName, value);
       end;
     end;
     ekMultipage: if assigned (onPrepareInternet) then begin
