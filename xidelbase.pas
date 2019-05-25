@@ -2432,6 +2432,7 @@ begin
         first := true;
         writeItem('{', cJSON);
         if vars.count > 0 then begin
+          tempUsed := nil;
           setlength(tempUsed, vars.count);
           FillChar(tempUsed[0], sizeof(tempUsed[0])*length(tempUsed), 0);
           for i:=0 to vars.count-1 do begin
@@ -2907,6 +2908,7 @@ begin
   {$ifdef windows}
   parse({$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(utf8string(GetCommandLineW)), true, autoReset);
   {$else}
+  args := nil;
   setlength(args, Paramcount);
   for i:=0 to high(args) do args[i] := {$ifndef FPC_HAS_CPSTRING} SysToUTF8{$ENDIF}(paramstr(i+1));
   parse(args, autoReset);
