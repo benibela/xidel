@@ -72,8 +72,9 @@ var
   i: Integer;
 begin
   i := indexOf(n);
-  if i <0 then add(n, v)
-  else varstorage[i].value := v;
+  if i >= 0 then varstorage[i].value := v
+  else if (parentLog = nil) or parentLog.readonly then add(n, v)
+  else parentLog.setOverride(n, v)
 end;
 
 
@@ -1806,7 +1807,7 @@ var next, res: TFollowToList;
     decoded := decodeURL(data.baseUri);
     htmlparser.variableChangeLog.setOverride('host', decoded.host + IfThen(decoded.port <> '' , ':' + decoded.port, ''));
     htmlparser.variableChangeLog.setOverride('path', decoded.path);
-    data.inputFormat; //auto deteect format and convert json to utf-8
+    data.inputFormat; //auto detect format and convert json to utf-8
     htmlparser.variableChangeLog.setOverride('raw', data.rawData);
     htmlparser.variableChangeLog.setOverride('headers', makeHeaders);
 
@@ -3578,6 +3579,7 @@ begin
       end;
     end;
   end;
+//  DumpHeap(false);
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
   globalDuplicationList.Free;
