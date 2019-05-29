@@ -2552,6 +2552,7 @@ end;
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(const data: IData);
 var temp: TTreeNode;
     i: integer;
+    a, na: TTreeAttribute;
 begin
   (*if (strFirstNonSpace(html) in ['{', '[']) and (
     striEndsWith(uri, 'json') or striEndsWith(uri, 'jsonp')
@@ -2569,10 +2570,12 @@ begin
     temp := FHtmlTree;
     while temp <> nil do begin
       temp.namespace:=nil;
-      if temp.attributes <> nil then
-        for i:=temp.attributes.count-1 downto 0 do
-          if temp.attributes.Items[i].isNamespaceNode then
-            temp.attributes.Delete(i);
+      a := temp.attributes;
+      while a <> nil do begin
+        na := TTreeAttribute(a.next);
+        if a.isNamespaceNode then temp.removeAttribute(a);
+        a := na;
+      end;
       temp := temp.next;
     end;
   end;
