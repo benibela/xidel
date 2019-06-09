@@ -2533,7 +2533,6 @@ end;
 
 procedure THtmlTemplateParserBreaker.parseHTMLSimple(const data: IData);
 var temp: TTreeNode;
-    i: integer;
     a, na: TTreeAttribute;
 begin
   (*if (strFirstNonSpace(html) in ['{', '[']) and (
