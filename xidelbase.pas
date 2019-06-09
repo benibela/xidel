@@ -59,24 +59,6 @@ implementation
 uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8, xquery.internals.common, xquery.namespaces, xidelcrt;
 //{$R xidelbase.res}
 
-type TVariableChangeLogHelper = class helper for TXQVariableChangeLog
-  procedure setOverride(const n,v: string);
-  procedure setOverride(const n: string; const v: ixqvalue);
-end;
-procedure TVariableChangeLogHelper.setOverride(const n,v: string);
-begin
-  setOverride(n, xqvalue(v));
-end;
-procedure TVariableChangeLogHelper.setOverride(const n: string; const v: ixqvalue);
-var
-  i: Integer;
-begin
-  i := indexOf(n);
-  if i >= 0 then varstorage[i].value := v
-  else if (parentLog = nil) or parentLog.readonly then add(n, v)
-  else parentLog.setOverride(n, v)
-end;
-
 
 ///////////////LCL IMPORT
 //uses lazutf8;
