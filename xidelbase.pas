@@ -1769,6 +1769,19 @@ var next, res: TFollowToList;
       if headers = nil then exit(xqvalue());
       result := xqvalue(headers);
     end;
+    procedure processFollowTo;
+    var
+      i: Integer;
+      tempdata: IData;
+    begin
+      if data.recursionLevel + 1 <= followMaxLevel then
+        for i := 0 to res.Count - 1 do begin
+          tempdata := TFollowTo(res[i]).retrieve(self, data.recursionLevel+1);
+          res[i] := nil;
+          followto.process(tempdata).free;
+        end;
+      res.Clear;
+    end;
 
   var
     i: Integer;
@@ -1834,12 +1847,8 @@ var next, res: TFollowToList;
         loadDataForQuery(data, followQueryCache);
         res.merge(evaluateQuery(followQueryCache, data), data, self);
       end;
-      if followTo <> nil then begin
-        if data.recursionLevel + 1 <= followMaxLevel then
-          for i := 0 to res.Count - 1 do
-            followto.process(TFollowTo(res[i]).retrieve(self, data.recursionLevel+1)).free;
-        res.Clear;
-      end;
+      if followTo <> nil then
+        processFollowTo;
     end;
   end;
 
