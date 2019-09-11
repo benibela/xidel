@@ -11,7 +11,7 @@ Some important changes:
 - --in-place option to override the input file with the output
 - <json> element in multipage templates to download JSON data
 - default whitespace normalization is disabled by default
-- do not escape &#nbsp; in serializations
+- improved serialization: faster, options for x:serialize-json, do not escape &#nbsp; for xml/html
 - reduced memory usage
 
 --------Xidel 0.9.8 --------
