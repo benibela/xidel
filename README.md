@@ -25,6 +25,7 @@ returns all links, the target URI of each link or the text of all links alphabet
 
 There are more examples on the above page with binaries, the github wiki and in the directory examples.
 
+
 Screenshots
 -----------
 
@@ -35,5 +36,13 @@ Screenshots
 <img src="http://www.videlibri.de/img/xidel-windows-blue.png" alt="Xidel on Windows">
 
 </p>
+
+Compilation and Installation
+-----------
+
+You can compile it by calling `build.sh` and install it by calling `build.sh -t`. Alternatively you can compile it with the Lazarus IDE.
+
+You can call the commands from the [.travis.yml](.travis.yml) script to download dependencies.
+
 
 
