@@ -2800,14 +2800,7 @@ begin
         if  strBeginsWith(message, 'err:') or strBeginsWith(message, 'pxp:') then begin
           p := strIndexOf(message, [#13,#10]);
           say(copy(message,1,p-1), ccRedBold);
-          delete(message, 1, p);
-        end;
-        while Length(message) > 0 do begin
-          p := strIndexOf(message, ParsingError);
-          if p <= 0 then break;
-          say(copy(message, 1, p - 1));
-          say(ParsingError, ccRedBold);
-          delete(message, 1, p + length(ParsingError) - 1);
+          delete(message, 1, p-1);
         end;
       end;
       sayln( message );
@@ -2833,6 +2826,10 @@ begin
       if tracer.backtrace then tracer.printBacktrace;
       if tracer.context then tracer.printLastContext;
     end;
+  end;
+  if (e is EXQParsingException) and (EXQParsingException(e).next <> nil) then begin
+    sayln('');
+    displayError(EXQParsingException(e).next);
   end;
 end;
 
