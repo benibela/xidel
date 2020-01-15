@@ -581,6 +581,7 @@ TProcessingContext = class(TDataProcessing)
   silent, printPostData: boolean;
 
   ignoreNamespace: boolean;
+  compatibilityJSONMode: (cjmDefault, cjmStandard, cjmJSONiq, cjmDeprecated);
   compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityNoExtendedJson, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
   compatibilityDotNotation: TXQPropertyDotNotation;
   noOptimizations: boolean;
@@ -677,7 +678,7 @@ begin
   result := false;
 end;
 
-function TOptionReaderWrapper.read(const name: string; out inputformat: TInputFormat): boolean;
+function TOptionReaderWrapper.read(const name: string ; out inputformat: TInputFormat): boolean;
 var
   temp: String;
 begin
@@ -1574,7 +1575,15 @@ begin
   reader.read('follow-level', followMaxLevel);
   reader.read('input-format', followInputFormat);
 
+  reader.read('json-mode', tempstr);
+  case tempstr of
+    'standard': compatibilityJSONMode:=cjmStandard;
+    'jsoniq': compatibilityJSONMode:=cjmJSONiq;
+    'deprecated': compatibilityJSONMode:=cjmDeprecated;
+    else{'standard': }compatibilityJSONMode:=cjmDefault;
+  end;
   reader.read('no-json', compatibilityNoJSON);
+  if compatibilityNoJSON then writeln(stderr, 'no-json option is deprecated. use --json-mode');
   reader.read('no-json-literals', compatibilityNoJSONliterals);
   reader.read('dot-notation', tempstr);
   case tempstr of
@@ -1586,6 +1595,7 @@ begin
     if tempbool = true then
       compatibilityDotNotation := xqpdnDisallowDotNotation;
   reader.read('only-json-objects', compatibilityOnlyJSONObjects);
+  if compatibilityOnlyJSONObjects then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
   reader.read('no-extended-json', compatibilityNoExtendedJson);
   reader.read('strict-type-checking', compatibilityStrictTypeChecking);
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
@@ -1677,6 +1687,7 @@ begin
   printPostData := other.printPostData;
 
   compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
+  compatibilityJSONMode:= other.compatibilityJSONMode;
   compatibilityNoJSON := other.compatibilityNoJSON;
   compatibilityNoJSONliterals := other.compatibilityNoJSONliterals;
   compatibilityDotNotation := other.compatibilityDotNotation;
@@ -1756,7 +1767,15 @@ const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingMode
   xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1,
   xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
 );
+  GlobalJSONParseOptions: TXQJsonParser.TOptions = [];
 
+procedure setJSONFormat(format: TInputFormat);
+begin
+  case format of //todo: cache?
+    ifJSON: xpathparser.DefaultJSONParser.options := [jpoAllowMultipleTopLevelItems, jpoLiberal, jpoAllowTrailingComma] + GlobalJSONParseOptions;
+    ifJSONStrict: xpathparser.DefaultJSONParser.options := [] + GlobalJSONParseOptions;
+  end;
+end;
 
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
@@ -1858,10 +1877,35 @@ var
 begin
   //init
   xpathparser.ParsingOptions.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
-  xpathparser.ParsingOptions.AllowJSON:=not compatibilityNoJSON;
   xpathparser.ParsingOptions.AllowJSONLiterals:=not compatibilityNoJSONliterals;
   xpathparser.ParsingOptions.AllowPropertyDotNotation:=compatibilityDotNotation;
-  xpathparser.StaticContext.objectsRestrictedToJSONTypes:=compatibilityOnlyJSONObjects;
+  case compatibilityJSONMode of
+    cjmDeprecated: begin
+      xpathparser.ParsingOptions.AllowJSON:=not compatibilityNoJSON;
+      if not compatibilityNoJSON and compatibilityOnlyJSONObjects then begin
+        xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
+        xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
+      end;
+      GlobalJSONParseOptions := [jpoJSONiq];
+    end;
+    cjmStandard: begin
+      xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
+      xpathparser.ParsingOptions.JSONObjectMode := xqjomForbidden;
+      xpathparser.ParsingOptions.AllowJSONiqTests := false;
+    end;
+    cjmJSONiq: begin
+      xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
+      xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
+      xpathparser.ParsingOptions.AllowJSONiqTests := true;
+      GlobalJSONParseOptions := [jpoJSONiq];
+    end;
+    cjmDefault: begin
+      xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
+      xpathparser.ParsingOptions.JSONObjectMode := xqjomMapAlias;
+      xpathparser.ParsingOptions.AllowJSONiqTests := true;
+    end;
+  end;
+  setJSONFormat(globalDefaultInputFormat);
   xpathparser.StaticContext.jsonPXPExtensions:=not compatibilityNoExtendedJson;
   xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
   xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
@@ -1975,11 +2019,12 @@ begin
   inherited destroy;
 end;
 
+
 function parseJSON(const data: IData): IXQValue;
 begin
+  setJSONFormat(data.inputFormat);
   case data.inputFormat of //todo: cache?
-    ifJSON: result := TXQJsonParser.parse(data.rawData, [jpoAllowMultipleTopLevelItems, jpoLiberal, jpoAllowTrailingComma]);
-    ifJSONStrict: result := TXQJsonParser.parse(data.rawData, []);
+    ifJSON, ifJSONStrict: result := xpathparser.DefaultJSONParser.parse(data.rawData);
     else result := xqvalue();
   end;
 end;
@@ -2257,7 +2302,10 @@ begin
 
   if hasOutputEncoding <> oePassRaw then htmlparser.OutputEncoding := CP_UTF8
   else htmlparser.OutputEncoding := CP_NONE;
-  globalDefaultInputFormat := inputFormat;
+  if globalDefaultInputFormat <> inputFormat then begin
+    globalDefaultInputFormat := inputFormat;
+    setJSONFormat(globalDefaultInputFormat);
+  end;
   globalCurrentExtraction := self;
 
   case extractKind of
@@ -2758,7 +2806,7 @@ procedure displayError(e: Exception; printPartialMatches: boolean = false);
     say(s+LineEnding, color);
   end;
 
-const ParsingError  = '[<- error occurs before here]';
+//const ParsingError  = '[<- error occurs before here]';
 var
   message: String;
   p: LongInt;
@@ -3380,6 +3428,7 @@ begin
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
+  mycmdline.declareString('json-mode', 'JSON mode: Possible values: standard, jsoniq, default, deprecated');
   mycmdline.declareFlag('no-json', 'Disables the JSONiq syntax extensions (like [1,2,3] and {"a": 1, "b": 2})');
   mycmdline.declareFlag('no-json-literals', 'Disables the json true/false/null literals');
   mycmdline.declareString('dot-notation', 'Specifies if the dot operator $object.property can be used. Possible values: off, on, unambiguous (default, does not allow $obj.prop, but ($obj).prop ) ', 'unambiguous');
