@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 rm /tmp/xidel-tests-state-ok
 rm /tmp/xidel-tests-state-failed
 
@@ -288,6 +289,24 @@ tests/test.sh bash-escape8 --xquery "concat('\"', \"'\", '\\\\', '&#xA;&#xD;')" 
 tests/test.sh bash-combining1 -e 1 -e '(2,3)' -e '4' --output-format bash
 tests/test.sh bash-combining2 -e 1 -e '(2,3)' -e 'temp:=712' -e '4' --output-format bash
 tests/test.sh bash-combining3 -e 1 -e '(2,3)' -e 'temp:=712' -e '4' -e 'temp:=189' --output-format bash
+
+#JSON formats
+
+tests/test.sh jsonmode/standard --json-mode standard --json-mode standard --xquery 'let $x := <a><b>c</b></a>//b, $o := map {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(2))) )'
+tests/test.sh jsonmode/jsoniq --json-mode jsoniq  --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )' 
+tests/test.sh jsonmode/deprecated  --json-mode deprecated --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
+tests/test.sh jsonmode/default  --json-mode default --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
+
+tests/test.sh jsonmode/standard-equals - --json-mode standard -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
+tests/test.sh jsonmode/jsoniq-equals - --json-mode jsoniq -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
+tests/test.sh jsonmode/deprecated-equals - --json-mode deprecated -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
+tests/test.sh jsonmode/default-equals - --json-mode default -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
+
+tests/test.sh jsonmode/standard-null - --json-mode standard -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
+tests/test.sh jsonmode/jsoniq-null - --json-mode jsoniq -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
+tests/test.sh jsonmode/deprecated-null - --json-mode deprecated -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
+tests/test.sh jsonmode/default-null - --json-mode default -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
+
 
 #Nesting
 tests/test.sh nest0a [ ]
