@@ -3,7 +3,8 @@ Some important changes:
 
 --------Xidel 0.9.9 --------
 (under development)
-- Steps towards XQuery 3.1: ? operator, => operator, map:/array: functions, string constructor
+- Steps towards XPath/XQuery 3.1: ? operator, => operator, map:/array: functions, string constructor
+- Use the JSON data model of XPath/XQuery 3.1 by default rather than the one of JSONiq.
 - New functions: 
     x:request-decode to parse the parameters of a HTTP request
     inner-text to get the visible text from a HTML page
