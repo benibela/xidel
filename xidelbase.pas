@@ -279,15 +279,6 @@ begin
   if Result = '' then raise EXidelException.Create('File '+fn+' is empty.');
 end;
 
-function strReadFromStdin: string;
-var s:string;
-begin
-  result:='';
-  while not EOF(Input) do begin
-    ReadLn(s);
-    result+=s+LineEnding;
-  end;
-end;
 
 
 
