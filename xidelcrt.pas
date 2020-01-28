@@ -36,6 +36,8 @@ procedure writeItem(const s: string; color: TColorOptions = cNever);
 procedure writeVarName(const s: string; color: TColorOptions = cNever);
 procedure wstderr(const s: string);
 
+function strReadFromStdin: string;
+
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
 var //output options
     outputFormat: TOutputFormat;
@@ -528,6 +530,46 @@ procedure writeVarName(const s: string; color: TColorOptions = cNever);
 begin
   writeItem(s, color);
   firstItem := true; //prevent another line break / separator
+end;
+
+type
+  FileFunc = Procedure(var t : TextRec);
+{$PUSH}{$R-}
+procedure nextTextRecBlock(var tr: TextRec; out from: pchar; out len: SizeInt);
+begin
+  if tr.bufpos >= tr.bufend then FileFunc(tr.inoutfunc)(tr);
+  if tr.bufpos < tr.bufend then begin
+    from := @tr.bufptr^[tr.bufpos];
+    len := @tr.bufptr^[tr.bufend] - from;
+  end else begin
+    from := nil;
+    len := 0;
+  end;
+  tr.bufpos := tr.bufend;
+end;
+{$POP}
+
+function strReadFromStdin: string;
+var s:string;
+    sb: TStrBuilder;
+    from: pchar;
+    len: SizeInt;
+begin
+  sb.init(@result);
+  if isStdinTTY then begin
+    while not EOF(Input) do begin
+      ReadLn(s);
+      sb.append(s);
+      sb.append(LineEnding);
+    end;
+  end else begin
+    while not eof(Input) do begin
+      nextTextRecBlock(TextRec(input), from, len);
+      if len > 0 then
+        sb.append(from, len);
+    end;
+  end;
+  sb.final;
 end;
 
 
