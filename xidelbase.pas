@@ -3976,18 +3976,20 @@ initialization
   SetMultiByteRTLFileSystemCodePage(CP_UTF8);
   registerFallbackUnicodeConversion;
 
-  pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
-  pxp.registerFunction('system', @xqfSystem, ['($arg as xs:string) as xs:string']);
-  pxp.registerFunction('read', @xqfRead, ['() as xs:untypedAtomic']);
-  pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
-  pxpx.registerFunction('request', @xqfRequest, ['($arg as item()*) as object()*']);
-  pxpx.registerFunction('argc', @xqfArgc, ['() as integer']);
-  pxpx.registerFunction('argv', @xqfArgv, ['($i as integer) as string']);
-  pxpx.registerFunction('integer', @xqfInteger, ['($arg as item()) as xs:integer', '($arg as item(), $base as xs:integer) as xs:integer']);
-  pxpx.registerFunction('integer-to-base', @xqfIntegerToBase, ['($arg as xs:integer, $base as xs:integer) as xs:string']);
-  pxpx.registerFunction('call-action', @xqfCallAction, ['($arg as xs:string) as empty-sequence()']);
-  pxpx.registerFunction('has-action', @xqfHasAction, ['($arg as xs:string) as xs:boolean']);
-  pxpx.registerFunction('clear-log', @xqfClearLog, ['() as empty-sequence()', '($var as xs:string) as empty-sequence()']);
-  pxpx.registerFunction('get-log', @xqfGetLog, ['() as item()*', '($var as xs:string) as item()*']);
+  with globalTypes do begin
+    pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
+    pxp.registerBasicFunction('system', @xqfSystem, [stringt, stringt]);
+    pxp.registerBasicFunction('read', @xqfRead, [untypedAtomic]);
+    pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
+    pxpx.registerFunction('request', @xqfRequest, [xqcdContextOther]).setVersionsShared([itemStar, mapStar]);
+    pxpx.registerBasicFunction('argc', @xqfArgc, [integer]);
+    pxpx.registerBasicFunction('argv', @xqfArgv, [integer, stringt]);
+    pxpx.registerFunction('integer', @xqfInteger).setVersionsShared([item, integer],  [item, integer, integer]);
+    pxpx.registerBasicFunction('integer-to-base', @xqfIntegerToBase, [integer, integer, stringt]);
+    pxpx.registerBasicFunction('call-action', @xqfCallAction, [stringt, empty]);
+    pxpx.registerBasicFunction('has-action', @xqfHasAction, [stringt, boolean]);
+    pxpx.registerFunction('clear-log', @xqfClearLog).setVersionsShared([empty],  [stringt, empty]);
+    pxpx.registerFunction('get-log', @xqfGetLog).setVersionsShared([itemStar],  [stringt, itemStar]);
+  end;
 end.
 
