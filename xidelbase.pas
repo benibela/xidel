@@ -1759,6 +1759,36 @@ const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingMode
   xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
 );
   GlobalJSONParseOptions: TXQJsonParser.TOptions = [];
+var GlobalDebugInfo: TObjectList;
+type
+  TXQueryEngineHelper = class helper for TXQueryEngine
+    function parserEnclosedExpressionsString(s: string): IXQuery;
+    procedure addAWeirdGlobalVariableHelper(const namespace, local: string);
+    function parseQuery(s:string; model: TExtractionKind): IXQuery; overload;
+  end;
+
+  function TXQueryEngineHelper.parserEnclosedExpressionsString(s: string): IXQuery;
+  begin
+    result := parseXStringNullTerminated(s);
+  end;
+
+  procedure TXQueryEngineHelper.addAWeirdGlobalVariableHelper(const namespace, local: string);
+  begin
+    addAWeirdGlobalVariable(namespace, local);
+  end;
+
+  function TXQueryEngineHelper.parseQuery(s: string; model: TExtractionKind): IXQuery;
+  begin
+    result := parseQuery(s, EXTRACTION_KIND_TO_PARSING_MODEL[model], xpathparser.StaticContext);
+    if LastDebugInfo <> nil then begin
+      if GlobalDebugInfo = nil then
+        GlobalDebugInfo := TObjectList.Create(true);
+      GlobalDebugInfo.Add(LastDebugInfo);
+      LastDebugInfo := nil;
+    end;
+
+  end;
+
 
 procedure setJSONFormat(format: TInputFormat);
 begin
@@ -1852,7 +1882,7 @@ var next, res: TFollowToList;
         if followQueryCache = nil then
           case followKind of
             ekCSS: followQueryCache := xpathparser.parseCSS3(follow);
-            else followQueryCache := xpathparser.parseQuery(follow, EXTRACTION_KIND_TO_PARSING_MODEL[followKind], xpathparser.StaticContext);
+            else followQueryCache := xpathparser.parseQuery(follow, followKind);
           end;
         loadDataForQuery(data, followQueryCache);
         res.merge(evaluateQuery(followQueryCache, data), data, self);
@@ -1965,15 +1995,6 @@ begin
   result := htmlparser.replaceEnclosedExpressions(translateDeprecatedStrings(expr));
 end;
 
-type
-  TXQueryEngineBreaker = class(TXQueryEngine)
-    function parserEnclosedExpressionsString(s: string): IXQuery;
-  end;
-
-  function TXQueryEngineBreaker.parserEnclosedExpressionsString(s: string): IXQuery;
-  begin
-    result := parseXStringNullTerminated(s);
-  end;
 
 function TProcessingContext.replaceEnclosedExpressions(data: IData; expr: string): string;
 var
@@ -1994,7 +2015,7 @@ begin
 
 
   loadDataForQueryPreParse(data);
-  temp := TXQueryEngineBreaker(xpathparser).parserEnclosedExpressionsString(expr);
+  temp := xpathparser.parserEnclosedExpressionsString(expr);
   loadDataForQuery(data, temp);
   result := evaluateQuery(temp, data).toString;
 end;
@@ -2319,7 +2340,7 @@ begin
         if extractBaseUri <> '' then xpathparser.StaticContext.baseURI := fileNameExpandToURI(extractBaseUri);
         case extractKind of
           ekCSS: extractQueryCache := xpathparser.parseCSS3(extract); //todo: optimize
-          else extractQueryCache := xpathparser.parseQuery(extract, EXTRACTION_KIND_TO_PARSING_MODEL[extractKind], xpathparser.StaticContext);
+          else extractQueryCache := xpathparser.parseQuery(extract, extractKind);
         end;
       end;
       parent.loadDataForQuery(data, extractQueryCache);
@@ -2801,6 +2822,7 @@ procedure displayError(e: Exception; printPartialMatches: boolean = false);
 var
   message: String;
   p: LongInt;
+  tobj: Pointer;
 begin
   case outputFormat of
     ofJsonWrapped: begin
@@ -2854,6 +2876,17 @@ begin
   if cgimode then flush(StdOut)
   else flush(stderr);
   if e is EXQEvaluationException then begin
+    if (EXQEvaluationException(e).term <> nil) and (GlobalDebugInfo <> nil) then begin
+      for tobj in GlobalDebugInfo do
+        with TXQDebugInfo(tobj) do begin
+          message := lineInfoMessage(EXQEvaluationException(e).term);
+          if message <> '' then begin
+            sayln(LineEnding + message + LineEnding);
+            break;
+          end;
+        end;
+    end;
+
     if (tracer = nil) or not tracer.backtrace then begin
       sayln('Possible backtrace:');
       for i := 0 to ExceptFrameCount-1 do begin
@@ -3268,7 +3301,7 @@ begin
   visitor.listVars := true;
   term := result.getTerm;
   visitor.simpleTermVisit(@term, nil);
-  for i := 0 to high(visitor.vars) do with visitor.vars[i] do TXQueryEngineBreaker(xpathparser).addAWeirdGlobalVariable(namespace, value);
+  for i := 0 to high(visitor.vars) do with visitor.vars[i] do xpathparser.addAWeirdGlobalVariableHelper(namespace, value);
   visitor.free;
   result.getTerm;
 end;
@@ -3613,6 +3646,7 @@ begin
   if allowInternetAccess then multipage.Free
   else htmlparser.free;
   globalDuplicationList.Free;
+  GlobalDebugInfo.Free;
   alternativeXMLParser.Free;
 
   case outputFormat of
