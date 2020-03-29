@@ -56,7 +56,8 @@ procedure perform;
 
 implementation
 
-uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8, xquery.internals.common, xquery.namespaces, xidelcrt;
+uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8, xquery.internals.common, xquery.namespaces, xidelcrt,
+  xquery__serialization;
 //{$R xidelbase.res}
 
 
@@ -2167,10 +2168,33 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
     writeItem(singletonToString(v), color)
   end;
 
+  procedure printSerialized;
+  var
+    params: TXQSerializationParams;
+    temp: RawByteString;
+    tempcontext: TXQEvaluationContext;
+  begin
+    tempcontext := xpathparser.getEvaluationContext();
+    params.initFromXQValue(tempcontext, xpathparser.StaticContext.serializationOptions);
+    params.allowEncodingConversion := true;
+    temp := serialize(value, params);
+    params.done;
+    SetCodePage(temp, CP_UTF8, false); //unnecessary?
+    case params.method of
+      xqsmXML,xqsmHTML,xqsmXHTML: wcolor(temp, cXML);
+      xqsmJSON: wcolor(temp, cJSON);
+      else wcolor(temp, cNever);
+    end;
+  end;
+
 var
   i: Integer;
   x: IXQValue;
 begin
+  if  xpathparser.StaticContext.serializationOptions <> nil then begin
+    printSerialized;
+    exit;
+  end;
   case outputFormat of
     ofAdhoc, ofRawHTML, ofRawXML, ofBash, ofWindowsCmd: begin
       if (outputFormat in [ofBash, ofWindowsCmd]) and not invariable then begin
