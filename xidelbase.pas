@@ -2577,9 +2577,7 @@ end;
 
 
 
-var i: Integer;
-    temp: TStringArray;
-    j: Integer;
+var temp: TStringArray;
     alternativeXMLParser: TTreeParser = nil;
 
 { TMultiPageTemplateBreaker }
@@ -2618,6 +2616,8 @@ begin
 end;
 
 function strFirstNonSpace(const s: string): char;
+var
+  i: SizeInt;
 begin
   for i:=1 to length(s) do
     if not (s[i] in WHITE_SPACE) then exit(s[i]);
@@ -2700,6 +2700,8 @@ begin
 end;
 
 procedure TTemplateReaderBreaker.perform(actions: TStringArray);
+var
+  i: SizeInt;
 begin
   if length(template.baseActions.children) = 0 then raise EXidelException.Create('Template contains no actions!'+LineEnding+'A Multipage template should look like <action>  <page url="..."> <post> post data </post> <template> single page template </template> </page> </action> ');
   if length(actions) = 0 then callAction(template.baseActions.children[0])
@@ -2743,6 +2745,7 @@ var tracer: TXQTracer;
 
 procedure TXQTracer.globalTracing(term: TXQTerm; const acontext: TXQEvaluationContext; argc: SizeInt; args: PIXQValue);
 var
+  i: SizeInt;
   entering: Boolean;
 begin
   entering := argc >= 0;
@@ -2847,6 +2850,8 @@ var
   message: String;
   p: LongInt;
   tobj: Pointer;
+  j: SizeInt;
+  i: Integer;
 begin
   case outputFormat of
     ofJsonWrapped: begin
@@ -2857,7 +2862,7 @@ begin
         sayln('"_partial-matches": [');
         temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
         if length(temp) > 0 then
-          say(jsonStrEscape(temp[j]));
+          say(jsonStrEscape(temp[0]));
         for j := 1 to high(temp) do  say (', '+LineEnding+jsonStrEscape(temp[j]));
         sayln(']');
       end else sayln('');
@@ -3113,6 +3118,7 @@ procedure variableRead({%H-}pseudoself: TObject; sender: TObject; const name, va
 
 var
   temps, tempurl: String;
+  i: SizeInt;
 begin
   if (name = 'follow') or (name = 'follow-file')             //follow always create new processing context
      or ((name = '') and (value <> '[') and (value <> ']')   //plain data/url
@@ -3297,6 +3303,7 @@ var d: IData;
   visitor: TXQTerm_VisitorFindWeirdGlobalVariableDeclarations;
   term: TXQTerm;
   oldSilent: Boolean;
+  i: SizeInt;
 begin
   d := nil;
   oldSilent := baseContext.silent;
@@ -3333,6 +3340,7 @@ end;
 procedure importModule({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; context: TXQStaticContext; const namespace: string; const at: array of string);
 var
   q: IXQuery;
+  i: SizeInt;
 begin
   if xpathparser.findModule(namespace) <> nil then exit;
   for i := 0 to high(at) do begin
@@ -3354,6 +3362,8 @@ end;
 procedure blockFileAccessFunctions; forward;
 
 procedure perform;
+var
+  i: SizeInt;
 begin
   if cgimode or (not allowFileAccess) then blockFileAccessFunctions;
 
@@ -3837,6 +3847,7 @@ function BigDecimalFromBase(const n: string; base: integer; negative: boolean): 
 var cur, bdbase: bigdecimal;
   c: Char;
   offset: Integer;
+  i: SizeInt;
 begin
   bdbase := base;
   setZero(result);
@@ -3973,6 +3984,7 @@ var
   reslist: TXQVList;
   procedure handleLog(log: TXQVariableChangeLog);
   var
+    i: SizeInt;
     tempobj: TXQValueObject;
     tempArray: TXQValueJSONArray;
   begin
