@@ -327,10 +327,10 @@ begin
 end;
 
 procedure w(const s: string);
-{$ifdef win32}
+{$IFnDEF FPC_HAS_CPSTRING}{$ifdef win32}
 var
   temp, temp2: String;
-{$endif}
+{$endif}{$endif}
 begin
   if s = '' then exit;
   {$IFDEF FPC_HAS_CPSTRING}
