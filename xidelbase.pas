@@ -3520,6 +3520,7 @@ begin
   xpathparser.OnParseDoc:= @htmlparser.parseDoc;
   xpathparser.OnImportModule:=TXQImportModuleEvent(procedureToMethod(TProcedure(@importModule)));
   xpathparser.OnTrace := TXQTraceEvent(procedureToMethod(TProcedure(@traceCall)));
+  xpathparser.ImplicitTimezoneInMinutes := -GetLocalTimeOffset;
 
   cmdlineWrapper := TOptionReaderFromCommandLine.create(mycmdline);
 
