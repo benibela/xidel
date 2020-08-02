@@ -1335,9 +1335,9 @@ end;
 procedure TFollowToList.merge(dest: IXQValue; basedata: IData; parent: TProcessingContext);
 var x: IXQValue;
     tempv: TXQValue;
-    keys: TStringList;
+    keys: TXQHashsetStr;
+    key: string;
     isPureDataSource: Boolean;
-    i: Integer;
 
 begin
   if dest.kind <> pvkSequence then
@@ -1345,22 +1345,22 @@ begin
   case dest.kind of
     pvkUndefined: exit;
     pvkObject: begin
-      keys := TStringList.Create;
-      (dest as TXQValueObject).enumerateKeys(keys);
+      keys.init;
+      dest.enumeratePropertyKeys(keys);
       isPureDataSource := true;
-      for i := 0 to keys.Count - 1 do
-        case keys[i] of
+      for key in keys do
+        case key of
           'header', 'headers', 'post', 'data', 'url', 'form', 'method', 'input-format': ;
           else begin
             isPureDataSource := false;
             break;
           end;
         end;
-      keys.free;
+      keys.done;
       if isPureDataSource then begin
-        if (dest as TXQValueObject).hasProperty('url', @tempv) then
+        if dest.hasProperty('url', @tempv) then
           addObject( tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat)
-        else if (dest as TXQValueObject).hasProperty('data', @tempv) then
+        else if dest.hasProperty('data', @tempv) then
           addObject(tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat );
       end else add(TFollowToXQVObject.create(basedata, dest));
     end;
