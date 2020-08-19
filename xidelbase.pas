@@ -312,14 +312,14 @@ type
   { TOptionReaderFromObject }
 
   TOptionReaderFromObject = class(TOptionReaderWrapper)
-    constructor create(aobj: TXQValueObject);
+    constructor create(aobj: TXQValueMapLike);
     function read(const name: string; out value: string): boolean; override;
     function read(const name: string; out value: integer): boolean; override;
     function read(const name: string; out value: boolean): boolean; override;
     function read(const name: string; out value: Extended): boolean; override;
     function read(const name: string; out value: IXQValue): boolean; override;
   private
-    obj: TXQValueObject;
+    obj: TXQValueMapLike;
   end;
 
 type
@@ -461,7 +461,7 @@ TFollowToList = class(TFpObjectList)
   function containsEqual(ft: TFollowTo): boolean;
 private
   procedure addBasicUrl(absurl: string; baseurl: string; inputFormat: TInputFormat);
-  procedure addObject(absurl: string; baseurl: string; options: TXQValueObject; fallBackInputFormat: TInputFormat);
+  procedure addObject(absurl: string; baseurl: string; options: TXQValueMapLike; fallBackInputFormat: TInputFormat);
 end;
 
 
@@ -474,7 +474,7 @@ TDataProcessing = class
 
   procedure readOptions({%H-}reader: TOptionReaderWrapper); virtual;
   procedure initFromCommandLine(cmdLine: TCommandLineReader); virtual;
-  procedure mergeWithObject(obj: TXQValueObject); virtual;
+  procedure mergeWithObject(obj: TXQValueMapLike); virtual;
 
   function clone(newparent: TProcessingContext): TDataProcessing; virtual; abstract;
 end;
@@ -583,7 +583,7 @@ TProcessingContext = class(TDataProcessing)
   procedure printStatus(s: string);
 
   procedure readOptions(reader: TOptionReaderWrapper); override;
-  procedure mergeWithObject(obj: TXQValueObject); override;
+  procedure mergeWithObject(obj: TXQValueMapLike); override;
 
   procedure addNewDataSource(source: TDataProcessing);
   procedure readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
@@ -645,7 +645,7 @@ begin
   temp.followTo := parent.followTo;
   temp.followInputFormat := parent.followInputFormat;
   temp.nextSibling := parent.nextSibling;
-  temp.mergeWithObject(v as TXQValueObject);
+  temp.mergeWithObject(v as TXQValueMapLike);
   fl := temp.process(basedata);
   case fl.count of
     0: ;
@@ -769,7 +769,7 @@ end;
 
 { TOptionReaderFromObject }
 
-constructor TOptionReaderFromObject.create(aobj: TXQValueObject);
+constructor TOptionReaderFromObject.create(aobj: TXQValueMapLike);
 begin
   obj := aobj;
 end;
@@ -1359,9 +1359,9 @@ begin
       keys.done;
       if isPureDataSource then begin
         if dest.hasProperty('url', @tempv) then
-          addObject( tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat)
+          addObject( tempv.toString, basedata.baseUri, dest as TXQValueMapLike, parent.followInputFormat)
         else if dest.hasProperty('data', @tempv) then
-          addObject(tempv.toString, basedata.baseUri, dest as TXQValueObject, parent.followInputFormat );
+          addObject(tempv.toString, basedata.baseUri, dest as TXQValueMapLike, parent.followInputFormat );
       end else add(TFollowToXQVObject.create(basedata, dest));
     end;
     pvkSequence: begin
@@ -1394,7 +1394,7 @@ begin
   Add(ft);
 end;
 
-procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQValueObject; fallBackInputFormat: TInputFormat);
+procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQValueMapLike; fallBackInputFormat: TInputFormat);
 var
   followTo: TFollowTo;
   reader: TOptionReaderFromObject;
@@ -1423,7 +1423,7 @@ begin
   temp.free;
 end;
 
-procedure TDataProcessing.mergeWithObject(obj: TXQValueObject);
+procedure TDataProcessing.mergeWithObject(obj: TXQValueMapLike);
 var
   temp: TOptionReaderFromObject;
 begin
@@ -1604,7 +1604,7 @@ begin
 end;
 
 
-procedure TProcessingContext.mergeWithObject(obj: TXQValueObject);
+procedure TProcessingContext.mergeWithObject(obj: TXQValueMapLike);
 var
   tempreader: TOptionReaderFromObject;
   temp: TXQValue;
@@ -3776,7 +3776,7 @@ var
   fakeData, data: Idata;
   fakeContext: TProcessingContext;
   list: TXQVList;
-  obj: TXQValueObject;
+  obj: TXQValueStringMap;
   pv: PIXQValue;
   oldInternetConfig: TInternetConfig;
   oldReact: TTransferReactEvent;
@@ -3798,7 +3798,7 @@ begin
       follow.merge(pv^, fakeData, fakeContext);
     while follow.Count > 0 do begin
       data := follow.first.retrieve(fakeContext,0);
-      obj := TXQValueObject.create();
+      obj := TXQValueStringMap.create();
       obj.setMutable('url', data.baseUri);
       obj.setMutable('type', data.contenttype);
       obj.setMutable('headers', xqvalue(data.headers));
@@ -3986,12 +3986,12 @@ var
   procedure handleLog(log: TXQVariableChangeLog);
   var
     i: SizeInt;
-    tempobj: TXQValueObject;
+    tempobj: TXQValueStringMap;
     tempArray: TXQValueJSONArray;
   begin
     if name = '' then begin
       for i := 0 to log.count - 1 do begin
-        tempobj := TXQValueObject.create();
+        tempobj := TXQValueStringMap.create();
         tempobj.setMutable('name', log.getName(i));
         tempobj.setMutable('value', log.get(i));
         if log.getNamespace(i) <> '' then tempobj.setMutable('namespace', log.getNamespace(i));
