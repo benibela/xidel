@@ -1822,7 +1822,8 @@ var next, res: TFollowToList;
         for i := 0 to res.Count - 1 do begin
           tempdata := TFollowTo(res[i]).retrieve(self, data.recursionLevel+1);
           res[i] := nil;
-          followto.process(tempdata).free;
+          if tempdata <> nil then
+            followto.process(tempdata).free;
         end;
       res.Clear;
     end;
@@ -3802,14 +3803,16 @@ begin
       follow.merge(pv^, fakeData, fakeContext);
     while follow.Count > 0 do begin
       data := follow.first.retrieve(fakeContext,0);
-      obj := TXQValueStringMap.create();
-      obj.setMutable('url', data.baseUri);
-      obj.setMutable('type', data.contenttype);
-      obj.setMutable('headers', xqvalue(data.headers));
-      obj.setMutable('raw', xqvalue(data.rawData));
-      if data.inputFormat in [ifJSON,ifJSONStrict] then obj.setMutable('json', parseJSON(data))
-      else obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
-      list.add(obj);
+      if data <> nil then begin
+        obj := TXQValueStringMap.create();
+        obj.setMutable('url', data.baseUri);
+        obj.setMutable('type', data.contenttype);
+        obj.setMutable('headers', xqvalue(data.headers));
+        obj.setMutable('raw', xqvalue(data.rawData));
+        if data.inputFormat in [ifJSON,ifJSONStrict] then obj.setMutable('json', parseJSON(data))
+        else obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
+        list.add(obj);
+      end;
       follow.Delete(0);
     end;
 
