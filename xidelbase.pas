@@ -3118,8 +3118,9 @@ procedure variableRead({%H-}pseudoself: TObject; sender: TObject; const name, va
     else prefix := '';
     q := loadModuleFromAtUrl(value, xpathparser.StaticContext.baseURI);
     if q = nil then raise Exception.Create('Failed to load module ' + value);
-    xpathparser.registerModule(q);
     namespace := (q as TXQuery).getStaticContext.moduleNamespace;
+    if namespace = nil then raise Exception.Create('File ' + value + ' is not a module (it should start with "module namespace ... ;" ).');
+    xpathparser.registerModule(q);
     if xpathparser.staticContext.importedModules = nil then xpathparser.staticContext.importedModules := TXQMapStringObject.Create;
     if prefix = '' then prefix := namespace.getPrefix;
     xpathparser.staticContext.importedModules.AddObject(prefix, q as txquery);
