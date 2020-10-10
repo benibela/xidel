@@ -222,6 +222,7 @@ begin
       wcolor('<e>', cXML);
     end;
     ofJsonWrapped: if not firstGroup then wcolor(', ' + LineEnding, cJSON);
+    else ;
   end;
   firstGroup := false;
 end;
@@ -232,6 +233,7 @@ begin
     ofXMLWrapped: begin
       wcolor('</e>' + LineEnding, cXML);
     end;
+    else ;
   end;
 end;
 
@@ -904,6 +906,7 @@ begin
       case data.inputFormat of
         ifHTML, ifXML, ifXMLStrict: color := cXML;
         ifJSON, ifJSONStrict: color := cJSON;
+        ifAuto: ;
       end;
     if xidelOutputFileName = '' then setOutputFileName('stdout:///', mycmdline);
     wcolor(data.rawdata, color);
@@ -1244,7 +1247,6 @@ begin
     rtRemoteURL: result := THTTPRequest.Create(data);
     rtFile: result := TFileRequest.create(data);
     rtEmpty, rtXML, rtJSON: result := TDirectDataRequest.create(data);
-    else raise EXidelException.Create('Impossible 232');
   end;
   //todo: handle completely empty data ''
 end;
@@ -1799,6 +1801,7 @@ begin
   case format of //todo: cache?
     ifJSON: xpathparser.DefaultJSONParser.options := [jpoAllowMultipleTopLevelItems, jpoLiberal, jpoAllowTrailingComma] + GlobalJSONParseOptions;
     ifJSONStrict: xpathparser.DefaultJSONParser.options := [] + GlobalJSONParseOptions;
+    else;
   end;
 end;
 
@@ -2142,7 +2145,6 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
           tnsText: result := escape(v.toString);
           tnsXML: result := cmdescape(v.toNode.outerXML());
           tnsHTML: result := cmdescape(v.toNode.outerHTML());
-          else raise EInvalidArgument.Create('Unknown node print format');
         end;
         if printTypeAnnotations then
           if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
@@ -2168,6 +2170,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       case value.get(1).kind of
         pvkNode: if printedNodeFormat <> tnsText then color := cXML;
         pvkArray,pvkObject: color := cJSON;
+        else;
       end;
     writeItem(singletonToString(v), color)
   end;
@@ -2260,6 +2263,7 @@ begin
         case outputFormat of
           ofBash: writeItem(name+'[0]="$'+name+'"');
           ofWindowsCmd: printCmdlineVariable(name+'[0]', usedCmdlineVariables[i].value);
+          else;
         end;
       printCmdlineVariable(name+'['+IntToStr(usedCmdlineVariables[i].count)+']', value);
       usedCmdlineVariables[i].count+=1;
@@ -2269,6 +2273,7 @@ begin
   case outputFormat of
     ofBash: writeVarName(name+'=');
     ofWindowsCmd: writeVarName('SET '+name+'=');
+    else;
   end;
   printExtractedValue(value, true);
   SetLength(usedCmdlineVariables, length(usedCmdlineVariables)+1);
@@ -2399,8 +2404,8 @@ begin
       multipage.setTemplate(multipagetemp);
       prepareForOutput(data);
       multipage.perform(templateActions);
-    end
-    else raise EXidelException.Create('Impossible');
+    end;
+    else raise EXidelException.Create('Internal error: Invalid extract kind');
   end;
 
   result := currentFollowList;
@@ -3699,6 +3704,7 @@ begin
       for i := 0 to high(usedCmdlineVariables) do
         if usedCmdlineVariables[i].count > 1 then
           writeItem('SET #'+usedCmdlineVariables[i].name +'='+ inttostr(usedCmdlineVariables[i].count));
+    else;
   end;
 
   endOutput(mycmdline);
