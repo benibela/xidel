@@ -13,3 +13,16 @@ h2 div a { color: #330000;  }
 .downloadTable td { padding-right: 2em; padding-left: 2em}
 
 dl dt { margin-top:8px; margin-bottom: 8px }
+
+/* use css to show more news on hover */
+#hiding-box .more {display: block}
+#hiding-box:hover .more {display: none}
+#hiding-box .hiddentext {display: none}
+#hiding-box .less {display: none}
+#hiding-box:hover .hiddentext {display: block}
+#hiding-box-scripted .more, #hiding-box-scripted .less {cursor: pointer}
+
+.more, .less {
+	text-align: center;
+	color: #7A0BB7;
+}

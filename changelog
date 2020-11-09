@@ -3,17 +3,20 @@ Some important changes:
 
 --------Xidel 0.9.9 --------
 (under development)
-- Steps towards XPath/XQuery 3.1: ? operator, => operator, map:/array: functions, string constructor
-- Use the JSON data model of XPath/XQuery 3.1 by default rather than the one of JSONiq.
+- support for XPath/XQuery 3.1, e.g. ? operator, => operator, map:/array: functions, string constructor
+- Use the JSON data model of XPath/XQuery 3.1 by default rather than the JSONiq data model.
 - New functions: 
     x:request-decode to parse the parameters of a HTTP request
     inner-text to get the visible text from a HTML page
-    matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be removed)
+    matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be replaced by the standard ./text() kind test)
 - --in-place option to override the input file with the output
 - <json> element in multipage templates to download JSON data
 - default whitespace normalization is disabled by default
-- improved serialization: faster, options for x:serialize-json, do not escape &#nbsp; for xml/html
+- set implicit timezone from local time 
+- improved serialization: faster, options for x:serialize-json; do not escape &#nbsp; for XML/HTML
+- improved error messages
 - reduced memory usage
+- compiled with FreePascal r47006
 
 --------Xidel 0.9.8 --------
 (2018-04-02)

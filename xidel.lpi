@@ -191,7 +191,7 @@
         <PackageName Value="internettools"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="xidel.pas"/>
         <IsPartOfProject Value="True"/>
@@ -204,6 +204,10 @@
         <Filename Value="xidelcrt.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="../../../components/pascal/data/htmlforms.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
