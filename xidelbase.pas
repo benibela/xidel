@@ -1916,22 +1916,26 @@ begin
         xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
       end;
       GlobalJSONParseOptions := [jpoJSONiq];
+      xpathparser.StaticContext.AllowJSONiqBooleanStringConversion := true;
     end;
     cjmStandard: begin
       xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
       xpathparser.ParsingOptions.JSONObjectMode := xqjomForbidden;
       xpathparser.ParsingOptions.AllowJSONiqTests := false;
+      xpathparser.StaticContext.AllowJSONiqBooleanStringConversion := false;
     end;
     cjmJSONiq: begin
       xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
       xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
       xpathparser.ParsingOptions.AllowJSONiqTests := true;
       GlobalJSONParseOptions := [jpoJSONiq];
+      xpathparser.StaticContext.AllowJSONiqBooleanStringConversion := true;
     end;
     cjmDefault: begin
       xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
       xpathparser.ParsingOptions.JSONObjectMode := xqjomMapAlias;
       xpathparser.ParsingOptions.AllowJSONiqTests := true;
+      xpathparser.StaticContext.AllowJSONiqBooleanStringConversion := false;
     end;
   end;
   setJSONFormat(globalDefaultInputFormat);

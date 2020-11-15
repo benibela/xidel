@@ -307,6 +307,16 @@ tests/test.sh jsonmode/jsoniq-null - --json-mode jsoniq -e 'count($json(1)), jn:
 tests/test.sh jsonmode/deprecated-null - --json-mode deprecated -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
 tests/test.sh jsonmode/default-null - --json-mode default -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
 
+tests/test.sh jsonmode/standard-boolean - --json-mode standard -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
+tests/test.sh jsonmode/jsoniq-boolean - --json-mode jsoniq -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
+tests/test.sh jsonmode/deprecated-boolean - --json-mode deprecated -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
+tests/test.sh jsonmode/default-boolean - --json-mode default -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
+
+tests/test.sh jsonmode/standard-stringvalue - --json-mode standard -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
+tests/test.sh jsonmode/jsoniq-stringvalue - --json-mode jsoniq -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
+tests/test.sh jsonmode/deprecated-stringvalue - --json-mode deprecated -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
+tests/test.sh jsonmode/default-stringvalue - --json-mode default -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
+ 
 
 #Nesting
 tests/test.sh nest0a [ ]
