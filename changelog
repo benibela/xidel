@@ -4,11 +4,12 @@ Some important changes:
 --------Xidel 0.9.9 --------
 (under development)
 - support for XPath/XQuery 3.1, e.g. ? operator, => operator, map:/array: functions, string constructor
-- Use the JSON data model of XPath/XQuery 3.1 by default rather than the JSONiq data model.
-- New functions: 
+- --json-mode option to switch between XPath 3.1 or JSONiq syntax for JSON processing, or (default) a mix of both
+- New extension functions: 
     x:request-decode to parse the parameters of a HTTP request
     inner-text to get the visible text from a HTML page
     matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be replaced by the standard ./text() kind test)
+    x:replace-nodes to replace nodes (replacing the deprecated pxp:transform function)
 - --in-place option to override the input file with the output
 - <json> element in multipage templates to download JSON data
 - default whitespace normalization is disabled by default
