@@ -19,7 +19,6 @@ TConsoleColors = (ccNormal, ccRedBold, ccGreenBold, ccBlueBold, ccPurpleBold, cc
                               ccRed, ccGreen, ccBlue, ccPurple, ccYellow
  );
 
-function encodingName(e: TSystemCodePage): string;
 procedure setTerminalColor(err: boolean; color: TConsoleColors);
 procedure initOutput(mycmdline: TCommandLineReader);
 procedure setOutputEncoding(e: string);
@@ -82,20 +81,6 @@ var
 
 
 
-function encodingName(e: TSystemCodePage): string;
-begin
-  e := strActualEncoding(e);
-  case e of
-    CP_UTF8: result := 'UTF-8'; //XML prefers uppercase
-    CP_UTF16BE, CP_UTF16: result := 'UTF-16'; //XML does not need BE/LE in name
-    CP_UTF32BE, CP_UTF32: result := 'UTF-32';
-    else begin
-      result := CodePageToCodePageName(e);
-      if result = '' then
-        result := 'cp-' + inttostr(e);
-    end;
-  end;
-end;
 
 
 procedure setTerminalColor(err: boolean; color: TConsoleColors);
@@ -171,11 +156,11 @@ begin
     end;
     'xml': begin
       outputFormat:=ofRawXML;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
     end;
     'xml-wrapped': begin
       outputFormat:=ofXMLWrapped;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ encodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
     end;
     'json', 'json-wrapped': begin
       outputFormat:=ofJsonWrapped;
