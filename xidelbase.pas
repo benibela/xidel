@@ -737,7 +737,7 @@ begin
       //it might be useful to convert other data, but the x/html parser does its own encoding detection
       enc := strEncodingFromContentType(contentType);
       if enc = CP_NONE then
-        if isInvalidUTF8(frawData) and not strContains(frawData, #0) then enc := CP_WINDOWS1252;
+        if isInvalidUTF8Guess(frawData, 32*1024) and not strContains(frawData, #0) then enc := CP_WINDOWS1252;
       if (enc <> CP_UTF8) and (enc <> CP_NONE) then frawdata := strConvertToUtf8(frawData, enc);
     end;
   end;
