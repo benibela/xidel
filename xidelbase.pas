@@ -3462,6 +3462,11 @@ begin
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 1xx=retry,200=accept,3xx=redirect,4xx=abort,5xx=skip');
     mycmdLine.declareFlag('raw-url', 'Do not escape the url (preliminary)');
+
+    mycmdLine.beginDeclarationCategory('HTTPS connection options:');
+    mycmdLine.declareFlag('no-check-certificate', 'Do not verify HTTPS certificates');
+    mycmdLine.declareFile('ca-certificate', 'CA certificate file for OpenSSL', defaultInternetConfiguration.CAFile);
+    mycmdLine.declareString('ca-directory', 'CA certificate directory for OpenSSL', defaultInternetConfiguration.CAPath);
   end;
 
   mycmdLine.beginDeclarationCategory('Output/Input options:');
@@ -3617,8 +3622,16 @@ begin
   if mycmdline.readFlag('debug-arguments') then
     debugPrintContext(baseContext);
 
-  if allowInternetAccess and assigned(onPrepareInternet) then
+  if allowInternetAccess and assigned(onPrepareInternet) then begin
     onPrepareInternet(baseContext.userAgent, baseContext.proxy, @baseContext.httpReact);
+    defaultInternetConfiguration.checkSSLCertificates := not mycmdLine.readFlag('no-check-certificate');
+    defaultInternetConfiguration.CAFile := mycmdLine.readString('ca-certificate');
+    if defaultInternetConfiguration.CAFile = '' then begin
+      if FileExists('/usr/share/xidel/cacert.pem') then defaultInternetConfiguration.CAFile := '/usr/share/xidel/cacert.pem'
+      else if FileExists('/usr/local/share/xidel/cacert.pem') then defaultInternetConfiguration.CAFile := '/usr/local/share/xidel/cacert.pem'
+    end;
+    defaultInternetConfiguration.CAPath := mycmdLine.readString('ca-directory');
+  end;
 
   cmdlineWrapper.Free;
 
