@@ -1484,7 +1484,9 @@ begin
       extractKind := ekMultipage;
     end;
   end;
-  if reader.read('template-action', tempstr) then templateActions := strSplit(tempstr, ',', false);
+  if templateActions = nil then
+    if reader.read('template-action', tempstr) then
+      templateActions := strSplit(tempstr, ',', false);
   if (extractKind = ekAuto) and reader.read('extract-kind', tempstr) then if extract <> '' then extractKind := extractKindFromString(tempstr);
 
   reader.read('default-variable-name', defaultName);
