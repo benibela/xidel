@@ -6,6 +6,13 @@ rm /tmp/xidel-tests-state-failed
 
 tests/test.sh t1   tests/a.xml
 tests/test.sh te   tests/a.xml -e //title 
+tests/test.sh te   -e //title tests/a.xml 
+tests/test.sh texml --xml  tests/a.xml -e //title   #this is the recommended argument order
+tests/test.sh texml --xml  -e //title tests/a.xml
+tests/test.sh texml   tests/a.xml -e //title --xml  #but some other permutations might work as well
+tests/test.sh texml   tests/a.xml --xml -e //title
+tests/test.sh texml -e //title tests/a.xml --xml
+tests/test.sh texml -e //title --xml tests/a.xml 
 #Follow all a, print all titles
 tests/test.sh tfe  tests/a.xml -f //a     -e //title
 tests/test.sh tfe2 tests/b.xml -f //a     -e //title
