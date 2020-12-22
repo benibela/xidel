@@ -47,17 +47,18 @@ function lazcompile(){
 function release(){
   if [ $action -lt 2 ]; then exit; fi
   packagesuffix=$1
+  if [ ! -f meta/cacert.pem ]; then curl https://curl.se/ca/cacert.pem > meta/cacert.pem; fi
   case "$exesuffix" in
     .exe) 
        package=xidel-$VERSION.$packagesuffix.zip
        zip -v $package xidel.exe changelog readme.txt 
+       cd meta; zip -v ../$package cacert.pem
      ;;
     *) 
        package=xidel-$VERSION.$packagesuffix.tar.gz
-       tar -vczf $package xidel readme.txt changelog install.sh 
+       tar -vczf $package xidel readme.txt changelog install.sh -C meta cacert.pem
      ;;
   esac
-        
   fileUpload $package "$UPLOAD_PATH"
 }
 
