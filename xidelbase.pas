@@ -209,7 +209,7 @@ var htmlparser:THtmlTemplateParserBreaker;
     xpathparser: TXQueryEngine;
     multipage: TTemplateReaderBreaker;
     multipagetemp: TMultiPageTemplate;
-    currentRoot: TTreeNode;
+    currentRoot: TTreeNode = nil;
 
 
 
@@ -2060,6 +2060,7 @@ begin
   if data.inputFormat in [ifJSON,ifJSONStrict] then begin //we need to set json before parsing, or it fails
     //this used htmlparser.VariableChangelog.get('raw') rather than data. why??
     htmlparser.VariableChangelog.setOverride('json',  parseJSON(data));
+    if currentRoot <> nil then currentRoot.getDocument().release;
     currentRoot := nil;
   end;
 end;
@@ -2072,7 +2073,9 @@ begin
   if (query.Term = nil) or (f in [ifJSON,ifJSONStrict]) then exit;
   if (self = nil) or (noOptimizations) or (xqcdFocusItem in query.Term.getContextDependencies) then begin
     htmlparser.parseHTMLSimple(data);
+    if currentRoot <> nil then currentRoot.getDocument().release;
     currentRoot := htmlparser.HTMLTree;
+    if currentRoot <> nil then currentRoot.getDocument().addRef;
   end;
 end;
 
