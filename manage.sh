@@ -52,7 +52,9 @@ function release(){
     .exe) 
        package=xidel-$VERSION.$packagesuffix.zip
        zip -v $package xidel.exe changelog readme.txt 
-       cd meta; zip -v ../$package cacert.pem
+       if [ $packagesuffix = "openssl.win32" ]; then
+         cd meta; zip -v ../$package cacert.pem; cd ..
+       fi
      ;;
     *) 
        package=xidel-$VERSION.$packagesuffix.tar.gz
