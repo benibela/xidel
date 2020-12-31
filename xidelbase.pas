@@ -3396,6 +3396,8 @@ begin
   registerModuleUCAICU;
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
+  //TXQueryEngine.dumpFunctions;
+
   htmlparser:=THtmlTemplateParserBreaker.create;
   htmlparser.HTMLParser.readProcessingInstructions := true;
 
@@ -4086,7 +4088,7 @@ initialization
   registerFallbackUnicodeConversion;
 
   with globalTypes do begin
-    pxp := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsMerged);
+    pxp := TXQueryEngine.findNativeModule(XMLNamespaceUrl_MyExtensionsNew).parents[0];
     pxp.registerBasicFunction('system', @xqfSystem, [stringt, stringt]);
     pxp.registerBasicFunction('read', @xqfRead, [untypedAtomic]);
     pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
