@@ -20,11 +20,23 @@ declare function cached-doc($url, $cache){
 declare variable $MARKERXP31 := <span class="model30">(: XPath/XQuery 3.1 only :)</span> ;:)
 declare variable $MARKERXP30 := <span class="model30">XP3.0+</span> ;
 declare variable $MARKERXP31 := <span class="model30">XP3.1</span> ;
+declare variable $MARKERXidel := <span class="model30">Xidel</span> ;
 declare function marker-for-version($version){
   switch ($version)
     case "3.0" return $MARKERXP30
     case "3.1" return $MARKERXP31
+    case "xidel" return $MARKERXidel
     default return ()
+};
+declare function format-description-text($text){
+  for $t at $i in tokenize($text, "[`]")
+  let $is-code := $i mod 2 = 0
+  return if ($is-code) then <code>{$t}</code>
+  else let $vars := tokenize($t, "[$]") 
+  return ($vars[1], tail($vars) ! (
+    <code>${extract(., "^[a-zA-Z0-9]+")}</code>,
+    replace(., "^[a-zA-Z0-9]+", "")
+  ))
 };
 <html>
 <meta charset="utf-8"/>
@@ -32,8 +44,8 @@ declare function marker-for-version($version){
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <style>{'
   p { padding-left: 4em } 
-  .content { padding-left: 4em; padding-top:1em } 
-  .content p{padding-left: 0}
+  .content { padding-left: 4em; padding-top:1em; line-height: 1.4;  } 
+  .content p{padding-left: 0 }
   div.examples { padding-left: 2em; padding-top: 1em; padding-bottom: 2em}
   .deprecated { text-decoration: line-through; padding-top: 3em }
   .deprecated::before { content: "Deprecated. Do not use."; text-decoration: none; display: inline-block; position: relative; top: -2em; height: 0px; width: 0px; overflow-wrap: unset; white-space: nowrap; overflow: visible}
@@ -59,10 +71,11 @@ let $extensions := {|for $module in doc("functions-x.xml")/functions/module retu
 let $custom-content := function($prefix, $f) { 
   let $data := $extensions($prefix)[@name = $f/@name]
   return if (exists($data)) then (
-    if ($data/@args) then <code class="f2">{<b>{(if (contains($f/@m, "pxp/extensions")) then "pxp:" else "x:") ||$f/@name}</b>, colorize-args(normalize-space($data/@args)), marker-for-version($f/@version)
+    if ($data/@args) then <code class="f2" id="{replace($prefix,"pxpx","x")}-{$f/@name}">{<b>{(if (contains($f/@m, "pxp/extensions")) then "pxp:" else "x:") ||$f/@name}</b>, colorize-args(normalize-space($data/@args)), marker-for-version(($data/@version, $f/@version)[1])
     }</code> else (),
     <div class="content{$data/(@deprecated,@internal)/concat(" ", name())}">{$data/node()!x:transform(., function($e){
       if (name($e) = "a" and empty($e/@*)) then <a href="#{replace($e, ":", "-")}">{$e/node()}</a>
+      else if ($e instance of text() and matches($e, "[$`]")) then format-description-text($e)
       else $e
     })}</div> 
   ) else ()
@@ -81,7 +94,7 @@ let $argument-names := {|
 |}
 let $merge-args := function($f, $args){
   if (contains($args, ";")) then
-    let $args := tokenize($args, ";")
+    let $args := tokenize($args, ";") ! ( if (not(matches(., "xs:|\(|^$"))) then "xs:"||. else . )
     let $args := if (count($args) = 2 and $args[1] = "") then $args[2] else $args
     let $param-count := count($args) - 1
     let $param-names := $argument-names($f/@m)($f/@name)[array:size(.) = $param-count]
@@ -110,7 +123,7 @@ let $xpathspecsnippet := function($id, $class) {
   let $dl := $xpathspec[@id = $id]/../../dl,
       $examples := $dl/dt[. = "Examples"]/following-sibling::dd[1]/node()!$xpathresolve(.)
   return
-  <div class="content">{$dl/dd[1]/p[1]/node()!$xpathresolve(.)} See the XPath/XQuery <a href="https://www.w3.org/TR/xpath-functions-31/#{$id}" rel="nofollow">{$class} function reference</a>. {if ($examples) then (<div class="examples"><b>Examples:</b><br/>{$examples}</div>) else ()}</div>
+  <div class="content">{$dl/dd[1]/p[1]/node()!$xpathresolve(.)} <a href="https://www.w3.org/TR/xpath-functions-31/#{$id}" rel="nofollow">More..</a>. {if ($examples) then (<div class="examples"><b>Examples:</b><br/>{$examples}</div>) else ()}</div>
 }
 let $expathfilespecurl := "http://expath.org/spec/file"
 let $expathfile := cached-doc($expathfilespecurl || "/1.0.xml", "expath-file.xml")
@@ -123,7 +136,7 @@ let $jsoniq-content := function($prefixname) {
   let $id := $jsoniq-toc[contains(., $prefixname)][1]/@href
   return 
     <p>{if ($id) then ( $jsoniq-targets(substring-after($id, "#"))/ancestor::div[@class="titlepage"]/following-sibling::div[1]/node()) else ()}
-       See <a href="{$jsoniqurl}{$id}" rel="nofollow">JSONiq reference</a>.</p> 
+       <a href="{$jsoniqurl}{$id}" rel="nofollow">More..</a>.</p> 
 }
 
 let $modules := {
@@ -139,10 +152,10 @@ let $modules := {
     "content": function($f) {
       let $name := $f/@name
       let $id := (if (matches($name, "separator|^(temp-dir|base-dir|current-dir|exists|last-modified|size)$|is-")) then "pr." else "fn.") || $name
-      return <p>{($expathfilefunctions[@id=$id]/gitem[label="Rules"]//p)[1]/node()} See <a href="{$expathfilespecurl}#{$id}" rel="nofollow">EXPath file specification</a>.</p> }, "license": "w3ccla"},
+      return <p>{($expathfilefunctions[@id=$id]/gitem[label="Rules"]//p)[1]/node()} <a href="{$expathfilespecurl}#{$id}" rel="nofollow">More..</a>.</p> }, "license": "w3ccla"},
 
   ".benibela.de": {"order": 24, "name": "Extension functions (primary)", "prefix": ("pxp", "x")},
-  "http://www.benibela.de/2012/pxp/extensions": {"order": 25, "name": "Extension functions in old namespace", "prefix": "pxp"},
+  "http://www.benibela.de/2012/pxp/extensions": {"order": 25, "name": "Extension functions in deprecated namespace", "prefix": "pxp"},
   "http://pxp.benibela.de": {"order": 26, "name": "Extension functions (secondary)", "prefix": "x"},
 
   "http://jsoniq.org/functions": {"order": 32, "name": "JSONiq base functions", "prefix": "jn", "unit": "xquery_json", "content": function($f){ $jsoniq-content("jn:" || $f/@name) }, "license": "jsoniq"},
@@ -165,7 +178,7 @@ for $cat in (
   {"name": "Mathematical functions", "funcs": "abs avg ceiling floor format-integer format-number max min random-number-generator round round-half-to-even sum math:acos math:asin math:atan math:atan2 math:cos math:exp math:exp10    math:log math:log10 math:pi math:pow math:sin math:sqrt math:tan x:integer x:integer-to-base x:product"},
   {"name": "Boolean functions", "funcs": "false not true"},
   {"name": "Environment functions", "funcs": "available-environment-variables  environment-variable x:argc x:argv x:system x:read"},
-  {"name": "URI encoding functions", "funcs": "encode-for-uri escape-html-uri iri-to-uri resolve-uri file:resolve-path x:uri-decode x:uri-encode x:form x:resolve-html"},
+  {"name": "URI encoding functions", "funcs": "encode-for-uri escape-html-uri iri-to-uri resolve-uri file:resolve-path x:uri-decode x:uri-encode x:form x:resolve-html x:request-combine x:request-decode"},
   {"name": "Higher order functions", "funcs": "apply filter fold-left fold-right for-each for-each-pair x:transform"},
   {"name": "Date time functions", "funcs": "adjust-date-to-timezone adjust-dateTime-to-timezone adjust-time-to-timezone current-date current-dateTime current-time dateTime day-from-date day-from-dateTime days-from-duration format-date format-dateTime format-time hours-from-dateTime hours-from-duration hours-from-time minutes-from-dateTime minutes-from-duration minutes-from-time month-from-date month-from-dateTime months-from-duration seconds-from-dateTime seconds-from-duration seconds-from-time year-from-date year-from-dateTime years-from-duration parse-ietf-date x:parse-date x:parse-time x:parse-dateTime"}
 ) return 
@@ -199,14 +212,15 @@ return (
   <h2 id="module{$prefixid}">{$module("name") || "  " || join($prefix, ":*, ") || ":*"}</h2>,
   "Namespace: "||$f[1]/@m/string(),
   if ($f[1]/@m/string() = ".benibela.de" ) then (<br/>,"Identical copies of these functions are available in namespace x:* and namespace pxp:*.") else (),
-  if ($prefix = ("fn", "pxp", "xs")) then (<br/>, "Prefix ", $prefix[. != "x"] , " can be omitted.") else (),
+  if ($prefix = ("fn", "pxp", "xs")) then (<br/>, "Prefix ", $prefix[. != "x"] , " can be omitted, but is deprecated.") else (),
+  if ($prefix = "jnlib") then (<br/>, 'The prefix jnlib isn''t predeclared for this namespace, so --xmlns:jnlib="http://jsoniq.org/function-library" is needed in order to use these functions in Xidel.') else (),
   if (exists($module("unit"))) then (<br/>,x"In the Pascal Internet Tools library the unit {$module("unit")}.pas needs to be loaded, before these functions are available.") else (),
   
   for $f in $f group by $name := $f/@name/string() order by $name 
   let $custom-info :=  $custom-content($prefixid, $f[1])
   return (
 (:    <h3>{$name}</h3>,:)
-   if (empty($custom-info/code[@class="f"]/b)) then 
+   if (empty($custom-info/descendant-or-self::code[@class="f2"]/b)) then 
      let $args := $f/@args
      let $args := if (exists($args)) then $args 
                   else $f!(if (@max-arg-count > 100) then join((1 to @min-arg-count) ! concat("$arg", .), ", ") || ", ..."
@@ -219,7 +233,7 @@ return (
             colorize-args($merge-args($f, .)), 
             marker-for-version(let $i := position() return $f[$i]/@version),
       <br/>)
-    }</code> else (),
+    }</code> else <code class="f"/>(:empty for proper padding:),
     $custom-info,
     $module("content")($f[1])
   ),
