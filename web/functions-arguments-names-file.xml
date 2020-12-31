@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml>
+<f name="append" args="file items"/>
+<f name="append" args="file items params"/>
+<f name="append-binary" args="file value"/>
+<f name="append-text" args="file value"/>
+<f name="append-text" args="file value encoding"/>
+<f name="append-text-lines" args="file values"/>
+<f name="append-text-lines" args="file lines encoding"/>
+<f name="base-dir" args=""/>
+<f name="children" args="path"/>
+<f name="copy" args="source target"/>
+<f name="create-dir" args="dir"/>
+<f name="create-temp-dir" args="prefix suffix"/>
+<f name="create-temp-dir" args="prefix suffix dir"/>
+<f name="create-temp-file" args="prefix suffix"/>
+<f name="create-temp-file" args="prefix suffix dir"/>
+<f name="current-dir" args=""/>
+<f name="delete" args="path"/>
+<f name="delete" args="path recursive"/>
+<f name="dir-separator" args=""/>
+<f name="exists" args="path"/>
+<f name="is-dir" args="path"/>
+<f name="is-file" args="path"/>
+<f name="last-modified" args="path"/>
+<f name="line-separator" args=""/>
+<f name="list" args="dir"/>
+<f name="list" args="dir recursive"/>
+<f name="list" args="dir recursive pattern"/>
+<f name="move" args="source target"/>
+<f name="name" args="path"/>
+<f name="parent" args="path"/>
+<f name="path-separator" args=""/>
+<f name="path-to-native" args="path"/>
+<f name="path-to-uri" args="path"/>
+<f name="read-binary" args="file"/>
+<f name="read-binary" args="file offset"/>
+<f name="read-binary" args="file offset length"/>
+<f name="read-text" args="file"/>
+<f name="read-text" args="file encoding"/>
+<f name="read-text-lines" args="file"/>
+<f name="read-text-lines" args="file encoding"/>
+<f name="resolve-path" args="path"/>
+<f name="size" args="file"/>
+<f name="temp-dir" args=""/>
+<f name="write" args="file items"/>
+<f name="write" args="file items params"/>
+<f name="write-binary" args="file value"/>
+<f name="write-binary" args="file value offset"/>
+<f name="write-text" args="file value"/>
+<f name="write-text" args="file value encoding"/>
+<f name="write-text-lines" args="file values"/>
+<f name="write-text-lines" args="file values encoding"/>
+</xml>

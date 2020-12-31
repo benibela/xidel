@@ -1,0 +1,469 @@
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="ENTITIES" args="($arg as xs:anyAtomicType?) as xs:ENTITIES?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="ENTITY" args="($arg as xs:anyAtomicType?) as xs:ENTITY?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="ID" args="($arg as xs:anyAtomicType?) as xs:ID?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="IDREF" args="($arg as xs:anyAtomicType?) as xs:IDREF?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="IDREFS" args="($arg as xs:anyAtomicType?) as xs:IDREFS?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="NCName" args="($arg as xs:anyAtomicType?) as xs:NCName?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="NMTOKEN" args="($arg as xs:anyAtomicType?) as xs:NMTOKEN?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="NMTOKENS" args="($arg as xs:anyAtomicType?) as xs:NMTOKENS?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="Name" args="($arg as xs:anyAtomicType?) as xs:Name?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="QName" args="($arg as xs:anyAtomicType?) as xs:QName?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="anyURI" args="($arg as xs:anyAtomicType?) as xs:anyURI?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="base64Binary" args="($arg as xs:anyAtomicType?) as xs:base64Binary?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="boolean" args="($arg as xs:anyAtomicType?) as xs:boolean?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="byte" args="($arg as xs:anyAtomicType?) as xs:byte?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="date" args="($arg as xs:anyAtomicType?) as xs:date?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="dateTime" args="($arg as xs:anyAtomicType?) as xs:dateTime?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="3.0" name="dateTimeStamp" args="($arg as xs:anyAtomicType?) as xs:dateTimeStamp?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="dayTimeDuration" args="($arg as xs:anyAtomicType?) as xs:dayTimeDuration?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="decimal" args="($arg as xs:anyAtomicType?) as xs:decimal?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="double" args="($arg as xs:anyAtomicType?) as xs:double?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="duration" args="($arg as xs:anyAtomicType?) as xs:duration?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="3.0" name="error" args="($arg as xs:anyAtomicType?) as xs:error?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="float" args="($arg as xs:anyAtomicType?) as xs:float?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="gDay" args="($arg as xs:anyAtomicType?) as xs:gDay?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="gMonth" args="($arg as xs:anyAtomicType?) as xs:gMonth?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="gMonthDay" args="($arg as xs:anyAtomicType?) as xs:gMonthDay?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="gYear" args="($arg as xs:anyAtomicType?) as xs:gYear?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="gYearMonth" args="($arg as xs:anyAtomicType?) as xs:gYearMonth?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="hexBinary" args="($arg as xs:anyAtomicType?) as xs:hexBinary?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="int" args="($arg as xs:anyAtomicType?) as xs:int?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="integer" args="($arg as xs:anyAtomicType?) as xs:integer?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="language" args="($arg as xs:anyAtomicType?) as xs:language?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="long" args="($arg as xs:anyAtomicType?) as xs:long?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="negativeInteger" args="($arg as xs:anyAtomicType?) as xs:negativeInteger?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="nonNegativeInteger" args="($arg as xs:anyAtomicType?) as xs:nonNegativeInteger?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="nonPositiveInteger" args="($arg as xs:anyAtomicType?) as xs:nonPositiveInteger?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="normalizedString" args="($arg as xs:anyAtomicType?) as xs:normalizedString?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="numeric" args="($arg as xs:anyAtomicType?) as xs:numeric?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="positiveInteger" args="($arg as xs:anyAtomicType?) as xs:positiveInteger?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="short" args="($arg as xs:anyAtomicType?) as xs:short?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="string" args="($arg as xs:anyAtomicType?) as xs:string?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="time" args="($arg as xs:anyAtomicType?) as xs:time?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="token" args="($arg as xs:anyAtomicType?) as xs:token?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="unsignedByte" args="($arg as xs:anyAtomicType?) as xs:unsignedByte?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="unsignedInt" args="($arg as xs:anyAtomicType?) as xs:unsignedInt?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="unsignedLong" args="($arg as xs:anyAtomicType?) as xs:unsignedLong?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="unsignedShort" args="($arg as xs:anyAtomicType?) as xs:unsignedShort?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="untypedAtomic" args="($arg as xs:anyAtomicType?) as xs:untypedAtomic?"/>
+<f m="http://www.w3.org/2001/XMLSchema" version="1.0" name="yearMonthDuration" args="($arg as xs:anyAtomicType?) as xs:yearMonthDuration?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="QName" arg-count="2" args="string?;string;QName"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="abs" arg-count="1" args="numeric?;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="avg" arg-count="1" args="anyAtomicType*;anyAtomicType?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="boolean" arg-count="1" args="item()*;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="ceiling" arg-count="1" args="numeric?;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="codepoint-equal" arg-count="2" args="string?;string?;boolean?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="codepoints-to-string" arg-count="1" args="integer*;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="concat" min-arg-count="2" max-arg-count="65535"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="concatenate" min-arg-count="2" max-arg-count="2"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="count" arg-count="1" args="item()*;integer"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="dateTime" arg-count="2" args="date?;time?;dateTime?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="day-from-date" arg-count="1" args="date?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="day-from-dateTime" arg-count="1" args="dateTime?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="days-from-duration" arg-count="1" args="duration?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="document-uri" arg-count="1" args="node()?;anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="empty" arg-count="1" args="item()*;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="encode-for-uri" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="error" arg-count="0" args=""/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="error" arg-count="1" args="QName"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="error" arg-count="2" args="QName?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="error" arg-count="3" args="QName?;string;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="escape-html-uri" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="exactly-one" arg-count="1" args="item()*;item()"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="exists" arg-count="1" args="item()*;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="false" arg-count="0" args=";boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="floor" arg-count="1" args="numeric?;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="hours-from-dateTime" arg-count="1" args="dateTime?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="hours-from-duration" arg-count="1" args="duration?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="hours-from-time" arg-count="1" args="time?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="in-scope-prefixes" arg-count="1" args="element();string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="insert-before" arg-count="3" args="item()*;integer;item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="iri-to-uri" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="local-name-from-QName" arg-count="1" args="QName?;NCName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="lower-case" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="matches" arg-count="2" args="string?;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="matches" arg-count="3" args="string?;string;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="minutes-from-dateTime" arg-count="1" args="dateTime?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="minutes-from-duration" arg-count="1" args="duration?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="minutes-from-time" arg-count="1" args="time?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="month-from-date" arg-count="1" args="date?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="month-from-dateTime" arg-count="1" args="dateTime?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="months-from-duration" arg-count="1" args="duration?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="namespace-uri-for-prefix" arg-count="2" args="string?;element();anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="namespace-uri-from-QName" arg-count="1" args="QName?;anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="normalize-unicode" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="normalize-unicode" arg-count="2" args="string?;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="not" arg-count="1" args="item()*;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="one-or-more" arg-count="1" args="item()*;item()+"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="prefix-from-QName" arg-count="1" args="QName?;NCName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="remove" arg-count="2" args="item()*;integer;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="replace" arg-count="3" args="string?;string;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="replace" arg-count="4" args="string?;string;string;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="reverse" arg-count="1" args="item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="round" arg-count="1" args="numeric?;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="round-half-to-even" arg-count="1" args="numeric?;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="round-half-to-even" arg-count="2" args="numeric?;integer;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="seconds-from-dateTime" arg-count="1" args="dateTime?;decimal?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="seconds-from-duration" arg-count="1" args="duration?;decimal?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="seconds-from-time" arg-count="1" args="time?;decimal?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="string-join" arg-count="2" args="string*;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="string-to-codepoints" arg-count="1" args="string?;integer*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="subsequence" arg-count="2" args="item()*;double;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="subsequence" arg-count="3" args="item()*;double;double;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="substring" arg-count="2" args="string?;double;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="substring" arg-count="3" args="string?;double;double;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="sum" arg-count="1" args="anyAtomicType*;anyAtomicType"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="sum" arg-count="2" args="anyAtomicType*;anyAtomicType?;anyAtomicType?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="timezone-from-date" arg-count="1" args="date?;dayTimeDuration?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="timezone-from-dateTime" arg-count="1" args="dateTime?;dayTimeDuration?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="timezone-from-time" arg-count="1" args="time?;dayTimeDuration?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="tokenize" arg-count="2" args="string?;string;string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="tokenize" arg-count="3" args="string?;string;string;string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="translate" arg-count="3" args="string?;string;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="true" arg-count="0" args=";boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="unordered" arg-count="1" args="item()*;item()"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="upper-case" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="year-from-date" arg-count="1" args="date?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="year-from-dateTime" arg-count="1" args="dateTime?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="years-from-duration" arg-count="1" args="duration?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="zero-or-one" arg-count="1" args="item()*;item()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="adjust-date-to-timezone" arg-count="1" args="date?;date?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="adjust-date-to-timezone" arg-count="2" args="date?;dayTimeDuration?;date?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="adjust-dateTime-to-timezone" arg-count="1" args="dateTime?;dateTime?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="adjust-dateTime-to-timezone" arg-count="2" args="dateTime?;dayTimeDuration?;dateTime?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="adjust-time-to-timezone" arg-count="1" args="time?;time?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="adjust-time-to-timezone" arg-count="2" args="time?;dayTimeDuration?;time?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="base-uri" arg-count="0" args=";anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="base-uri" arg-count="1" args="node()?;anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="collection" arg-count="0" args=";node()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="collection" arg-count="1" args="string?;node()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="compare" arg-count="2" args="string?;string?;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="compare" arg-count="3" args="string?;string?;string;integer?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="contains" arg-count="2" args="string?;string?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="contains" arg-count="3" args="string?;string?;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="current-date" arg-count="0" args=";date"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="current-dateTime" arg-count="0" args=";dateTime"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="current-time" arg-count="0" args=";time"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="data" arg-count="1" args="item()*;anyAtomicType*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="deep-equal" arg-count="2" args="item()*;item()*;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="deep-equal" arg-count="3" args="item()*;item()*;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="default-collation" arg-count="0" args=";string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="distinct-values" arg-count="1" args="anyAtomicType*;anyAtomicType*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="distinct-values" arg-count="2" args="anyAtomicType*;string;anyAtomicType*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="doc" arg-count="1" args="string?;document-node()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="doc-available" arg-count="1" args="string?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="element-with-id" arg-count="1" args="string*;element()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="element-with-id" arg-count="2" args="string*;node();element()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="ends-with" arg-count="2" args="string?;string?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="ends-with" arg-count="3" args="string?;string?;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="id" arg-count="1" args="string*;element()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="id" arg-count="2" args="string*;node();element()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="idref" arg-count="1" args="string*;node()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="idref" arg-count="2" args="string*;node();node()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="implicit-timezone" arg-count="0" args=";dayTimeDuration"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="index-of" arg-count="2" args="anyAtomicType*;anyAtomicType;integer*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="index-of" arg-count="3" args="anyAtomicType*;anyAtomicType;string;integer*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="lang" arg-count="1" args="string?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="lang" arg-count="2" args="string?;node();boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="last" arg-count="0" args=";integer"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="local-name" arg-count="0" args=";string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="local-name" arg-count="1" args="node()?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="max" arg-count="1" args="anyAtomicType*;anyAtomicType?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="max" arg-count="2" args="anyAtomicType*;string;anyAtomicType?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="min" arg-count="1" args="anyAtomicType*;anyAtomicType?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="min" arg-count="2" args="anyAtomicType*;string;anyAtomicType?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="name" arg-count="0" args=";string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="name" arg-count="1" args="node()?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="namespace-uri" arg-count="0" args=";anyURI"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="namespace-uri" arg-count="1" args="node()?;anyURI"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="nilled" arg-count="1" args="node()?;boolean?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="node-name" arg-count="1" args="node()?;QName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="normalize-space" arg-count="0" args=";string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="normalize-space" arg-count="1" args="string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="number" arg-count="0" args=";double"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="number" arg-count="1" args="anyAtomicType?;double"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="position" arg-count="0" args=";integer"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="resolve-QName" arg-count="2" args="string?;element();QName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="resolve-uri" arg-count="1" args="string?;anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="resolve-uri" arg-count="2" args="string?;string;anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="root" arg-count="0" args=";node()"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="root" arg-count="1" args="node()?;node()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="starts-with" arg-count="2" args="string?;string?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="starts-with" arg-count="3" args="string?;string?;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="static-base-uri" arg-count="0" args=";anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="string" arg-count="0" args=";string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="string" arg-count="1" args="item()?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="string-length" arg-count="0" args=";integer"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="string-length" arg-count="1" args="string?;integer"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="substring-after" arg-count="2" args="string?;string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="substring-after" arg-count="3" args="string?;string?;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="substring-before" arg-count="2" args="string?;string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="substring-before" arg-count="3" args="string?;string?;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="1.0" name="trace" arg-count="2" args="item()*;string;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="available-environment-variables" arg-count="0" args=";string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="environment-variable" arg-count="1" args="string;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="function-arity" arg-count="1" args="function(*);integer"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="function-name" arg-count="1" args="function(*);QName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="head" arg-count="1" args="item()*;item()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="round" arg-count="2" args="numeric?;integer;numeric?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="string-join" arg-count="1" args="string*;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="tail" arg-count="1" args="item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="analyze-string" arg-count="2" args="string?;string;element(fn:analyze-string-result)"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="analyze-string" arg-count="3" args="string?;string;string;element(fn:analyze-string-result)"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="data" arg-count="0" args=";anyAtomicType*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="document-uri" arg-count="0" args=";anyURI?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="fold-left" arg-count="3" args="item()*;item()*;function(item()*, item()) as item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="fold-right" arg-count="3" args="item()*;item()*;function(item(), item()*) as item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="for-each-pair" arg-count="3" args="item()*;item()*;function(item(), item()) as item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-date" arg-count="2" args="date?;string;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-date" arg-count="5" args="date?;string;string?;string?;string?;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-dateTime" arg-count="2" args="dateTime?;string;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-dateTime" arg-count="5" args="dateTime?;string;string?;string?;string?;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-integer" arg-count="2" args="integer?;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-integer" arg-count="3" args="integer?;string;string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-number" arg-count="2" args="numeric?;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-number" arg-count="3" args="numeric?;string;string?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-time" arg-count="2" args="time?;string;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="format-time" arg-count="5" args="time?;string;string?;string?;string?;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="function-lookup" arg-count="2" args="QName;integer;function(*)?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="generate-id" arg-count="0" args=";string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="generate-id" arg-count="1" args="node()?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="has-children" arg-count="0" args=";boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="has-children" arg-count="1" args="node()?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="nilled" arg-count="0" args=";boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="node-name" arg-count="0" args=";QName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="parse-xml" arg-count="1" args="string?;document-node(element(*))?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="parse-xml-fragment" arg-count="1" args="string?;document-node()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="path" arg-count="0" args=";string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="path" arg-count="1" args="node()?;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="random-number-generator" arg-count="0" args=";map(string, item())"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="random-number-generator" arg-count="1" args="anyAtomicType?;map(string, item())"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="serialize" arg-count="1" args="item()*;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="serialize" arg-count="2" args="item()*;element(output:serialization-parameters)?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="unparsed-text" arg-count="1" args="string?;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="unparsed-text" arg-count="2" args="string?;string;string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="unparsed-text-available" arg-count="1" args="string?;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="unparsed-text-available" arg-count="2" args="string?;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="uri-collection" arg-count="0" args=";anyURI*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="uri-collection" arg-count="1" args="string?;anyURI*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="filter" arg-count="2" args="item()*;function(item()) as boolean;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="for-each" arg-count="2" args="item()*;function(item()) as item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="innermost" arg-count="1" args="node()*;node()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="outermost" arg-count="1" args="node()*;node()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="unparsed-text-lines" arg-count="2" args="string?;string;string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.0" name="unparsed-text-lines" arg-count="1" args="string?;string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="error" arg-count="1" args="QName?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="parse-ietf-date" arg-count="1" args="string?;dateTime?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="string-join" arg-count="1" args="anyAtomicType*;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="string-join" arg-count="2" args="anyAtomicType*;string;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="tokenize" arg-count="1" args="string?;string*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="apply" arg-count="2" args="function(*);array(*);item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="collation-key" arg-count="1" args="string;base64Binary"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="collation-key" arg-count="2" args="string;string;base64Binary"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="contains-token" arg-count="2" args="string*;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="contains-token" arg-count="3" args="string*;string;string;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="default-language" arg-count="0" args=";language"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="json-doc" arg-count="1" args="string?;item()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="json-doc" arg-count="2" args="string?;map(*);item()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="load-xquery-module" arg-count="1" args="string;map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="load-xquery-module" arg-count="2" args="string;map(*);map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="parse-json" arg-count="1" args="string?;item()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="parse-json" arg-count="2" args="string?;map(*);item()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="serialize" arg-count="1" args="item()*;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="serialize" arg-count="2" args="item()*;item()?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="sort" arg-count="1" args="item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="sort" arg-count="2" args="item()*;string?;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="sort" arg-count="3" args="item()*;string?;function(item()) as anyAtomicType*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="trace" arg-count="1" args="item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="transform" arg-count="1" args="map(*);map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="json-to-xml" arg-count="2" args="string?;map(*);document-node()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="json-to-xml" arg-count="1" args="string?;document-node()?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="xml-to-json" arg-count="2" args="node()?;map(*);string?"/>
+<f m="http://www.w3.org/2005/xpath-functions" version="3.1" name="xml-to-json" arg-count="1" args="node()?;string?"/>
+<f m="http://pxp.benibela.de" version="1.0" name="argc" arg-count="0" args=";integer"/>
+<f m="http://pxp.benibela.de" version="1.0" name="argv" arg-count="1" args="integer;string"/>
+<f m="http://pxp.benibela.de" version="1.0" name="call-action" arg-count="1" args="string;empty-sequence()"/>
+<f m="http://pxp.benibela.de" version="1.0" name="clear-log" arg-count="0" args=";empty-sequence()"/>
+<f m="http://pxp.benibela.de" version="1.0" name="clear-log" arg-count="1" args="string;empty-sequence()"/>
+<f m="http://pxp.benibela.de" version="1.0" name="get-log" arg-count="0" args=";item()*"/>
+<f m="http://pxp.benibela.de" version="1.0" name="get-log" arg-count="1" args="string;item()*"/>
+<f m="http://pxp.benibela.de" version="1.0" name="has-action" arg-count="1" args="string;boolean"/>
+<f m="http://pxp.benibela.de" version="1.0" name="integer" arg-count="1" args="item();integer"/>
+<f m="http://pxp.benibela.de" version="1.0" name="integer" arg-count="2" args="item();integer;integer"/>
+<f m="http://pxp.benibela.de" version="1.0" name="integer-to-base" arg-count="2" args="integer;integer;string"/>
+<f m="http://pxp.benibela.de" version="1.0" name="product" arg-count="1" args="anyAtomicType*;anyAtomicType"/>
+<f m="http://pxp.benibela.de" version="1.0" name="request" arg-count="1" args="item()*;map(*)*"/>
+<f m="http://pxp.benibela.de" version="1.0" name="cps" arg-count="1" args="item()*;item()*"/>
+<!--
+<f m="http://pxp.benibela.de" version="1.0" name="joewiz-FOJS0006" arg-count="1" args="node()*;item()*"/>
+<f m="http://pxp.benibela.de" version="1.0" name="joewiz-json-data-type" arg-count="1" args="item()?;string"/>
+<f m="http://pxp.benibela.de" version="1.0" name="joewiz-json-to-xml-recurse" arg-count="1" args="item()*;item()+"/>
+<f m="http://pxp.benibela.de" version="1.0" name="joewiz-xml-to-json-recurse" arg-count="1" args="node()*;item()*"/>
+-->
+<f m="http://pxp.benibela.de" version="1.0" name="lines" arg-count="1" args="string?;string*"/>
+<f m="http://pxp.benibela.de" version="1.0" name="replace-nodes" arg-count="2" args="item()*;item()*;item()*"/>
+<f m=".benibela.de" version="1.0" name="binary-to-string" arg-count="1" args="hexBinary| base64Binary;string"/>
+<f m=".benibela.de" version="1.0" name="binary-to-string" arg-count="2" args="hexBinary| base64Binary;string;string"/>
+<f m=".benibela.de" version="1.0" name="extract" min-arg-count="2" max-arg-count="4"/>
+<f m=".benibela.de" version="1.0" name="get-property" min-arg-count="2" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="is-nth" min-arg-count="3" max-arg-count="3"/>
+<f m=".benibela.de" version="1.0" name="join" min-arg-count="1" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="parse-date" min-arg-count="1" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="parse-dateTime" min-arg-count="2" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="parse-time" min-arg-count="2" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="sleep" min-arg-count="1" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="string-to-base64Binary" arg-count="1" args="string;base64Binary"/>
+<f m=".benibela.de" version="1.0" name="string-to-base64Binary" arg-count="2" args="string;string;base64Binary"/>
+<f m=".benibela.de" version="1.0" name="string-to-hexBinary" arg-count="1" args="string;hexBinary"/>
+<f m=".benibela.de" version="1.0" name="string-to-hexBinary" arg-count="2" args="string;string;hexBinary"/>
+<f m=".benibela.de" version="1.0" name="type-of" min-arg-count="1" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="uri-decode" arg-count="1" args="string?;string"/>
+<f m=".benibela.de" version="1.0" name="uri-encode" arg-count="1" args="string?;string"/>
+<f m=".benibela.de" version="1.0" name="css" min-arg-count="1" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="deep-text" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="eval" min-arg-count="1" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="form" min-arg-count="0" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="form-combine" arg-count="2" args="map(*);item()*;map(*)"/>
+<f m=".benibela.de" version="1.0" name="garbage-collect" min-arg-count="0" max-arg-count="0"/>
+<f m=".benibela.de" version="1.0" name="get" arg-count="1" args="string;item()*"/>
+<f m=".benibela.de" version="1.0" name="get" arg-count="2" args="string;item()*;item()*"/>
+<f m=".benibela.de" version="1.0" name="inner-html" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="inner-text" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="inner-xml" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="matched-text" min-arg-count="0" max-arg-count="0"/>
+<f m=".benibela.de" version="1.0" name="object" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="outer-html" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="outer-xml" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="parse-html" arg-count="1" args="string?;document-node(element(*))?"/>
+<f m=".benibela.de" version="1.0" name="random" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="random-seed" min-arg-count="0" max-arg-count="1"/>
+<f m=".benibela.de" version="1.0" name="request-combine" arg-count="2" args="item();item()*;map(*)"/>
+<f m=".benibela.de" version="1.0" name="request-decode" arg-count="1" args="item();map(*)"/>
+<f m=".benibela.de" version="1.0" name="resolve-html" min-arg-count="0" max-arg-count="2"/>
+<f m=".benibela.de" version="1.0" name="split-equal" min-arg-count="2" max-arg-count="3"/>
+<f m=".benibela.de" version="1.0" name="uri-combine" arg-count="2" args="item()*;item()*;string"/>
+<f m=".benibela.de" version="1.0" name="transform" arg-count="1" args="function(*);item()*"/>
+<f m=".benibela.de" version="1.0" name="transform" arg-count="2" args="item()*;function(*);item()*"/>
+<f m=".benibela.de" version="1.0" name="transform" arg-count="3" args="item()*;function(*);objectobject();item()*"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="read" arg-count="0" args=";untypedAtomic"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="system" arg-count="1" args="string;string"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="json" arg-count="1" args="string;item()*"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="json" arg-count="2" args="string;map(*);item()*"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="match" min-arg-count="2" max-arg-count="2"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="serialize-json" arg-count="1" args="item()*;string"/>
+<f m="http://www.benibela.de/2012/pxp/extensions" version="1.0" name="serialize-json" arg-count="2" args="item()*;item()?;string"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="append" arg-count="2" args="array(*);item()*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="flatten" arg-count="1" args="item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="get" arg-count="2" args="array(*);integer;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="head" arg-count="1" args="array(*);item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="insert-before" arg-count="3" args="array(*);integer;item()*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="join" arg-count="1" args="array(*)*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="put" arg-count="3" args="array(*);integer;item()*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="remove" arg-count="2" args="array(*);integer*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="reverse" arg-count="1" args="array(*);array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="size" arg-count="1" args="array(*);integer"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="subarray" arg-count="2" args="array(*);integer;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="subarray" arg-count="3" args="array(*);integer;integer;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="tail" arg-count="1" args="array(*);array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="filter" arg-count="2" args="array(*);function(item()*) as boolean;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="fold-left" arg-count="3" args="array(*);item()*;function(item()*, item()*) as item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="fold-right" arg-count="3" args="array(*);item()*;function(item()*, item()*) as item()*;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="for-each" arg-count="2" args="array(*);function(item()*) as item()*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="for-each-pair" arg-count="3" args="array(*);array(*);function(item()*, item()*) as item()*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="sort" arg-count="1" args="array(*);array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="sort" arg-count="2" args="array(*);string?;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/array" version="3.1" name="sort" arg-count="3" args="array(*);string?;function(item()*) as anyAtomicType*;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="contains" arg-count="2" args="map(*);anyAtomicType;boolean"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="entry" arg-count="2" args="anyAtomicType;item()*;map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="find" arg-count="2" args="item()*;anyAtomicType;array(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="get" arg-count="2" args="map(*);anyAtomicType;item()*"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="keys" arg-count="1" args="map(*);anyAtomicType*"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="merge" arg-count="1" args="map(*)*;map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="merge" arg-count="2" args="map(*)*;map(*);map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="put" arg-count="3" args="map(*);anyAtomicType;item()*;map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="remove" arg-count="2" args="map(*);anyAtomicType*;map(*)"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="size" arg-count="1" args="map(*);integer"/>
+<f m="http://www.w3.org/2005/xpath-functions/map" version="3.1" name="for-each" arg-count="2" args="map(*);function(anyAtomicType, item()*) as item()*;item()*"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="is-null" arg-count="1" args="item();boolean"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="keys" arg-count="1" args="item()*;string*"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="members" arg-count="1" args="item()*;item()*"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="null" arg-count="0" args=";null"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="object" min-arg-count="0" max-arg-count="65535"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="parse-json" arg-count="1" args="string?;json-item()*"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="parse-json" arg-count="2" args="string?;map(*);json-item()*"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="size" arg-count="1" args="array(*)?;integer?"/>
+<f m="http://jsoniq.org/functions" version="1.0" name="json-doc" arg-count="1" args="string?;json-item()?"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="accumulate" arg-count="1" args="item()*;objectobject()"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="descendant-arrays" arg-count="1" args="item()*;array(*)*"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="descendant-objects" arg-count="1" args="item()*;objectobject()*"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="descendant-pairs" arg-count="1" args="item()*;item()*"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="flatten" arg-count="1" args="item()*;item()*"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="intersect" arg-count="1" args="item()*;objectobject()"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="project" arg-count="2" args="item()*;string*;item()*"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="remove-keys" arg-count="2" args="item()*;string*;item()*"/>
+<f m="http://jsoniq.org/function-library" version="1.0" name="values" arg-count="1" args="item()*;item()*"/>
+<f m="http://expath.org/ns/file" version="1.0" name="dir-separator" arg-count="0" args=";string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="line-separator" arg-count="0" args=";string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="name" arg-count="1" args="string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="path-separator" arg-count="0" args=";string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="temp-dir" arg-count="0" args=";string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append" arg-count="2" args="string;item()*;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append" arg-count="3" args="string;item()*;element(output:serialization-parameters);empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append-binary" arg-count="2" args="string;base64Binary;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append-text" arg-count="2" args="string;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append-text" arg-count="3" args="string;string;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append-text-lines" arg-count="2" args="string;string*;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="append-text-lines" arg-count="3" args="string;string*;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="children" arg-count="1" args="string;string*"/>
+<f m="http://expath.org/ns/file" version="1.0" name="copy" arg-count="2" args="string;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="create-dir" arg-count="1" args="string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="create-temp-dir" arg-count="2" args="string;string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="create-temp-dir" arg-count="3" args="string;string;string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="create-temp-file" arg-count="2" args="string;string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="create-temp-file" arg-count="3" args="string;string;string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="delete" arg-count="1" args="string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="delete" arg-count="2" args="string;boolean;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="exists" arg-count="1" args="string;boolean"/>
+<f m="http://expath.org/ns/file" version="1.0" name="is-dir" arg-count="1" args="string;boolean"/>
+<f m="http://expath.org/ns/file" version="1.0" name="is-file" arg-count="1" args="string;boolean"/>
+<f m="http://expath.org/ns/file" version="1.0" name="last-modified" arg-count="1" args="string;dateTime"/>
+<f m="http://expath.org/ns/file" version="1.0" name="list" arg-count="1" args="string;string*"/>
+<f m="http://expath.org/ns/file" version="1.0" name="list" arg-count="2" args="string;boolean;string*"/>
+<f m="http://expath.org/ns/file" version="1.0" name="list" arg-count="3" args="string;boolean;string;string*"/>
+<f m="http://expath.org/ns/file" version="1.0" name="move" arg-count="2" args="string;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="parent" arg-count="1" args="string;string?"/>
+<f m="http://expath.org/ns/file" version="1.0" name="path-to-native" arg-count="1" args="string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="path-to-uri" arg-count="1" args="string;anyURI"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-binary" arg-count="1" args="string;base64Binary"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-binary" arg-count="2" args="string;integer;base64Binary"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-binary" arg-count="3" args="string;integer;integer;base64Binary"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-text" arg-count="1" args="string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-text" arg-count="2" args="string;string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="resolve-path" arg-count="1" args="string;string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="size" arg-count="1" args="string;integer"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write" arg-count="2" args="string;item()*;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write" arg-count="3" args="string;item()*;element(output:serialization-parameters);empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write-binary" arg-count="2" args="string;base64Binary;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write-binary" arg-count="3" args="string;base64Binary;integer;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write-text" arg-count="2" args="string;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write-text" arg-count="3" args="string;string;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write-text-lines" arg-count="2" args="string;string*;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="write-text-lines" arg-count="3" args="string;string*;string;empty-sequence()"/>
+<f m="http://expath.org/ns/file" version="1.0" name="base-dir" arg-count="0" args=";string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="current-dir" arg-count="0" args=";string"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-text-lines" arg-count="2" args="string;string;string*"/>
+<f m="http://expath.org/ns/file" version="1.0" name="read-text-lines" arg-count="1" args="string;string*"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="acos" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="asin" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="atan" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="atan2" arg-count="2" args="double;double;double"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="cos" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="exp" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="exp10" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="log" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="log10" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="pi" arg-count="0" args=";double"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="pow" arg-count="2" args="double?;numeric;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="sin" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="sqrt" arg-count="1" args="double?;double?"/>
+<f m="http://www.w3.org/2005/xpath-functions/math" version="1.0" name="tan" arg-count="1" args="double?;double?"/>
