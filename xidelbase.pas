@@ -31,6 +31,7 @@ uses
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess, contnrs, simplexmltreeparserfpdom,
   xquery_module_file,
+  //xquery_module_binary,
   xquery_module_math,
   xquery_module_uca_icu,
   rcmdline,math
@@ -3393,6 +3394,7 @@ begin
   LongDateFormat{%H-}:='YYYY-MM-DD';
   SetExceptionMask([exInvalidOp, exDenormalized, {exZeroDivide,} exOverflow, exUnderflow, exPrecision]);
   registerModuleMath;
+  //registerModuleBinary;
   registerModuleUCAICU;
   {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
