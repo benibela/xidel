@@ -1584,19 +1584,29 @@ begin
   end;
   reader.read('no-json', compatibilityNoJSON);
   if compatibilityNoJSON then writeln(stderr, 'no-json option is deprecated. use --json-mode');
-  reader.read('no-json-literals', compatibilityNoJSONliterals);
-  reader.read('dot-notation', tempstr);
-  case tempstr of
-    'on': compatibilityDotNotation := xqpdnAllowFullDotNotation;
-    'off': compatibilityDotNotation := xqpdnDisallowDotNotation;
-    'unambiguous': compatibilityDotNotation := xqpdnAllowUnambiguousDotNotation;
-  end;
-  if reader.read('no-dot-notation', tempbool) then
+  if not reader.read('no-json-literals', compatibilityNoJSONliterals)  then
+    compatibilityNoJSONliterals := compatibilityJSONMode = cjmStandard;
+
+  if reader.read('dot-notation', tempstr) then begin
+    case tempstr of
+      'on': compatibilityDotNotation := xqpdnAllowFullDotNotation;
+      'off': compatibilityDotNotation := xqpdnDisallowDotNotation;
+      'unambiguous': compatibilityDotNotation := xqpdnAllowUnambiguousDotNotation;
+    end;
+  end else if compatibilityJSONMode in [cjmStandard,cjmJSONiq] then
+    compatibilityDotNotation := xqpdnDisallowDotNotation
+   else
+    compatibilityDotNotation := xqpdnAllowUnambiguousDotNotation;
+  if reader.read('no-dot-notation', tempbool) then begin
+    writeln(stderr, 'no-dot-notation option is deprecated. use --dot-notation');
     if tempbool = true then
       compatibilityDotNotation := xqpdnDisallowDotNotation;
+  end;
   reader.read('only-json-objects', compatibilityOnlyJSONObjects);
   if compatibilityOnlyJSONObjects then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
-  reader.read('no-extended-json', compatibilityNoExtendedJson);
+  if not reader.read('no-extended-json', compatibilityNoExtendedJson) then
+    compatibilityNoExtendedJson := compatibilityJSONMode in [cjmStandard,cjmJSONiq];
+
   reader.read('strict-type-checking', compatibilityStrictTypeChecking);
   reader.read('strict-namespaces', compatibilityStrictNamespaces);
   reader.read('no-extended-strings', compatibilityNoExtendedStrings);

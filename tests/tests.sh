@@ -324,6 +324,25 @@ tests/test.sh jsonmode/jsoniq-stringvalue - --json-mode jsoniq -e '$json || $jso
 tests/test.sh jsonmode/deprecated-stringvalue - --json-mode deprecated -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
 tests/test.sh jsonmode/default-stringvalue - --json-mode default -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
  
+tests/test.sh jsonmode/standard-literals --json-mode standard -e 'true, false, null'
+tests/test.sh jsonmode/jsoniq-literals --json-mode jsoniq -e 'true, false, null'
+tests/test.sh jsonmode/deprecated-literals --json-mode deprecated -e 'true, false, null'
+tests/test.sh jsonmode/default-literals --json-mode default -e 'true, false, null'
+tests/test.sh jsonmode/standard-literals --no-json-literals --json-mode jsoniq -e 'true, false, null'
+tests/test.sh jsonmode/standard-literals --no-json-literals --json-mode deprecated -e 'true, false, null'
+tests/test.sh jsonmode/standard-literals --no-json-literals --json-mode default -e 'true, false, null'
+tests/test.sh jsonmode/jsoniq-literals --no-json-literals=false --json-mode standard -e 'true, false, null'
+
+tests/test.sh jsonmode/standard-dotnotation --json-mode standard -e '{"a":1}.a'
+tests/test.sh jsonmode/jsoniq-dotnotation --json-mode jsoniq -e '{"a":1}.a'
+tests/test.sh jsonmode/deprecated-dotnotation --json-mode deprecated -e '{"a":1}.a'
+tests/test.sh jsonmode/default-dotnotation --json-mode default -e '{"a":1}.a'
+
+tests/test.sh jsonmode/standard-dotnotation --json-mode standard -e '{"a":1}/a'
+tests/test.sh jsonmode/jsoniq-dotnotation --json-mode jsoniq -e '{"a":1}/a'
+tests/test.sh jsonmode/deprecated-dotnotation --json-mode deprecated -e '{"a":1}/a'
+tests/test.sh jsonmode/default-dotnotation --json-mode default -e '{"a":1}/a'
+
 
 #Nesting
 tests/test.sh nest0a [ ]
