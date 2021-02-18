@@ -232,13 +232,14 @@ If $options("always-recurse") is true, all values returned by $f are also transf
 In most cases, it is simpler to use <a>x:replace-nodes</a>. Currently it is implemented as trivial recursive XQuery function, thus it is magnitudes slower than a corresponding native Pascal implementation could be. <br/>
 Preliminary, behavior might change in future versions. E.g. it will be renamed to map-nodes or for-each-node.<br/>
 </f>
-<f name="replace-nodes" args="($nodes as item()*, $replacement as item()*) as item()*">
-Replaces the $nodes with $replacement and returns the document containing the nodes.<br/><br/>
-Currently it is implemented trivially by calling <a>x:transform</a> on the document and filtering for $nodes. <br/>
+<f name="replace-nodes" args="([ $root as item()*, ] $nodes as item()*, $replacement as item()*) as item()*">
+Replaces the $nodes with $replacement in the document $root and returns a new document with the replaced nodes.<br/><br/>
+Currently it is implemented trivially by calling <a>x:transform</a> on the document and filtering for $nodes. <br/><br/>
+The parameter $root can be omitted, in which case it uses the document containing the $nodes (note, if you omit $root and $nodes is the empty sequence, it will return nothing). <br/><br/>
 Preliminary function, behaviour might change in future versions or be replaced by XQuery Update.
 <div class="examples">
 <b>Examples:</b><br/>
-<p>`x:replace-nodes(//foo, ())` removes all nodes selected by //foo</p>
+<p>`x:replace-nodes(/, //foo, ())` (or `x:replace-nodes(//foo, ())`) removes all nodes selected by //foo</p>
 <p>`x:replace-nodes(//text(), "example")` changes all text to `example`, e.g. <code><![CDATA[<x>y</x>]]></code> to <code><![CDATA[<x>example<x>]]></code>.</p>
 <p>`x:replace-nodes(//text(), upper-case#1)` converts all text to upper case, e.g. <code><![CDATA[<x>y</x>]]></code> to <code><![CDATA[<x>Y<x>]]></code>.</p>
 <p>`x:replace-nodes(//foo, function($e){ $e/element {upper-case(name())} {node(),@*} })` converts the names of selected nodes to upper-case, e.g. <code><![CDATA[<x><foo>y</foo></x>]]></code> to <code><![CDATA[<x><FOO>Y</FOO><x>]]></code>.</p>
