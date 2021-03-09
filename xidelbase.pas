@@ -163,7 +163,7 @@ end;
 var
     internet: TInternetAccess;
 
-type TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON, ifJSONStrict);
+type TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON, ifJSONStrict, ifPlainText);
 
 var
     globalDefaultInputFormat: TInputFormat;
@@ -688,7 +688,8 @@ begin
       'html': inputFormat:=ifHTML;
       'xml-strict': inputFormat:=ifXMLStrict;
       'json': inputFormat := ifJSON;
-      'json-strict': inputFormat := ifJSONStrict
+      'json-strict': inputFormat := ifJSONStrict;
+      'text': inputFormat := ifPlainText;
       else raise EXidelException.Create('Invalid input-format: '+temp);
     end;
 end;
@@ -726,12 +727,16 @@ begin
 end;
 
 function TDataObject.inputFormat: TInputFormat;
-const FormatMap: array[TInternetToolsFormat] of TInputFormat = ( ifXML, ifHTML, ifJSON, ifXML );
 var
   enc: TSystemCodePage;
 begin
   if finputformat = ifAuto then begin
-    finputformat := FormatMap[guessFormat(rawData, baseUri, contentType)];
+    case guessFormat(rawData, baseUri, contentType) of
+      itfUnknown, itfPlainText: finputformat := ifPlainText;
+      itfXML, itfXMLPreparsedEntity: finputformat := ifXML;
+      itfHTML: finputformat := ifHTML;
+      itfJSON: finputformat := ifJSON;
+    end;
 
     if (finputformat in [ifJSON,ifJSONStrict]) and (hasOutputEncoding <> oePassRaw) then begin
       //convert json to utf-8, because the regex parser does not match non-utf8 (not even with . escape)
@@ -907,7 +912,7 @@ begin
       case data.inputFormat of
         ifHTML, ifXML, ifXMLStrict: color := cXML;
         ifJSON, ifJSONStrict: color := cJSON;
-        ifAuto: ;
+        ifAuto, ifPlainText: ;
       end;
     if xidelOutputFileName = '' then setOutputFileName('stdout:///', mycmdline);
     wcolor(data.rawdata, color);
@@ -2081,7 +2086,7 @@ var
   f: TInputFormat;
 begin
   f := data.inputFormat;
-  if (query.Term = nil) or (f in [ifJSON,ifJSONStrict]) then exit;
+  if (query.Term = nil) or (f in [ifJSON,ifJSONStrict,ifPlainText]) then exit;
   if (self = nil) or (noOptimizations) or (xqcdFocusItem in query.Term.getContextDependencies) then begin
     htmlparser.parseHTMLSimple(data);
     if currentRoot <> nil then currentRoot.getDocument().release;
@@ -2096,8 +2101,11 @@ begin
   if allowWithoutReturnValue and ((query.Term is TXQTermModule) and (TXQTermModule(query.Term).children[high(TXQTermModule(query.Term).children)] = nil)) then
     TXQTermModule(query.Term).children[high(TXQTermModule(query.Term).children)] := TXQTermSequence.Create; //allows to process queries without return value, e.g. "declare variable $a := 1"
 
-  if not (data.inputFormat in [ifJSON,ifJSONStrict]) then result := query.evaluate(currentRoot)
-  else result := query.evaluate(htmlparser.variableChangeLog.get('json'));
+  case data.inputFormat of
+    ifJSON,ifJSONStrict: result := query.evaluate(htmlparser.variableChangeLog.get('json'));
+    ifXML, ifHTML, ifXMLStrict: result := query.evaluate(currentRoot);
+    ifAuto, ifPlainText: result := query.evaluate(htmlparser.variableChangeLog.get('raw'));
+  end;
 end;
 
 procedure TProcessingContext.httpReact(sender: TInternetAccess; var method: string; var url: TDecodedUrl;
@@ -3854,8 +3862,11 @@ begin
         obj.setMutable('type', data.contenttype);
         obj.setMutable('headers', xqvalue(data.headers));
         obj.setMutable('raw', xqvalue(data.rawData));
-        if data.inputFormat in [ifJSON,ifJSONStrict] then obj.setMutable('json', parseJSON(data))
-        else obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
+        case data.inputFormat of
+          ifJSON,ifJSONStrict: obj.setMutable('json', parseJSON(data));
+          ifXML, ifHTML, ifXMLStrict: obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
+          ifAuto, ifPlainText: ;
+        end;
         list.add(obj);
       end;
       follow.Delete(0);
