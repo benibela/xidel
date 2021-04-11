@@ -27,7 +27,7 @@ unit xidelbase;
 interface
 
 uses
-  Classes,         {$ifdef win32} windows, {$endif}
+  Classes,         {$ifdef windows} windows, {$endif}
   extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess, contnrs, simplexmltreeparserfpdom,
   xquery_module_file,
@@ -888,7 +888,7 @@ begin
   downloadTo := parent.replaceEnclosedExpressions(data, Self.downloadTarget);
   if striBeginsWith(downloadTo, 'http://') then delete(downloadTo, 1, length('http://'));
   if striBeginsWith(downloadTo, 'https://') then delete(downloadTo, 1, length('https://'));
-  {$ifdef win32}
+  {$ifdef windows}
   downloadTo := StringReplace(downloadTo, '\' , '/', [rfReplaceAll]);
   {$endif}
 
@@ -3414,7 +3414,7 @@ begin
   registerModuleMath;
   //registerModuleBinary;
   registerModuleUCAICU;
-  {$ifdef win32}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
+  {$ifdef windows}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
 
   //TXQueryEngine.dumpFunctions;
 
@@ -3518,7 +3518,7 @@ begin
 
   mycmdLine.declareString('stdin-encoding', 'Character encoding of stdin', 'utf-8');
 
-  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json, json-strict', 'auto');
+  mycmdLine.declareString('input-format', 'Input format: auto, html, xml, xml-strict, json, json-strict, text', 'auto');
   mycmdLine.declareFlag('xml','Abbreviation for --input-format=xml --output-format=xml');
   mycmdLine.declareFlag('html','Abbreviation for --input-format=html --output-format=html');
   mycmdLine.declareFlag('in-place', 'Override the input file');

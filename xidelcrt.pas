@@ -47,7 +47,7 @@ var //output options
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
 
 var
-  {$ifdef win32}systemEncodingIsUTF8: boolean = true;{$endif}
+  {$ifdef windows}systemEncodingIsUTF8: boolean = true;{$endif}
 
   lastConsoleColor: TConsoleColors = ccNormal;
   isStdinTTY: boolean = false;

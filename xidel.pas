@@ -23,7 +23,7 @@ program xidel;
 
 {$mode objfpc}{$H+}
 
-{$if defined(win32) and not defined(USE_SYNAPSE_WRAPPER)}
+{$if defined(windows) and not defined(USE_SYNAPSE_WRAPPER)}
 {$define USE_WININET_WRAPPER}
 {$else}
 {$define USE_SYNAPSE_WRAPPER}
