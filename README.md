@@ -1,4 +1,4 @@
-Xidel [![Build Status](https://travis-ci.org/benibela/xidel.svg?branch=master)](https://travis-ci.org/benibela/xidel)
+Xidel [![Build Status](https://api.travis-ci.com/benibela/xidel.svg?branch=master)](https://travis-ci.com/benibela/xidel)
 =============
 Xidel is a command line tool to download and extract data from HTML/XML pages using CSS selectors, XPath/XQuery 3.0, as well as querying JSON files or APIs (e.g. REST) using JSONiq. 
 
