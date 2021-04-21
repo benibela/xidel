@@ -10,7 +10,7 @@ h2 div a { color: #330000;  }
 .examples {style: list-type: none}
 .examples li {margin-bottom: 1em}
 .examples li ul {margin-top: 1em}
-.downloadTable td { padding-right: 2em; padding-left: 2em}
+.downloadTable td { padding-right: 2em; padding-left: 2em; background-color: white }
 
 dl dt { margin-top:8px; margin-bottom: 8px }
 
@@ -26,3 +26,11 @@ dl dt { margin-top:8px; margin-bottom: 8px }
 	text-align: center;
 	color: #7A0BB7;
 }
+
+img { max-width: 100% }
+
+/*if it is to small it cuts of the sha256 in the table*/
+.content { max-width: 70em }
+
+ul.linklist { list-style-type: circle }
+ul.linklist li { margin-bottom: 1em }

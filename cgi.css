@@ -11,3 +11,4 @@ br {clear: both; }
 #codemirrorspan {
   display: none
 }
+div.pretextoptions { min-height: 2.5em; position: relative }

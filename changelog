@@ -3,18 +3,20 @@ Some important changes:
 
 --------Xidel 0.9.9 --------
 (under development)
-- support for XPath/XQuery 3.1, e.g. ? operator, => operator, map:/array: functions, string constructor
+- support for XPath/XQuery 3.1, for example ? operator, => operator, map:/array: functions, string constructor
 - --json-mode option to switch between XPath 3.1 or JSONiq syntax for JSON processing, or (default) a mix of both
 - New extension functions: 
-    x:request-decode to parse the parameters of a HTTP request
-    inner-text to get the visible text from a HTML page
-    matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be replaced by the standard ./text() kind test)
-    x:replace-nodes to replace nodes (replacing the deprecated pxp:transform function)
+    * x:request-decode to parse the parameters of a HTTP request
+    * inner-text to get the visible text from a HTML page
+    * matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be replaced by the standard ./text() kind test)
+    * new behaviour for form() when building an HTTP request to submit a HTML <form> element: The <form> element has become optional and defaults to the first <form> element on the current webpage. Additional values can be given as sequence, and each item of the sequence is sent separately, for example, key:(1,2) sends key=1&key=2 and key:() sends nothing for that key.
+    * x:replace-nodes to replace nodes (replacing the deprecated pxp:transform function)
 - --in-place option to override the input file with the output
 - <json> element in multipage templates to download JSON data
 - default whitespace normalization is disabled by default
 - set implicit timezone from local time 
-- improved serialization: faster, options for x:serialize-json; do not escape &#nbsp; for XML/HTML
+- options for HTTPS certificates and enable validation by default
+- improved parsing and serialization: faster, options for x:serialize-json; do not escape &#nbsp; for XML/HTML
 - improved error messages
 - reduced memory usage
 - compiled with FreePascal r47006

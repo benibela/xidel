@@ -42,8 +42,8 @@ function updateNow(calltime, codemirror) {
   sendForm(document.getElementsByTagName("form")[0], function(answer, request){
     if (window.outputMirror) window.outputMirror.setValue(answer);
     else  document.getElementById("result").value = answer;
-    document.getElementById("permalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?"+lastFormEncoding;
-    document.getElementById("rawpermalink").href = "http://videlibri.sourceforge.net/cgi-bin/xidelcgi?raw=true"+lastFormEncoding;
+    document.getElementById("permalink").href = "https://videlibri.de/cgi-bin/xidelcgi?"+lastFormEncoding;
+    document.getElementById("rawpermalink").href = "https://videlibri.de/cgi-bin/xidelcgi?raw=true"+lastFormEncoding;
     lastQueryEditMode = request.getResponseHeader("Xidel-Detected-Extraction-Kind");
     setRealEditMode();
   });
@@ -73,7 +73,7 @@ function changeexample(examplename, example){
   changed = false;
 }
 function setRealEditMode(){
-  if (editMode == "auto") realEditMode = /[a-zA-Z]*/.exec(lastQueryEditMode)[0];
+  if (editMode == "auto") realEditMode = /[a-zA-Z-]*/.exec(lastQueryEditMode)[0];
   else realEditMode = editMode;
   
   function addjsoniq(){return (document.getElementsByName("no-json")[0].checked ? "" : "+jsoniq")}
@@ -91,7 +91,7 @@ function setRealEditMode(){
         }
       }
     }
-    if (realEditMode == "template") window.extractCodeMirror.setOption("mode", "xquery" + addjsoniq())
+    if (realEditMode == "template" || realEditMode == "html-pattern" || realEditMode == "xml-pattern") window.extractCodeMirror.setOption("mode", "xquery" + addjsoniq())
     else if (realEditMode == "css") window.extractCodeMirror.setOption("mode", "css");
     else window.extractCodeMirror.setOption("mode", realEditMode + addjsoniq());
   }
@@ -179,6 +179,12 @@ function activateCodeMirrors(){
       window.inputMirror.setOption("mode", "htmlmixed");
     else
       window.inputMirror.setOption("mode", "xml");
+  }
+
+  if (extractCodeMirror.getWrapperElement().offsetWidth + inputMirror.getWrapperElement().offsetWidth + 20 > document.body.offsetWidth) {
+    var w = (document.body.offsetWidth - 30) / 2;
+    extractCodeMirror.setSize(w, null);
+    inputMirror.setSize(w, null);
   }
 
   inputChanged();
