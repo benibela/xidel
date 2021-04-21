@@ -20,11 +20,14 @@ const ExampleHTML: string = '<html><body>'#13#10+
                             '</body></html>';
 
 
-    ExampleTemplate:string = '<table id="t2">'#13#10+
-                             '<template:loop>'#13#10+
-                             '<tr><td>{col:=text()}</td></tr>'#13#10+
-                             '</template:loop>'#13#10+
+    ExampleTemplate:string = '<!--'#13#10+
+                             '   example for pattern matching'#13#10+
+                             '   (finding one table with all its rows)'#13#10+
+                             '-->'#13#10+
+                             '<table id="t2">'#13#10+
+                             '<tr><td>{$col:=.}</td></tr>+'#13#10+
                              '</table>';
+
 
     ExampleCSS: string = '#t2 tr td:first-child';
 
@@ -53,6 +56,8 @@ const ExampleHTML: string = '<html><body>'#13#10+
       'bar'#13#10 +
       'xyz';
 
+    BASEURL = 'https://www.videlibri.de/';
+    CANONICALURL  = BASEURL+'cgi-bin/xidelcgi';
 
 var
   wasRaw: Boolean = false;
@@ -209,22 +214,22 @@ begin
   w('');
 
   w('<!DOCTYPE html><html><head>');
-  w('<title>Template / XPath 3.0 / XQuery 3.0 / CSS 3 Selector / JSONiq Online Tester</title>');
+  w('<title>XPath 3.1 / XQuery 3.1 / CSS 3 Selector / JSONiq Online Tester</title>');
+  w('<meta name="description" content="Here you can run an XPath/XQuery 3.1 query against some HTML/XML/JSON data. It supports standard queries and extensions like JSONiq or pattern matching.">');
   w('<link rel="stylesheet" href="../codemirror/codemirror.css">');
-  w('<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css">');
-  w('<link rel="stylesheet" type="text/css" href="../cgi.css" />');
-  w('<link rel="stylesheet" type="text/css" href="cgi.css" />');
+  w('<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css">');
+  w('<link rel="stylesheet" type="text/css" href="'+BASEURL+'/cgi.css" />');
+  w('<link rel="canonical" href="'+CANONICALURL+'" />');
   w('<meta charset="utf-8" /> ');
-  w('<script src="../cgi.js"></script>');
-  w('<script src="cgi.js"></script>');
+  w('<script src="'+BASEURL+'/cgi.js"></script>');
   w('</head><body onload="init()">');
-  w('<h1>Template / XPath 3.0 / XQuery 3.0 / CSS 3 Selector / JSONiq Online Tester</h1>');
+  w('<h1>Pattern matching / XPath 3.1 / XQuery 3.1 / CSS 3 Selector Online Tester</h1>');
   w('(You can find the documentation below)<br><br>');
   w('<form method="POST" action="./xidelcgi">');
-  w('<div id="html">'+select('input-format', 'HTML/XML-Input file', ['auto', 'html', 'xml', 'xml-strict'])
-    + '<br><textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
-  w('<div id="template">'+kind('template', 'Template')+kind('xpath3.0', 'XPath 3.0')+ kind('xpath2', '2.0')+kind('xquery3.0', 'XQuery 3.0')+kind('xquery1', '1')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect'));
-  w('<br><textarea name="extract" rows=18 cols=80 >');
+  w('<div id="html"><div class="pretextoptions">'+select('input-format', 'HTML/XML/JSON-Input file', ['auto', 'html', 'xml', 'xml-strict', 'json'])+'</div>'
+    + '<textarea name="data" rows="18" cols="80"  >'+xmlStrEscape(IfThen(mycmdline.readString('data') <> '', mycmdline.readString('data'), ExampleHTML))+'</textarea></div>');
+  w('<div id="template"><div class="pretextoptions" style="position:relative"><div style="position: absolute; bottom: 5px">'+kind('template', 'Pattern matching')+kind('xpath3.1', 'XPath 3.1') + kind('xquery3.1', 'XQuery 3.1')+kind('css', 'CSS 3.0 selectors')+kind('auto', 'Autodetect')+'</div></div>');
+  w('<textarea name="extract" rows=18 cols=80 >');
   if mycmdline.readString('extract') <> '' then w(xmlStrEscape(mycmdline.readString('extract')))
   else w(example(mycmdline.readString('extract-kind')));
   w('</textarea></div>');
@@ -242,7 +247,7 @@ begin
   w('</span>');
 
   w('</span>');
-  w('<br>Work in progress: ' + kind('xpath3.1', 'XPath 3.1') + kind('xquery3.1', 'XQuery 3.1')+'<br>');
+  w('<br>Old languages: ' + kind('xpath2', 'XPath 2.0')+kind('xpath3.0', 'XPath 3.0')+kind('xquery1', 'XQuery 1.0')+kind('xquery3.0', 'XQuery 3.0')+'<br>');
   w('</form>');
 
  { w('<script src="../codemirror/codemirror.js"></script>');
@@ -256,7 +261,7 @@ begin
   w('<script src="../codemirror/jquery-ui-1.10.2.custom.min.js"></script>');
 
   w('<hr>');
-  w('Result of the above expression applied to the above HTML file:<br>');
+  w('Result of the above expression applied to the above input file:<br>');
   w('<textarea id="result" rows="30" cols="100">');
 
   if  (mycmdline.readString('data') = '') and (mycmdline.readString('extract') = '') then
@@ -265,8 +270,8 @@ begin
     else w(ExampleOtherResult);
     end;
 
-  permalink := 'http://www.videlibri.de/cgi-bin/xidelcgi?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
-  rawpermalink := 'http://www.videlibri.de/cgi-bin/xidelcgi?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+  permalink := CANONICALURL+'?'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
+  rawpermalink := CANONICALURL+'?raw=true&'+TCommandLineReaderCGI(mycmdline).urlEncodeParams;
 
 
   flush(xidelOutputFile);
@@ -316,20 +321,23 @@ begin
   //w(cgi.QueryString);
 
   w('<h2>What is this about?</h2>');
-  w('Here you can test HTML templates, CSS 3 selectors, standard XPath 2.0 / 3.0 / XQuery 1.0 / 3.0 and JSONiq expressions.<br>');
-  w('It is an example for my Pascal Internet Tools library written for VideLibri and implementing these queries.<br>');
+  w('Here you can test pattern matching, CSS 3 selectors, standard XPath/XQuery 3.1, and JSONiq expressions.<br>');
+  w('XPath, XQuery, and CSS Selectors are W3C standardized query languages. The new XPath versions, from XPath 2.0 on, should not be confused with the old XPath 1.0. While old XPath can only process sets of XML nodes, XPath 2 can process any kind of data sequence. Modern XPath is a Turing-complete functional programming language.<br>'+
+    'JSONiq was a proposed extension to XQuery to query JSON, but with XPath 3.1 supporting JSON, it is rarely needed.<br>'+
+    'Pattern matching (also called templates) is my own extension: every node in the pattern is searched in the input. The {} text nodes in the pattern contain XPath expressions that are evaluated with the result being assigned to variables.<br>');
+  w('It is a nearly standalone implementation of the standards into the Pascal Internet Tools library written for the VideLibri app.<br>');
   //w('The template example shows the two most basic template commands (read/loop) and copies the first column of a table.'+' .<br>');
 
-  w('<br>You can find more details in the corresponding unit documentation:<br>');
-  w(link('http://benibela.de/documentation/internettools/xquery.TXQueryEngine.html', 'Documentation of the XQuery / XPath / CSS 3 selector implementation'));
-  w(link('http://benibela.de/documentation/internettools/extendedhtmlparser.THtmlTemplateParser.html', 'Documentation of the template syntax'));
+  w('<br>You can find more details in the corresponding Pascal unit documentation:<br>');
+  w(link('https://benibela.de/documentation/internettools/xquery.TXQueryEngine.html', 'Documentation of the XQuery / XPath / CSS 3 selector implementation'));
+  w(link('https://benibela.de/documentation/internettools/extendedhtmlparser.THtmlTemplateParser.html', 'Documentation of the pattern syntax'));
   w('<br>Other related links:<br>');
-  w(link('http://www.benibela.de/sources_en.html#internettools', 'Internet Tools library', ', the library page'));
-  w(link('http://www.benibela.de/documentation/internettools/xqts.html', 'XQuery Test Suite Results'));
-  w(link('http://www.videlibri.de/xidel.html', 'Xidel command line tool', ', a litte tool using this library for web page downloading / scraping'));
+  w(link('https://www.videlibri.de/xidel.html', 'Xidel', ', the command line version of this XQuery processor for web page downloading/scraping and any kind of XML/HTML/JSON processing'));
+  w(link('https://www.benibela.de/documentation/internettools/xqts.html', 'XQuery Test Suite Results'));
+  w(link('https://www.benibela.de/sources_en.html#internettools', 'Internet Tools library', ', the Pascal library page'));
   w(link('https://sourceforge.net/p/videlibri/code/ci/tip/tree/', 'Source repository', '', ' rel="nofollow"'));
   w(link('https://github.com/benibela/xidel', 'Github mirror (Xidel excluding library)', '', ' rel="nofollow"'));
-  w(link('https://bitbucket.org/benibela/xidel', 'Bitbucket mirror (Xidel excluding library)', '', ' rel="nofollow"'));
+//  w(link('https://bitbucket.org/benibela/xidel', 'Bitbucket mirror (Xidel excluding library)', '', ' rel="nofollow"'));
 
 
   w('<script>lastQueryEditMode="'+firstExtractionKind+'"; ');
@@ -338,7 +346,7 @@ begin
   w('compatibilityChange = ["'+compatibiltiyOptionsChange[1]+'", "'+compatibiltiyOptionsChange[2]+'", "'+compatibiltiyOptionsChange[3]+'"];');
   w('activateCodeMirrors(); </script>');
 
-  w('<div id="sf-logo"><a href="http://sourceforge.net/projects/videlibri"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
+  w('<div id="sf-logo"><a href="https://sourceforge.net/projects/videlibri"><img src="https://sflogo.sourceforge.net/sflogo.php?group_id=359854&amp;type=1" width="125" height="37" border="0" alt="SourceForge.net Logo" /></a></div>');
 
   {sl := tstringlist.create;
   cgi.AddResponseLn('reqvar:');
