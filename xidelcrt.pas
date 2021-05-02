@@ -1,6 +1,6 @@
 unit xidelcrt;
 
-{$mode objfpc}{$H+}
+{$mode objfpc}{$H+}{$COperators on}
 
 interface
 

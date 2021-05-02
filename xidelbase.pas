@@ -23,6 +23,7 @@ unit xidelbase;
 {$mode objfpc}{$H+}
 {$modeswitch advancedrecords}
 {$modeswitch typehelpers}
+{$COperators on}{$goto on}{$inline on}
 
 interface
 
