@@ -62,7 +62,7 @@ procedure perform;
 implementation
 
 uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8, xquery.internals.common, xquery.namespaces, xidelcrt,
-  xquery__serialization;
+  xquery__serialization, xquery__serialization_nodes;
 //{$R xidelbase.res}
 
 
