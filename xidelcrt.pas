@@ -192,17 +192,17 @@ begin
     'xml': colorizing := cXML;
     else raise EXidelInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
   end;
+  {$ifdef unix}
+  isStdinTTY := IsATTY(Input) <> 0;
+  isStdoutTTY := IsATTY(stdout) <> 0;
+  isStderrTTY := IsATTY(StdErr) <> 0;
+  {$endif}
+  {$ifdef windows}
+  isStdinTTY :=  getfiletype(StdInputHandle) = FILE_TYPE_CHAR;
+  isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
+  isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
+  {$endif}
   if not (colorizing in [cNever,cAlways]) or (hasOutputEncoding = oeAbsent) then begin
-    {$ifdef unix}
-    isStdinTTY := IsATTY(Input) <> 0;
-    isStdoutTTY := IsATTY(stdout) <> 0;
-    isStderrTTY := IsATTY(StdErr) <> 0;
-    {$endif}
-    {$ifdef windows}
-    isStdinTTY :=  getfiletype(StdInputHandle) = FILE_TYPE_CHAR;
-    isStdoutTTY := getfiletype(StdOutputHandle) = FILE_TYPE_CHAR;
-    isStderrTTY := getfiletype(StdErrorHandle) = FILE_TYPE_CHAR;
-    {$endif}
     if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
     if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextCodePage(input, strEncodingFromNameXidel(mycmdline.readString('stdin-encoding')));
   end;

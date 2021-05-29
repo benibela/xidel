@@ -75,6 +75,7 @@ tests/test.sh varnoenviron --variable foo=bar -e '$foo'
 
 #stdin
 echo '<test>123<x/>foo<abc>bar</abc>def<x/></test>' | tests/test.sh stdin1 - -e //abc
+echo '<test>123<x/>foo<abc>bar</abc>def<x/></test>' | tests/test.sh stdin1 -e //abc
 echo //abc2 | tests/test.sh stdin2 '<test>123<x/>foo<abc2>bar2!</abc2>def<x/></test>' -e -
 
 #multipage template
@@ -437,7 +438,7 @@ tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
 #other stuff
 
 tests/test.sh system -e 'system("echo 123") * 8'
-echo 101 | tests/test.sh read -e 'read() * 8' --strict-type-checking
+#echo 101 | tests/test.sh read -e 'read() * 8' --strict-type-checking
 echo '{"a": 1, "b": 2}' |  tests/test.sh jsonassign - -e '($json).a := 10'
 tests/test.sh jsonreassign -e '$json := [1,2,3]'
 tests/test.sh namespace1 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml

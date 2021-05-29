@@ -604,7 +604,7 @@ TProcessingContext = class(TDataProcessing)
 
   function last: TProcessingContext; //returns the last context in this sibling/follow chain
 
-  procedure insertFictiveDatasourceIfNeeded; //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
+  procedure insertFictiveDatasourceIfNeeded(canUseStdin: boolean); //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
 
   function process(data: IData): TFollowToList; override;
 
@@ -1757,7 +1757,7 @@ begin
   exit(self);
 end;
 
-procedure TProcessingContext.insertFictiveDatasourceIfNeeded;
+procedure TProcessingContext.insertFictiveDatasourceIfNeeded(canUseStdin: boolean);
 var
   i: Integer;
   needDatasource: Boolean;
@@ -1770,11 +1770,11 @@ begin
       needDatasource := true;
       break;
     end;
-  if needDatasource then
-    readNewDataSource(TFollowTo.createFromRetrievalAddress('<empty/>'), nil)
-   else for i := 0 to high(actions) do
+  if needDatasource then begin
+    readNewDataSource(TFollowTo.createFromRetrievalAddress(IfThen(canUseStdin, '-', '<empty/>')), nil)
+   end else for i := 0 to high(actions) do
     if actions[i] is TProcessingContext then
-      TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded;
+      TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded(false);
 end;
 
 const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingModel = (
@@ -3672,10 +3672,6 @@ begin
   end;
 
 
-  baseContext.insertFictiveDatasourceIfNeeded; //this allows data less evaluations, like xidel -e 1+2+3
-
-  if mycmdline.readFlag('debug-arguments') then
-    debugPrintContext(baseContext);
 
   if allowInternetAccess and assigned(onPrepareInternet) then begin
     onPrepareInternet(baseContext.userAgent, baseContext.proxy, @baseContext.httpReact);
@@ -3692,6 +3688,11 @@ begin
 
 
   initOutput(mycmdline);
+
+  baseContext.insertFictiveDatasourceIfNeeded(not isStdinTTY); //this allows data less evaluations, like xidel -e 1+2+3
+
+  if mycmdline.readFlag('debug-arguments') then
+    debugPrintContext(baseContext);
 
   if mycmdline.readFlag('trace') or mycmdline.readFlag('trace-stack') or mycmdline.readFlag('trace-context') {or mycmdline.readFlag('trace-context-variables') }then begin
     tracer := TXQTracer.Create;
