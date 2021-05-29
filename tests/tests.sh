@@ -70,6 +70,7 @@ tests/test.sh varmix '<a>hello</a>' -e '.'  -e '<a>{temp:=.}</a>' -e '3+4' -e 'r
 tests/test.sh varmixb '<a>hello</a>' -e 'concat(">", ., "<")'  -e '<a>{temp:=$result}</a>' -e '3+4' -e 'res:=$result'
 tests/test.sh varenviron --variable environ1 -e '$environ1'
 tests/test.sh varenviron2 --variable environ1,environ2 -e '$environ1||$environ2'
+tests/test.sh varenviron2 -e 'declare variable $environ1 external; declare variable $environ2 external; $environ1||$environ2'
 tests/test.sh varnoenviron --variable foo=bar -e '$foo'
 
 #stdin

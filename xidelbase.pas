@@ -3395,6 +3395,30 @@ procedure OnWarningDeprecated({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngi
 begin
   writeln(stderr, warning);
 end;
+type TGlobalCallbackHolder = class
+  class procedure OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
+end;
+class procedure TGlobalCallbackHolder.OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
+var
+  env: String;
+  t: TXQTermSequenceType;
+  envvalue: IXQValue;
+  temp: TXQEvaluationContext;
+begin
+  ignore(context);
+  if (namespaceUrl = '') and (sender is TXQTermDefineVariable) then begin
+    env := GetEnvironmentVariableUTF8(variable);
+    //initialize external variables from environment, but use default value, if environment is '' or has wrong type
+    if (value <> nil) and (env = '') then exit;
+    envvalue := xqvalue(env);
+    t := TXQTermDefineVariable(sender).getSequenceType;
+    if (t <> nil) then begin
+      temp := context.sender.getEvaluationContext(context);
+      if not t.instanceOf(envvalue, temp) then exit;
+    end;
+    value := envvalue;
+  end;
+end;
 
 
 
@@ -3559,6 +3583,7 @@ begin
   contextStack[0] := baseContext;
 
   xpathparser := htmlparser.QueryEngine;
+  xpathparser.OnDeclareExternalVariable:=@TGlobalCallbackHolder.onDeclareExternalVariable;
   xpathparser.OnWarningDeprecated := TXQWarningEvent(procedureToMethod(TProcedure(@onWarningDeprecated)));
   if xpathparser.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
   xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
