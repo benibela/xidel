@@ -3396,9 +3396,10 @@ begin
   writeln(stderr, warning);
 end;
 type TGlobalCallbackHolder = class
-  class procedure OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
+  procedure OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
 end;
-class procedure TGlobalCallbackHolder.OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
+var GlobalCallbackHolder: TGlobalCallbackHolder;
+procedure TGlobalCallbackHolder.OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
 var
   env: String;
   t: TXQTermSequenceType;
@@ -3583,7 +3584,7 @@ begin
   contextStack[0] := baseContext;
 
   xpathparser := htmlparser.QueryEngine;
-  xpathparser.OnDeclareExternalVariable:=@TGlobalCallbackHolder.onDeclareExternalVariable;
+  xpathparser.OnDeclareExternalVariable:=@GlobalCallbackHolder.onDeclareExternalVariable;
   xpathparser.OnWarningDeprecated := TXQWarningEvent(procedureToMethod(TProcedure(@onWarningDeprecated)));
   if xpathparser.StaticContext.namespaces = nil then htmlparser.QueryEngine.StaticContext.namespaces := TNamespaceList.Create;
   xpathparser.StaticContext.namespaces.add(XMLNamespace_Expath_File);
