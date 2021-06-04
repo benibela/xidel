@@ -296,22 +296,22 @@ type
   { TOptionReaderWrapper }
 
   TOptionReaderWrapper = class
-    function read(const name: string; out value: string): boolean; virtual; abstract;
-    function read(const name: string; out value: integer): boolean; virtual; abstract;
-    function read(const name: string; out value: boolean): boolean; virtual; abstract;
-    function read(const name: string; out value: Extended): boolean; virtual; abstract;
-    function read(const name: string; out value: IXQValue): boolean; virtual;
-    function read(const name: string; out inputformat: TInputFormat): boolean; virtual;
+    function read(const name: string; var value: string): boolean; virtual; abstract;
+    function read(const name: string; var value: integer): boolean; virtual; abstract;
+    function read(const name: string; var value: boolean): boolean; virtual; abstract;
+    function read(const name: string; var value: Extended): boolean; virtual; abstract;
+    function read(const name: string; var value: IXQValue): boolean; virtual;
+    function read(const name: string; var inputformat: TInputFormat): boolean; virtual;
   end;
 
   { TOptionReaderFromCommandLine }
 
   TOptionReaderFromCommandLine = class(TOptionReaderWrapper)
     constructor create(cmdLine: TCommandLineReader);
-    function read(const name: string; out value: string): boolean; override;
-    function read(const name: string; out value: integer): boolean; override;
-    function read(const name: string; out value: boolean): boolean; override;
-    function read(const name: string; out value: Extended): boolean; override;
+    function read(const name: string; var value: string): boolean; override;
+    function read(const name: string; var value: integer): boolean; override;
+    function read(const name: string; var value: boolean): boolean; override;
+    function read(const name: string; var value: Extended): boolean; override;
   private
     acmdLine: TCommandLineReader;
   end;
@@ -320,11 +320,11 @@ type
 
   TOptionReaderFromObject = class(TOptionReaderWrapper)
     constructor create(aobj: TXQValueMapLike);
-    function read(const name: string; out value: string): boolean; override;
-    function read(const name: string; out value: integer): boolean; override;
-    function read(const name: string; out value: boolean): boolean; override;
-    function read(const name: string; out value: Extended): boolean; override;
-    function read(const name: string; out value: IXQValue): boolean; override;
+    function read(const name: string; var value: string): boolean; override;
+    function read(const name: string; var value: integer): boolean; override;
+    function read(const name: string; var value: boolean): boolean; override;
+    function read(const name: string; var value: Extended): boolean; override;
+    function read(const name: string; var value: IXQValue): boolean; override;
   private
     obj: TXQValueMapLike;
   end;
@@ -672,14 +672,14 @@ end;
 
 { TOptionReaderWrapper }
 
-function TOptionReaderWrapper.read(const name: string; out value: IXQValue): boolean;
+function TOptionReaderWrapper.read(const name: string; var value: IXQValue): boolean;
 begin
   result := false;
 end;
 
-function TOptionReaderWrapper.read(const name: string ; out inputformat: TInputFormat): boolean;
+function TOptionReaderWrapper.read(const name: string ; var inputformat: TInputFormat): boolean;
 var
-  temp: String;
+  temp: String = '';
 begin
   result := read('input-format', temp);
   if result then
@@ -786,7 +786,7 @@ begin
   obj := aobj;
 end;
 
-function TOptionReaderFromObject.read(const name: string; out value: string): boolean;
+function TOptionReaderFromObject.read(const name: string; var value: string): boolean;
 var
   temp: TXQValue;
 begin
@@ -794,7 +794,7 @@ begin
   if result then value := temp.toString;
 end;
 
-function TOptionReaderFromObject.read(const name: string; out value: integer): boolean;
+function TOptionReaderFromObject.read(const name: string; var value: integer): boolean;
 var
   temp: TXQValue;
 begin
@@ -802,7 +802,7 @@ begin
   if result then value := temp.toInt64;
 end;
 
-function TOptionReaderFromObject.read(const name: string; out value: boolean): boolean;
+function TOptionReaderFromObject.read(const name: string; var value: boolean): boolean;
 var
   temp: TXQValue;
 begin
@@ -810,7 +810,7 @@ begin
   if result then value := temp.toBoolean;
 end;
 
-function TOptionReaderFromObject.read(const name: string; out value: Extended): boolean;
+function TOptionReaderFromObject.read(const name: string; var value: Extended): boolean;
 var
   temp: TXQValue;
 begin
@@ -818,7 +818,7 @@ begin
   if result then value := temp.toFloat;
 end;
 
-function TOptionReaderFromObject.read(const name: string; out value: IXQValue): boolean;
+function TOptionReaderFromObject.read(const name: string; var value: IXQValue): boolean;
 var
   temp: TXQValue;
 begin
@@ -833,25 +833,25 @@ begin
   acmdLine := cmdLine;
 end;
 
-function TOptionReaderFromCommandLine.read(const name: string; out value: string): boolean;
+function TOptionReaderFromCommandLine.read(const name: string; var value: string): boolean;
 begin
   value := acmdLine.readString(name);
   result := acmdLine.existsProperty(name);
 end;
 
-function TOptionReaderFromCommandLine.read(const name: string; out value: integer): boolean;
+function TOptionReaderFromCommandLine.read(const name: string; var value: integer): boolean;
 begin
   value := acmdLine.readInt(name);
   result := acmdLine.existsProperty(name);
 end;
 
-function TOptionReaderFromCommandLine.read(const name: string; out value: boolean): boolean;
+function TOptionReaderFromCommandLine.read(const name: string; var value: boolean): boolean;
 begin
   value := acmdLine.readFlag(name);
   result := acmdLine.existsProperty(name);
 end;
 
-function TOptionReaderFromCommandLine.read(const name: string; out value: Extended): boolean;
+function TOptionReaderFromCommandLine.read(const name: string; var value: Extended): boolean;
 begin
   value := acmdLine.readFloat(name);
   result := acmdLine.existsProperty(name);
@@ -1103,8 +1103,8 @@ end;
 procedure closeMultiArgs(var oldValue: string; separator: string); forward;
 
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
-var temp: string;
-  tempxq: IXQValue;
+var temp: string = '';
+  tempxq: IXQValue = nil;
   h: IXQValue;
 begin
   inherited;
@@ -1472,7 +1472,7 @@ end;
 
 procedure TExtraction.readOptions(reader: TOptionReaderWrapper);
 var
-  tempstr: string;
+  tempstr: string='';
 begin
   if extract = '' then begin
     reader.read('extract', extract);  //todo. option: extract-file
@@ -1547,8 +1547,8 @@ end;
 
 procedure TProcessingContext.readOptions(reader: TOptionReaderWrapper);
 var
-  tempstr: string;
-  tempbool: boolean;
+  tempstr: string = '';
+  tempbool: boolean = false;
 begin
 
   if allowInternetAccess then begin
