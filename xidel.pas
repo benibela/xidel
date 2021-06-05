@@ -42,10 +42,11 @@ uses //heaptrc,
  { TTemplateReaderBreaker }
 
 
-function prepareInternet(const userAgent, proxy: string; onReact: TTransferReactEvent): TInternetAccess;
+function prepareInternet(const userAgent, proxy: string; hasProxySettings: boolean; onReact: TTransferReactEvent): TInternetAccess;
 begin
   defaultInternetConfiguration.userAgent:=userAgent;
   defaultInternetConfiguration.setProxy(proxy);
+  defaultInternetConfiguration.tryDefaultConfig := not hasProxySettings;
   if assigned(internetaccess.defaultInternet.internetConfig) then begin
     internetaccess.defaultInternet.internetConfig^.userAgent := userAgent;
     internetaccess.defaultInternet.internetConfig^.setProxy(proxy);

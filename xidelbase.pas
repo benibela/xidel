@@ -52,7 +52,7 @@ var cgimode: boolean = false;
 
 var
     onPostParseCmdLine: procedure ();
-    onPrepareInternet: function (const useragent, proxy: string; onReact: TTransferReactEvent): tinternetaccess;
+    onPrepareInternet: function (const useragent, proxy: string; hasProxySettings: boolean; onReact: TTransferReactEvent): tinternetaccess;
     onRetrieve: function (const method, url, postdata, headers: string): string;
     onPreOutput: procedure (extractionKind: TExtractionKind);
 
@@ -573,6 +573,7 @@ TProcessingContext = class(TDataProcessing)
   wait: Extended;
   userAgent: string;
   proxy: string;
+  hasProxySettings: boolean;
   printReceivedHeaders: boolean;
   errorHandling: string;
   loadCookies, saveCookies: string;
@@ -969,7 +970,7 @@ var
   d: TDataObject;
 begin
   if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
-  if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
+  if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy,  parent.hasProxySettings, @parent.httpReact);
   if (parent.loadCookies <> '') then begin
     internet.cookies.loadFromFile(parent.loadCookies);
     parent.loadCookies := ''; //only need to load them once?
@@ -1554,7 +1555,7 @@ begin
   if allowInternetAccess then begin
     reader.read('wait', wait);
     reader.read('user-agent', userAgent);
-    reader.read('proxy', proxy);
+    hasProxySettings := reader.read('proxy', proxy);
     //reader.read('post', Post);
     //reader.read('method', method); moved to
     reader.read('print-received-headers', printReceivedHeaders);
@@ -1696,6 +1697,7 @@ begin
   wait := other.wait;
   userAgent := other.userAgent;
   proxy := other.proxy;
+  hasProxySettings := other.hasProxySettings;
   printReceivedHeaders:=other.printReceivedHeaders;
   errorHandling:=errorHandling;
 
@@ -2426,7 +2428,7 @@ begin
       xpathparser.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
       multipage.onPageProcessed:=@pageProcessed;
       if parent.silent then multipage.onLog := nil else multipage.onLog := @multipage.selfLog;
-      multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, @parent.httpReact);
+      multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, parent.hasProxySettings,@parent.httpReact);
       multipagetemp := TMultiPageTemplate.create();
       if extract = '' then raise Exception.Create('Multipage-action-template is empty');
       multipagetemp.loadTemplateFromString(extract, ExtractFileName(extractBaseUri), ExtractFileDir(extractBaseUri));
@@ -3675,7 +3677,7 @@ begin
 
 
   if allowInternetAccess and assigned(onPrepareInternet) then begin
-    onPrepareInternet(baseContext.userAgent, baseContext.proxy, @baseContext.httpReact);
+    onPrepareInternet(baseContext.userAgent, baseContext.proxy, baseContext.hasProxySettings,@baseContext.httpReact);
     defaultInternetConfiguration.checkSSLCertificates := not mycmdLine.readFlag('no-check-certificate');
     defaultInternetConfiguration.CAFile := mycmdLine.readString('ca-certificate');
     if defaultInternetConfiguration.CAFile = '' then begin
