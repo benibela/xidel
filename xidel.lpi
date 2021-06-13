@@ -163,6 +163,11 @@
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
+          <Other>
+            <OtherDefines Count="1">
+              <Define0 Value="USE_SYNAPSE_WRAPPER"/>
+            </OtherDefines>
+          </Other>
         </CompilerOptions>
       </Item5>
       <Item6 Name="linux32">
@@ -196,12 +201,13 @@
             </Optimizations>
           </CodeGeneration>
           <Linking>
-            <Debugging>
-              <UseHeaptrc Value="True"/>
-              <TrashVariables Value="True"/>
-            </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
+          <Other>
+            <OtherDefines Count="1">
+              <Define0 Value="USE_SYNAPSE_WRAPPER"/>
+            </OtherDefines>
+          </Other>
         </CompilerOptions>
       </Item6>
       <Item7 Name="win64">
@@ -315,6 +321,11 @@
     <Linking>
       <LinkSmart Value="True"/>
     </Linking>
+    <Other>
+      <OtherDefines Count="1">
+        <Define0 Value="USE_SYNAPSE_WRAPPER"/>
+      </OtherDefines>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="4">
