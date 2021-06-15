@@ -61,7 +61,7 @@ procedure perform;
 
 implementation
 
-uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery_utf8, xquery.internals.common, xquery.namespaces, xidelcrt,
+uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery.internals.common, xquery.namespaces, xidelcrt,
   xquery__serialization, xquery__serialization_nodes;
 //{$R xidelbase.res}
 
@@ -1354,7 +1354,7 @@ var x: IXQValue;
 
 begin
   if dest.kind <> pvkSequence then
-    dest := xpathparser.evaluateXPath2('pxp:resolve-html(., $url)', dest);
+    dest := xpathparser.evaluateXPath('pxp:resolve-html(., $url)', dest);
   case dest.kind of
     pvkUndefined: exit;
     pvkObject: begin
@@ -3944,8 +3944,8 @@ var cur, bdbase: bigdecimal;
   i: SizeInt;
 begin
   bdbase := base;
-  setZero(result);
-  setOne(cur);
+  result.setZero();
+  cur.setOne();
   for i := length(n) downto 1 do begin
     c := n[i];
     case c of
