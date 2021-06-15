@@ -3958,7 +3958,7 @@ begin
     result := result + offset * cur;
     cur := cur * bdbase;
   end;
-  if not isZero(result) then result.signed := negative;
+  if not result.isZero() then result.signed := negative;
 end;
 
 function xqfInteger(argc: SizeInt; args: PIXQValue): IXQValue;
@@ -4004,7 +4004,7 @@ begin
   negative := bd.signed;
   bd.signed:=false;
   result := '';
-  while not isZero(bd) do begin
+  while not bd.isZero() do begin
     quotient.digits := nil;
     divideModNoAlias(quotient, remainder, bd, bdbase, 0, [bddfFillIntegerPart, bddfNoFractionalPart]);
     temp := BigDecimalToLongint(remainder);
