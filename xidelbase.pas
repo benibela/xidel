@@ -3222,6 +3222,8 @@ begin
     TCommandLineReaderBreaker(sender).overrideVar('form', combineMultiArgs(commandLineStackLastFormData, value, #0))
   else if name = 'header' then
     TCommandLineReaderBreaker(sender).overrideVar('header', combineMultiArgs(commandLineLastHeader, value, #13#10))
+  else if name = 'compressed' then
+    TCommandLineReaderBreaker(sender).overrideVar('header', combineMultiArgs(commandLineLastHeader, 'Accept-Encoding: gzip', #13#10))
   else if name = 'variable' then parseVariableArg
   else if name = 'xmlns' then begin
     temps:=trim(value);
@@ -3519,6 +3521,7 @@ begin
     mycmdLine.declareString('save-cookies', 'Save cookies to file');
     mycmdLine.declareFlag('print-received-headers', 'Print the received headers');
     mycmdLine.declareString('error-handling', 'How to handle http errors, e.g. 1xx=retry,200=accept,3xx=redirect,4xx=abort,5xx=skip');
+    mycmdLine.declareFlag('compressed', 'Add header Accept-Encoding: gzip');
     mycmdLine.declareFlag('raw-url', 'Do not escape the url (preliminary)');
 
     mycmdLine.beginDeclarationCategory('HTTPS connection options:');
