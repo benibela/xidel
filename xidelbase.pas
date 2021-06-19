@@ -35,6 +35,7 @@ uses
   //xquery_module_binary,
   xquery_module_math,
   xquery_module_uca_icu,
+  internetaccess_inflater_paszlib,
   rcmdline,math
   ;
 
