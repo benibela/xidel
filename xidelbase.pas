@@ -3417,7 +3417,9 @@ begin
     t := TXQTermDefineVariable(sender).getSequenceType;
     if (t <> nil) then begin
       temp := context.sender.getEvaluationContext(context);
-      if not t.instanceOf(envvalue, temp) then exit;
+      if not t.instanceOf(envvalue, temp) then
+        if not t.castableAs(envvalue, context) then exit
+        else envvalue := t.castAs(envvalue, temp);
     end;
     value := envvalue;
   end;
