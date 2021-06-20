@@ -72,6 +72,7 @@ function extractKindToString(kind: TExtractionKind): string;
 begin
   case kind of
     ekAuto: exit('auto');
+    //ekDefault: exit('default');
     ekXPath2: exit('xpath2');
     ekXPath3_0: exit('xpath3');
     ekXPath3_1: exit('xpath3_1');

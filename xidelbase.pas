@@ -1458,6 +1458,7 @@ function extractKindFromString(v: string): TExtractionKind;
 begin
   case v of
     'auto': result := ekAuto;
+    'default': result := ekDefault;
     'xpath2': result :=ekXPath2;
     'xquery1': result :=ekXQuery1;
     'xpath', 'xpath3', 'xpath3.1': result :=ekXPath3_1;
@@ -1781,7 +1782,7 @@ begin
 end;
 
 const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingModel = (
-  xqpmXPath3_1,
+  xqpmXQuery3_1, xqpmXQuery3_1,
   xqpmXPath2, xqpmXPath3_0, xqpmXPath3_1,
   xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1,
   xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
@@ -1907,7 +1908,8 @@ var next, res: TFollowToList;
       end else begin
         //assume xpath like
         xpathparser.StaticContext. BaseUri := data.baseUri;
-        xpathparser.ParsingOptions.StringEntities:=xqseDefault;
+        if followKind = ekDefault then xpathparser.ParsingOptions.StringEntities:=xqseResolveLikeXQueryButIgnoreInvalid
+        else xpathparser.ParsingOptions.StringEntities:=xqseDefault;
         loadDataForQueryPreParse(data);
         if followQueryCache = nil then
           case followKind of
@@ -2396,9 +2398,10 @@ begin
       prepareForOutput(data);
       pageProcessed(nil,htmlparser);
     end;
-    ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
+    ekDefault, ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
       xpathparser.StaticContext.BaseUri := fileNameExpandToURI(data.baseUri);
-      xpathparser.ParsingOptions.StringEntities:=xqseDefault;
+      if extractKind = ekDefault then xpathparser.ParsingOptions.StringEntities:=xqseResolveLikeXQueryButIgnoreInvalid
+      else xpathparser.ParsingOptions.StringEntities:=xqseDefault;
 
       parent.loadDataForQueryPreParse(data);
       if extractQueryCache = nil then begin
