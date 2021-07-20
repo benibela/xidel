@@ -3699,6 +3699,7 @@ begin
     SetLength(currentContext.actions, length(currentContext.actions));
     for i := 0 to high(currentContext.actions) do
       currentContext.actions[i] := currentContext.actions[i].clone(currentContext);
+    writeln(stderr, '!!! Recursive follow is deprecated and might be removed soon. !!!');
   end;
 
   if (currentContext.parent = nil) and (baseContext.nextSibling = currentContext) and (length(baseContext.dataSources) = 0) and (length(currentContext.actions) = 0) and (currentContext.follow = '') then begin
