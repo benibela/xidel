@@ -304,32 +304,33 @@ tests/test.sh bash-combining3 -e 1 -e '(2,3)' -e 'temp:=712' -e '4' -e 'temp:=18
 tests/test.sh jsonmode/standard --json-mode standard --json-mode standard --xquery 'let $x := <a><b>c</b></a>//b, $o := map {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(2))) )'
 tests/test.sh jsonmode/jsoniq --json-mode jsoniq  --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )' 
 tests/test.sh jsonmode/deprecated  --json-mode deprecated --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
-tests/test.sh jsonmode/default  --json-mode default --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
+tests/test.sh jsonmode/default  --json-mode unified --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
 
 tests/test.sh jsonmode/standard-equals - --json-mode standard -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
 tests/test.sh jsonmode/jsoniq-equals - --json-mode jsoniq -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
 tests/test.sh jsonmode/deprecated-equals - --json-mode deprecated -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
-tests/test.sh jsonmode/default-equals - --json-mode default -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
+tests/test.sh jsonmode/default-equals - --json-mode unified -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
 
 tests/test.sh jsonmode/standard-null - --json-mode standard -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
 tests/test.sh jsonmode/jsoniq-null - --json-mode jsoniq -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
 tests/test.sh jsonmode/deprecated-null - --json-mode deprecated -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
-tests/test.sh jsonmode/default-null - --json-mode default -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
+tests/test.sh jsonmode/default-null - --json-mode unified -e 'count($json(1)), jn:is-null($json(1)), count($json(2)?a), jn:is-null($json?2?a),  count($json(2)?b), jn:is-null($json?2?b)' < tests/data2.json
 
 tests/test.sh jsonmode/standard-boolean - --json-mode standard -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
 tests/test.sh jsonmode/jsoniq-boolean - --json-mode jsoniq -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
 tests/test.sh jsonmode/deprecated-boolean - --json-mode deprecated -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
-tests/test.sh jsonmode/default-boolean - --json-mode default -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
+tests/test.sh jsonmode/default-boolean - --json-mode unified -e 'if ($json) then "T"[$json and $json(2)][$json][$json(2)] else false()' < tests/data2.json
 
 tests/test.sh jsonmode/standard-stringvalue - --json-mode standard -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
 tests/test.sh jsonmode/jsoniq-stringvalue - --json-mode jsoniq -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
 tests/test.sh jsonmode/deprecated-stringvalue - --json-mode deprecated -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
-tests/test.sh jsonmode/default-stringvalue - --json-mode default -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
+tests/test.sh jsonmode/default-stringvalue - --json-mode unified -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
  
 tests/test.sh jsonmode/standard-literals --json-mode standard -e 'true, false, null'
 tests/test.sh jsonmode/jsoniq-literals --json-mode jsoniq -e 'true, false, null'
 tests/test.sh jsonmode/deprecated-literals --json-mode deprecated -e 'true, false, null'
 tests/test.sh jsonmode/default-literals --json-mode default -e 'true, false, null'
+tests/test.sh jsonmode/standard-literals --json-mode default --xquery 'true, false, null'
 tests/test.sh jsonmode/standard-literals --no-json-literals --json-mode jsoniq -e 'true, false, null'
 tests/test.sh jsonmode/standard-literals --no-json-literals --json-mode deprecated -e 'true, false, null'
 tests/test.sh jsonmode/standard-literals --no-json-literals --json-mode default -e 'true, false, null'
@@ -499,12 +500,12 @@ tests/test.sh varlogAB -e 'x:clear-log(),a:=1,a:=2,b:=3,c:=4,x:clear-log("c"), t
 
 #interpreter tests
 tests/test.sh utf8  -e 'substring("äbcd",1,3)'
-tests/test.sh division --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a div .), " ")'
-tests/test.sh multiplication --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a * .), " ")'
-tests/test.sh addition --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a + .), " ")'
-tests/test.sh subtraction --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a - .), " ")'
-tests/test.sh divisionInt --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( try { ($a) idiv xs:double(.) } catch *  {$Q{http://www.w3.org/2005/xqt-errors}code} ), " ")'
-tests/test.sh modulo --xquery 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( try { $a mod . } catch *  {$Q{http://www.w3.org/2005/xqt-errors}code} ), " ")'
+tests/test.sh division --extract 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a div .), " ")'
+tests/test.sh multiplication --extract 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a * .), " ")'
+tests/test.sh addition --extract 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a + .), " ")'
+tests/test.sh subtraction --extract 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( $a - .), " ")'
+tests/test.sh divisionInt --extract 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( try { ($a) idiv xs:double(.) } catch *  {$Q{http://www.w3.org/2005/xqt-errors}code} ), " ")'
+tests/test.sh modulo --extract 'let $n := ("-INF", "-1", "-0", "NaN", "0", "1", "INF") for $a in $n return string-join( $n ! ( try { $a mod . } catch *  {$Q{http://www.w3.org/2005/xqt-errors}code} ), " ")'
 
 
 #parser
@@ -613,8 +614,8 @@ tests/test.sh moreActionsLocalPattern  --template-action local --template-file t
 tests/test.sh moreActions -e '"init"||get("res")' --template-action ac1 --template-file tests/more.actions --xquery '"res:" || $res, for $i in ("ac2", "local", "ac1", "ac2") return ( x:call-action($i), "res:"||$res)' #variables set by call-action are reordered before the extract print, since the values of the extract are only known after the for has finished
 tests/test.sh moreActions3  --template-file tests/more.actions  -e 't:=123,x:call-action("local"),x:call-action("foo?"),u:=456,h:=x:has-action("foo"),h:=x:has-action("ac2")'
 
-tests/test.sh eval  --xquery 'let $a := 123 return eval("declare function local:abc(){0};456",{"language": "xquery"})'
-tests/test.sh eval  --xquery 'declare variable $outer := 456; let $a := 123 return eval("declare function local:abc(){0};$outer",{"language": "xquery"})'
+tests/test.sh eval  --xquery 'let $a := 123 return eval("declare function local:abc(){0};456",map {"language": "xquery"})'
+tests/test.sh eval  --xquery 'declare variable $outer := 456; let $a := 123 return eval("declare function local:abc(){0};$outer",map {"language": "xquery"})'
 
 
 echo

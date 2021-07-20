@@ -293,6 +293,7 @@ end;
 
 
 type
+  trilean = (tUnknown, tTrue, tFalse);
 
   { TOptionReaderWrapper }
 
@@ -303,6 +304,7 @@ type
     function read(const name: string; var value: Extended): boolean; virtual; abstract;
     function read(const name: string; var value: IXQValue): boolean; virtual;
     function read(const name: string; var inputformat: TInputFormat): boolean; virtual;
+    function read(const name: string; var value: trilean): boolean; virtual;
   end;
 
   { TOptionReaderFromCommandLine }
@@ -550,12 +552,12 @@ TFollowToWrapper = class(TDataProcessing)
 end;
 
 { TProcessingContext }
-
 TXQueryCompatibilityOptions = record
-  JSONMode: (cjmDefault, cjmStandard, cjmJSONiq, cjmDeprecated);
-  noExtendedStrings, noJSON, noJSONliterals, onlyJSONObjects, noExtendedJson, strictTypeChecking, strictNamespaces: boolean;
+  JSONMode: (cjmUndefined, cjmUnified, cjmStandard, cjmJSONiq, cjmDeprecated);
+  noExtendedStrings, noJSON, noJSONliterals, onlyJSONObjects, noExtendedJson, strictTypeChecking, strictNamespaces: trilean;
   dotNotation: TXQPropertyDotNotation;
   ignoreNamespace: boolean;
+  procedure setUnknownToDefault(kind: TExtractionKind);
   procedure configureParsers;
   procedure configureParsers(kind: TExtractionKind);
 end;
@@ -642,15 +644,48 @@ begin
     else;
   end;
 end;
+
+procedure TXQueryCompatibilityOptions.setUnknownToDefault(kind: TExtractionKind);
+begin
+  if noJSON = tUnknown then noJSON := tFalse;
+  case kind of
+    ekPatternXML, ekPatternHTML, ekMultipage, ekDefault: begin
+      if JSONMode = cjmUndefined then JSONMode := cjmUnified;
+      if noExtendedStrings = tUnknown then noExtendedStrings := tFalse;
+      if noJSONliterals = tUnknown then begin
+        if JSONMode = cjmStandard then noJSONliterals := ttrue
+        else noJSONliterals:=tFalse;
+      end;
+      if onlyJSONObjects = tUnknown then onlyJSONObjects := tFalse;
+      if noExtendedJson = tUnknown then
+        if JSONMode in [cjmStandard,cjmJSONiq] then noExtendedJson := tTrue
+        else noExtendedJson := tFalse;
+      if strictTypeChecking = tUnknown then strictTypeChecking := tFalse;
+      if strictNamespaces = tUnknown then strictNamespaces := tFalse;
+      if dotNotation = xqpdnUndefined then dotNotation := xqpdnAllowUnambiguousDotNotation;
+    end;
+    else begin
+      if JSONMode = cjmUndefined then JSONMode := cjmStandard;
+      if noExtendedStrings = tUnknown then noExtendedStrings := tTrue;
+      if noJSONliterals = tUnknown then noJSONliterals:=tTrue;
+      if onlyJSONObjects = tUnknown then onlyJSONObjects := tFalse;
+      if noExtendedJson = tUnknown then noExtendedJson := tTrue;
+      if strictTypeChecking = tUnknown then strictTypeChecking := tTrue;
+      if strictNamespaces = tUnknown then strictNamespaces := tTrue;
+      if dotNotation = xqpdnUndefined then dotNotation := xqpdnDisallowDotNotation;
+    end;
+  end;
+end;
+
 procedure TXQueryCompatibilityOptions.configureParsers;
 begin
-  xpathparser.ParsingOptions.AllowExtendedStrings:= not NoExtendedStrings;
-  xpathparser.ParsingOptions.AllowJSONLiterals:=not NoJSONliterals;
+  xpathparser.ParsingOptions.AllowExtendedStrings := NoExtendedStrings = tFalse;
+  xpathparser.ParsingOptions.AllowJSONLiterals := NoJSONliterals = tFalse;
   xpathparser.ParsingOptions.AllowPropertyDotNotation:=DotNotation;
   case JSONMode of
     cjmDeprecated: begin
-      xpathparser.ParsingOptions.AllowJSON:=not NoJSON;
-      if not NoJSON and OnlyJSONObjects then begin
+      xpathparser.ParsingOptions.AllowJSON:=NoJSON = tfalse;
+      if (NoJSON = tfalse) and (OnlyJSONObjects = tTrue) then begin
         xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
         xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
       end;
@@ -670,7 +705,7 @@ begin
       GlobalJSONParseOptions := [jpoJSONiq];
       xpathparser.StaticContext.AllowJSONiqOperations := true;
     end;
-    cjmDefault: begin
+    cjmUnified: begin
       xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
       xpathparser.ParsingOptions.JSONObjectMode := xqjomMapAlias;
       xpathparser.ParsingOptions.AllowJSONiqTests := true;
@@ -678,15 +713,18 @@ begin
     end;
   end;
   setJSONFormat(globalDefaultInputFormat);
-  xpathparser.StaticContext.jsonPXPExtensions:=not NoExtendedJson;
-  xpathparser.StaticContext.strictTypeChecking:=StrictTypeChecking;
-  xpathparser.StaticContext.useLocalNamespaces:=not StrictNamespaces;
+  xpathparser.StaticContext.jsonPXPExtensions:=NoExtendedJson = tFalse;
+  xpathparser.StaticContext.strictTypeChecking:=StrictTypeChecking = tTrue;
+  xpathparser.StaticContext.useLocalNamespaces:=StrictNamespaces = tFalse;
   htmlparser.ignoreNamespaces := ignoreNamespace;
 end;
 
 procedure TXQueryCompatibilityOptions.configureParsers(kind: TExtractionKind);
+var mycopy: TXQueryCompatibilityOptions;
 begin
-  configureParsers();
+  mycopy := self;
+  mycopy.setUnknownToDefault(kind);
+  mycopy.configureParsers();
   case kind of
     ekPatternHTML, ekPatternXML: begin
       if kind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
@@ -771,6 +809,15 @@ begin
       'text': inputFormat := ifPlainText;
       else raise EXidelException.Create('Invalid input-format: '+temp);
     end;
+end;
+
+function TOptionReaderWrapper.read(const name: string; var value: trilean): boolean;
+var temp: boolean;
+begin
+  result := read(name, temp);
+  if not result then value := tUnknown
+  else if temp then value := tTrue
+  else value := tfalse;
 end;
 
 { TDataObject }
@@ -1667,12 +1714,12 @@ begin
       'standard': JSONMode:=cjmStandard;
       'jsoniq': JSONMode:=cjmJSONiq;
       'deprecated': JSONMode:=cjmDeprecated;
-      else{'standard': }JSONMode:=cjmDefault;
+      'unified': JSONMode := cjmUnified;
+      else{'standard': }JSONMode:=cjmUndefined;
     end;
     reader.read('no-json', NoJSON);
-    if NoJSON then writeln(stderr, 'no-json option is deprecated. use --json-mode');
-    if not reader.read('no-json-literals', NoJSONliterals)  then
-      NoJSONliterals := JSONMode = cjmStandard;
+    if NoJSON <> tUnknown then writeln(stderr, 'no-json option is deprecated. use --json-mode');
+    reader.read('no-json-literals', NoJSONliterals);
 
     if reader.read('dot-notation', tempstr) then begin
       case tempstr of
@@ -1690,9 +1737,7 @@ begin
         DotNotation := xqpdnDisallowDotNotation;
     end;
     reader.read('only-json-objects', OnlyJSONObjects);
-    if OnlyJSONObjects then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
-    if not reader.read('no-extended-json', NoExtendedJson) then
-      NoExtendedJson := JSONMode in [cjmStandard,cjmJSONiq];
+    if OnlyJSONObjects <> tUnknown then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
 
     reader.read('strict-type-checking', StrictTypeChecking);
     reader.read('strict-namespaces', StrictNamespaces);
@@ -3583,7 +3628,7 @@ begin
 
   mycmdLine.beginDeclarationCategory('XPath/XQuery compatibility options:');
 
-  mycmdline.declareString('json-mode', 'JSON mode: Possible values: standard, jsoniq, default, deprecated');
+  mycmdline.declareString('json-mode', 'JSON mode: Possible values: standard, jsoniq, unified, deprecated');
   mycmdline.declareFlag('no-json', 'Disables the JSONiq syntax extensions (like [1,2,3] and {"a": 1, "b": 2})');
   mycmdline.declareFlag('no-json-literals', 'Disables the json true/false/null literals');
   mycmdline.declareString('dot-notation', 'Specifies if the dot operator $object.property can be used. Possible values: off, on, unambiguous (default, does not allow $obj.prop, but ($obj).prop ) ', 'unambiguous');
