@@ -551,6 +551,15 @@ end;
 
 { TProcessingContext }
 
+TXQueryCompatibilityOptions = record
+  JSONMode: (cjmDefault, cjmStandard, cjmJSONiq, cjmDeprecated);
+  noExtendedStrings, noJSON, noJSONliterals, onlyJSONObjects, noExtendedJson, strictTypeChecking, strictNamespaces: boolean;
+  dotNotation: TXQPropertyDotNotation;
+  ignoreNamespace: boolean;
+  procedure configureParsers;
+  procedure configureParsers(kind: TExtractionKind);
+end;
+
 //Processing is done in processing contexts
 //A processing context can have its own data sources (TFollowTo or data sources of a nested processing context) or receive the data from its parent
 //To every data source actions are applied (e.g. tdownload or textraction). These actions can also yield new data sources (e.g. follow := assignments or nested processing contexts with yieldDataToParent)
@@ -581,10 +590,7 @@ TProcessingContext = class(TDataProcessing)
 
   silent, printPostData: boolean;
 
-  ignoreNamespace: boolean;
-  compatibilityJSONMode: (cjmDefault, cjmStandard, cjmJSONiq, cjmDeprecated);
-  compatibilityNoExtendedStrings,compatibilityNoJSON, compatibilityNoJSONliterals, compatibilityOnlyJSONObjects, compatibilityNoExtendedJson, compatibilityStrictTypeChecking, compatibilityStrictNamespaces: boolean;
-  compatibilityDotNotation: TXQPropertyDotNotation;
+  compatibility: TXQueryCompatibilityOptions;
   noOptimizations: boolean;
 
   yieldDataToParent: boolean;
@@ -626,6 +632,76 @@ var globalCurrentExtraction: TExtraction;
 
 
 type EInvalidArgument = Exception;
+
+var GlobalJSONParseOptions: TXQJsonParser.TOptions = [];
+procedure setJSONFormat(format: TInputFormat);
+begin
+  case format of //todo: cache?
+    ifJSON: xpathparser.DefaultJSONParser.options := [jpoAllowMultipleTopLevelItems, jpoLiberal, jpoAllowTrailingComma] + GlobalJSONParseOptions;
+    ifJSONStrict: xpathparser.DefaultJSONParser.options := [] + GlobalJSONParseOptions;
+    else;
+  end;
+end;
+procedure TXQueryCompatibilityOptions.configureParsers;
+begin
+  xpathparser.ParsingOptions.AllowExtendedStrings:= not NoExtendedStrings;
+  xpathparser.ParsingOptions.AllowJSONLiterals:=not NoJSONliterals;
+  xpathparser.ParsingOptions.AllowPropertyDotNotation:=DotNotation;
+  case JSONMode of
+    cjmDeprecated: begin
+      xpathparser.ParsingOptions.AllowJSON:=not NoJSON;
+      if not NoJSON and OnlyJSONObjects then begin
+        xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
+        xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
+      end;
+      GlobalJSONParseOptions := [jpoJSONiq];
+      xpathparser.StaticContext.AllowJSONiqOperations := true;
+    end;
+    cjmStandard: begin
+      xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
+      xpathparser.ParsingOptions.JSONObjectMode := xqjomForbidden;
+      xpathparser.ParsingOptions.AllowJSONiqTests := false;
+      xpathparser.StaticContext.AllowJSONiqOperations := false;
+    end;
+    cjmJSONiq: begin
+      xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
+      xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
+      xpathparser.ParsingOptions.AllowJSONiqTests := true;
+      GlobalJSONParseOptions := [jpoJSONiq];
+      xpathparser.StaticContext.AllowJSONiqOperations := true;
+    end;
+    cjmDefault: begin
+      xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
+      xpathparser.ParsingOptions.JSONObjectMode := xqjomMapAlias;
+      xpathparser.ParsingOptions.AllowJSONiqTests := true;
+      xpathparser.StaticContext.AllowJSONiqOperations := false;
+    end;
+  end;
+  setJSONFormat(globalDefaultInputFormat);
+  xpathparser.StaticContext.jsonPXPExtensions:=not NoExtendedJson;
+  xpathparser.StaticContext.strictTypeChecking:=StrictTypeChecking;
+  xpathparser.StaticContext.useLocalNamespaces:=not StrictNamespaces;
+  htmlparser.ignoreNamespaces := ignoreNamespace;
+end;
+
+procedure TXQueryCompatibilityOptions.configureParsers(kind: TExtractionKind);
+begin
+  configureParsers();
+  case kind of
+    ekPatternHTML, ekPatternXML: begin
+      if kind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
+      else htmlparser.TemplateParser.parsingModel := pmStrict;
+      htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
+    end;
+    ekDefault: begin
+      xpathparser.ParsingOptions.StringEntities:=xqseResolveLikeXQueryButIgnoreInvalid
+    end;
+    ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
+      xpathparser.ParsingOptions.StringEntities:=xqseDefault;
+    end;
+    ekMultipage: ;
+  end;
+end;
 
 constructor TFollowToXQVObject.create(const abasedata: IData; const av: IXQValue);
 begin
@@ -1586,49 +1662,49 @@ begin
   reader.read('input-format', followInputFormat);
 
   reader.read('json-mode', tempstr);
-  case tempstr of
-    'standard': compatibilityJSONMode:=cjmStandard;
-    'jsoniq': compatibilityJSONMode:=cjmJSONiq;
-    'deprecated': compatibilityJSONMode:=cjmDeprecated;
-    else{'standard': }compatibilityJSONMode:=cjmDefault;
-  end;
-  reader.read('no-json', compatibilityNoJSON);
-  if compatibilityNoJSON then writeln(stderr, 'no-json option is deprecated. use --json-mode');
-  if not reader.read('no-json-literals', compatibilityNoJSONliterals)  then
-    compatibilityNoJSONliterals := compatibilityJSONMode = cjmStandard;
-
-  if reader.read('dot-notation', tempstr) then begin
+  with compatibility do begin
     case tempstr of
-      'on': compatibilityDotNotation := xqpdnAllowFullDotNotation;
-      'off': compatibilityDotNotation := xqpdnDisallowDotNotation;
-      'unambiguous': compatibilityDotNotation := xqpdnAllowUnambiguousDotNotation;
+      'standard': JSONMode:=cjmStandard;
+      'jsoniq': JSONMode:=cjmJSONiq;
+      'deprecated': JSONMode:=cjmDeprecated;
+      else{'standard': }JSONMode:=cjmDefault;
     end;
-  end else if compatibilityJSONMode in [cjmStandard,cjmJSONiq] then
-    compatibilityDotNotation := xqpdnDisallowDotNotation
-   else
-    compatibilityDotNotation := xqpdnAllowUnambiguousDotNotation;
-  if reader.read('no-dot-notation', tempbool) then begin
-    writeln(stderr, 'no-dot-notation option is deprecated. use --dot-notation');
-    if tempbool = true then
-      compatibilityDotNotation := xqpdnDisallowDotNotation;
-  end;
-  reader.read('only-json-objects', compatibilityOnlyJSONObjects);
-  if compatibilityOnlyJSONObjects then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
-  if not reader.read('no-extended-json', compatibilityNoExtendedJson) then
-    compatibilityNoExtendedJson := compatibilityJSONMode in [cjmStandard,cjmJSONiq];
+    reader.read('no-json', NoJSON);
+    if NoJSON then writeln(stderr, 'no-json option is deprecated. use --json-mode');
+    if not reader.read('no-json-literals', NoJSONliterals)  then
+      NoJSONliterals := JSONMode = cjmStandard;
 
-  reader.read('strict-type-checking', compatibilityStrictTypeChecking);
-  reader.read('strict-namespaces', compatibilityStrictNamespaces);
-  reader.read('no-extended-strings', compatibilityNoExtendedStrings);
-  reader.read('ignore-namespaces', ignoreNamespace);
+    if reader.read('dot-notation', tempstr) then begin
+      case tempstr of
+        'on': DotNotation := xqpdnAllowFullDotNotation;
+        'off': DotNotation := xqpdnDisallowDotNotation;
+        'unambiguous': DotNotation := xqpdnAllowUnambiguousDotNotation;
+      end;
+    end else if JSONMode in [cjmStandard,cjmJSONiq] then
+      DotNotation := xqpdnDisallowDotNotation
+     else
+      DotNotation := xqpdnAllowUnambiguousDotNotation;
+    if reader.read('no-dot-notation', tempbool) then begin
+      writeln(stderr, 'no-dot-notation option is deprecated. use --dot-notation');
+      if tempbool = true then
+        DotNotation := xqpdnDisallowDotNotation;
+    end;
+    reader.read('only-json-objects', OnlyJSONObjects);
+    if OnlyJSONObjects then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
+    if not reader.read('no-extended-json', NoExtendedJson) then
+      NoExtendedJson := JSONMode in [cjmStandard,cjmJSONiq];
+
+    reader.read('strict-type-checking', StrictTypeChecking);
+    reader.read('strict-namespaces', StrictNamespaces);
+    reader.read('no-extended-strings', NoExtendedStrings);
+    reader.read('ignore-namespaces', ignoreNamespace);
+  end;
   reader.read('no-optimizations', noOptimizations);
 
 
 //deprecated:   if (length(extractions) > 0) and (extractions[high(extractions)].extractKind = ekMultipage) and (length(urls) = 0) then
 //    arrayAdd(urls, '<empty/>');
 //  if cmdLine.readString('data') <> '' then arrayAdd(urls, cmdLine.readString('data'));
-
-
 end;
 
 
@@ -1707,16 +1783,7 @@ begin
   silent := other.silent;
   printPostData := other.printPostData;
 
-  compatibilityNoExtendedStrings := other.compatibilityNoExtendedStrings;
-  compatibilityJSONMode:= other.compatibilityJSONMode;
-  compatibilityNoJSON := other.compatibilityNoJSON;
-  compatibilityNoJSONliterals := other.compatibilityNoJSONliterals;
-  compatibilityDotNotation := other.compatibilityDotNotation;
-  compatibilityOnlyJSONObjects := other.compatibilityOnlyJSONObjects;
-  compatibilityNoExtendedJson := other.compatibilityNoExtendedJson;
-  compatibilityStrictTypeChecking := other.compatibilityStrictTypeChecking;
-  compatibilityStrictNamespaces := other.compatibilityStrictNamespaces;
-  ignoreNamespace:=other.ignoreNamespace;
+  compatibility := other.compatibility;
   noOptimizations:=other.noOptimizations;
 
   followExclude := other.followExclude;
@@ -1788,7 +1855,6 @@ const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingMode
   xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1,
   xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
 );
-  GlobalJSONParseOptions: TXQJsonParser.TOptions = [];
 var GlobalDebugInfo: TObjectList;
 type
   TXQueryEngineHelper = class helper for TXQueryEngine
@@ -1820,14 +1886,6 @@ type
   end;
 
 
-procedure setJSONFormat(format: TInputFormat);
-begin
-  case format of //todo: cache?
-    ifJSON: xpathparser.DefaultJSONParser.options := [jpoAllowMultipleTopLevelItems, jpoLiberal, jpoAllowTrailingComma] + GlobalJSONParseOptions;
-    ifJSONStrict: xpathparser.DefaultJSONParser.options := [] + GlobalJSONParseOptions;
-    else;
-  end;
-end;
 
 function TProcessingContext.process(data: IData): TFollowToList;
 var next, res: TFollowToList;
@@ -1895,11 +1953,9 @@ var next, res: TFollowToList;
       followKind := self.followKind;
       globalDefaultInputFormat := followInputFormat;
       if followKind = ekAuto then followKind := guessExtractionKind(follow);
+      compatibility.configureParsers(followKind);
 
       if followKind in [ekPatternHTML, ekPatternXML] then begin
-        if followKind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
-        else htmlparser.TemplateParser.parsingModel := pmStrict;
-        htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
         htmlparser.parseTemplate(follow); //todo reuse existing parser
         htmlparser.parseHTML(data); //todo: optimize
         for i:=0 to htmlparser.variableChangeLog.count-1 do
@@ -1909,8 +1965,6 @@ var next, res: TFollowToList;
       end else begin
         //assume xpath like
         xpathparser.StaticContext. BaseUri := data.baseUri;
-        if followKind = ekDefault then xpathparser.ParsingOptions.StringEntities:=xqseResolveLikeXQueryButIgnoreInvalid
-        else xpathparser.ParsingOptions.StringEntities:=xqseDefault;
         loadDataForQueryPreParse(data);
         if followQueryCache = nil then
           case followKind of
@@ -1930,44 +1984,7 @@ var
   curRecursionLevel: Integer;
 begin
   //init
-  xpathparser.ParsingOptions.AllowExtendedStrings:= not compatibilityNoExtendedStrings;
-  xpathparser.ParsingOptions.AllowJSONLiterals:=not compatibilityNoJSONliterals;
-  xpathparser.ParsingOptions.AllowPropertyDotNotation:=compatibilityDotNotation;
-  case compatibilityJSONMode of
-    cjmDeprecated: begin
-      xpathparser.ParsingOptions.AllowJSON:=not compatibilityNoJSON;
-      if not compatibilityNoJSON and compatibilityOnlyJSONObjects then begin
-        xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
-        xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
-      end;
-      GlobalJSONParseOptions := [jpoJSONiq];
-      xpathparser.StaticContext.AllowJSONiqOperations := true;
-    end;
-    cjmStandard: begin
-      xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
-      xpathparser.ParsingOptions.JSONObjectMode := xqjomForbidden;
-      xpathparser.ParsingOptions.AllowJSONiqTests := false;
-      xpathparser.StaticContext.AllowJSONiqOperations := false;
-    end;
-    cjmJSONiq: begin
-      xpathparser.ParsingOptions.JSONArrayMode := xqjamJSONiq;
-      xpathparser.ParsingOptions.JSONObjectMode := xqjomJSONiq;
-      xpathparser.ParsingOptions.AllowJSONiqTests := true;
-      GlobalJSONParseOptions := [jpoJSONiq];
-      xpathparser.StaticContext.AllowJSONiqOperations := true;
-    end;
-    cjmDefault: begin
-      xpathparser.ParsingOptions.JSONArrayMode := xqjamStandard;
-      xpathparser.ParsingOptions.JSONObjectMode := xqjomMapAlias;
-      xpathparser.ParsingOptions.AllowJSONiqTests := true;
-      xpathparser.StaticContext.AllowJSONiqOperations := false;
-    end;
-  end;
   setJSONFormat(globalDefaultInputFormat);
-  xpathparser.StaticContext.jsonPXPExtensions:=not compatibilityNoExtendedJson;
-  xpathparser.StaticContext.strictTypeChecking:=compatibilityStrictTypeChecking;
-  xpathparser.StaticContext.useLocalNamespaces:=not compatibilityStrictNamespaces;
-  htmlparser.ignoreNamespaces := ignoreNamespace;
 
   //apply all actions to all data source
   next := TFollowToList.Create;
@@ -2387,13 +2404,11 @@ begin
     setJSONFormat(globalDefaultInputFormat);
   end;
   globalCurrentExtraction := self;
+  parent.compatibility.configureParsers(extractKind);
 
   case extractKind of
     ekPatternHTML, ekPatternXML: begin
       htmlparser.UnnamedVariableName:=defaultName;
-      htmlparser.QueryEngine.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
-      if extractKind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
-      else htmlparser.TemplateParser.parsingModel := pmStrict;
       htmlparser.parseTemplate(extract); //todo reuse existing parser
       htmlparser.parseHTML(data); //todo: full url is abs?
       prepareForOutput(data);
@@ -2401,9 +2416,6 @@ begin
     end;
     ekDefault, ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
       xpathparser.StaticContext.BaseUri := fileNameExpandToURI(data.baseUri);
-      if extractKind = ekDefault then xpathparser.ParsingOptions.StringEntities:=xqseResolveLikeXQueryButIgnoreInvalid
-      else xpathparser.ParsingOptions.StringEntities:=xqseDefault;
-
       parent.loadDataForQueryPreParse(data);
       if extractQueryCache = nil then begin
         if extractBaseUri <> '' then xpathparser.StaticContext.baseURI := fileNameExpandToURI(extractBaseUri);
@@ -3664,8 +3676,7 @@ begin
     if (length(baseContext.actions) = 0) and (baseContext.follow = '') and not mycmdline.readFlag('version') then begin
       if (ParamCount = 1) and FileExists(paramstr(1)) then begin
         SetLength(baseContext.dataSources, 0);
-        SetLength(baseContext.actions, 1);
-        baseContext.actions[0] := TExtraction.create;
+        baseContext.addNewAction(TExtraction.create);
         TExtraction(baseContext.actions[0]).extract := strLoadFromFileChecked(ParamStr(1));
         TExtraction(baseContext.actions[0]).extractBaseUri := ParamStr(1);
         baseContext.silent := true;
