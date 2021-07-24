@@ -3078,12 +3078,15 @@ end;
 
 procedure TCommandLineReaderBreaker.setProperties(newProperties: TPropertyArray);
 begin
-  propertyArray := newProperties;
+  propertyArrayBuffer := newProperties;
+  propertyCount := length(newProperties);
 end;
 
 function TCommandLineReaderBreaker.getProperties: TPropertyArray;
 begin
-  result := propertyArray;
+  result := propertyArrayBuffer;
+  if length(result) <> propertyCount then
+    setlength(result, propertyCount)
 end;
 
 procedure TCommandLineReaderBreaker.parseUTF8(autoReset: boolean = true);
