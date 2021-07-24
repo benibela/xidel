@@ -25,6 +25,8 @@ unit xidelbase;
 {$modeswitch typehelpers}
 {$COperators on}{$goto on}{$inline on}
 
+//{$define FREE_ALL_MEMORY_ON_EXIT}
+
 interface
 
 uses
@@ -3795,7 +3797,7 @@ begin
     globalDuplicationList := TFollowToList.Create;
   try
     baseContext.process(nil).free;
-    baseContext.Free;
+    {$ifdef FREE_ALL_MEMORY_ON_EXIT}baseContext.Free;{$endif}
   except
     on e: ETreeParseException do begin
       displayError(e);
@@ -3835,11 +3837,6 @@ begin
     end;
   end;
 //  DumpHeap(false);
-  if allowInternetAccess then multipage.Free
-  else htmlparser.free;
-  globalDuplicationList.Free;
-  GlobalDebugInfo.Free;
-  alternativeXMLParser.Free;
 
   case outputFormat of
     {ofJsonWrapped:  wln(']');
@@ -3856,8 +3853,17 @@ begin
 
   endOutput(mycmdline);
 
+  {$ifdef FREE_ALL_MEMORY_ON_EXIT}
+  if allowInternetAccess then multipage.Free
+  else htmlparser.free;
+  globalDuplicationList.Free;
+  GlobalDebugInfo.Free;
+  alternativeXMLParser.Free;
   mycmdLine.free;
   tracer.free;
+  {$else}
+  createMemoryLeakOnExit := true;
+  {$endif}
 end;
 
 
