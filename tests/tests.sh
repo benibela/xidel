@@ -305,6 +305,7 @@ tests/test.sh jsonmode/standard --json-mode standard --json-mode standard --xque
 tests/test.sh jsonmode/jsoniq --json-mode jsoniq  --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )' 
 tests/test.sh jsonmode/deprecated  --json-mode deprecated --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
 tests/test.sh jsonmode/default  --json-mode unified --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
+tests/test.sh jsonmode/default  --disable-no-extended-json --xquery 'let $x := <a><b>c</b></a>//b, $o := map {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
 
 tests/test.sh jsonmode/standard-equals - --json-mode standard -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json
 tests/test.sh jsonmode/jsoniq-equals - --json-mode jsoniq -e 'for $j in (json($raw), jn:parse-json($raw), parse-json($raw)) return deep-equal($json, $j)' < tests/data2.json

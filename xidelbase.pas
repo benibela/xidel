@@ -1740,6 +1740,8 @@ begin
     end;
     reader.read('only-json-objects', OnlyJSONObjects);
     if OnlyJSONObjects <> tUnknown then writeln(stderr, 'only-json-objects option is deprecated. use --json-mode');
+    reader.read('no-extended-json', noExtendedJson);
+
 
     reader.read('strict-type-checking', StrictTypeChecking);
     reader.read('strict-namespaces', StrictNamespaces);
