@@ -792,6 +792,8 @@ end;
 
 function TOptionReaderWrapper.read(const name: string; var value: IXQValue): boolean;
 begin
+  ignore(name);
+  ignore(value);
   result := false;
 end;
 
@@ -799,7 +801,7 @@ function TOptionReaderWrapper.read(const name: string ; var inputformat: TInputF
 var
   temp: String = '';
 begin
-  result := read('input-format', temp);
+  result := read(name, temp);
   if result then
     case temp of
       'auto': inputFormat:=ifAuto;
@@ -814,7 +816,7 @@ begin
 end;
 
 function TOptionReaderWrapper.read(const name: string; var value: trilean): boolean;
-var temp: boolean;
+var temp: boolean = false;
 begin
   result := read(name, temp);
   if not result then value := tUnknown
