@@ -323,17 +323,15 @@
     </PublishOptions>
     <RunParams>
       <local>
-        <CommandLineParams Value="--input-format html '&lt;e>'  -f '{&quot;data&quot;: &quot;tests/dtd.xml&quot;, &quot;input-format&quot;: &quot;xml-strict&quot;, &quot;xx--yy--non-pure-caße!&quot;: 1}'  -e /"/>
+        <CommandLineParams Value="--extract &quot;akt.url:=(((map {})//books)()[regions/shortName='...'])&quot;"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
-        <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
       </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
           <local>
-            <CommandLineParams Value="--input-format html '&lt;e>'  -f '{&quot;data&quot;: &quot;tests/dtd.xml&quot;, &quot;input-format&quot;: &quot;xml-strict&quot;, &quot;xx--yy--non-pure-caße!&quot;: 1}'  -e /"/>
+            <CommandLineParams Value="--extract &quot;akt.url:=(((map {})//books)()[regions/shortName='...'])&quot;"/>
             <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
-            <WorkingDirectory Value="/home/benito/hg/programs/internet/xidel/"/>
           </local>
         </Mode0>
       </Modes>

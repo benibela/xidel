@@ -7,9 +7,12 @@ Some important changes:
 - --json-mode option to switch between XPath 3.1 or JSONiq syntax for JSON processing, or (default) a mix of both
 - New extension functions: 
     * x:request-decode to parse the parameters of a HTTP request
-    * inner-text to get the visible text from a HTML page
+    * inner-text to get the visible text from a HTML page (no full CSS support)
     * matched-text for use in pattern matching (this replaces the text() function. stop using text() in patterns. text() is now deprecated and will be replaced by the standard ./text() kind test)
-    * new behaviour for form() when building an HTTP request to submit a HTML <form> element: The <form> element has become optional and defaults to the first <form> element on the current webpage. Additional values can be given as sequence, and each item of the sequence is sent separately, for example, key:(1,2) sends key=1&key=2 and key:() sends nothing for that key.
+    * new behaviour for form() when building an HTTP request to submit a HTML <form> element: 
+      The <form> element has become optional and defaults to the first <form> element on the current webpage. 
+      Additional values can be given as sequence, and each item of the sequence is sent separately, for example, {"key":(1,2)} sends key=1&key=2 and {"key":()} sends nothing for that key.
+      Handles rarer elements like image buttons or _charset_ input elements.
     * x:replace-nodes to replace nodes (replacing the deprecated pxp:transform function)
 - --in-place option to override the input file with the output
 - <json> element in multipage templates to download JSON data
@@ -19,7 +22,7 @@ Some important changes:
 - improved parsing and serialization: faster, options for x:serialize-json; do not escape &#nbsp; for XML/HTML
 - improved error messages
 - reduced memory usage
-- compiled with FreePascal r47006
+- compiled with newer FreePascal
 
 --------Xidel 0.9.8 --------
 (2018-04-02)
