@@ -152,6 +152,7 @@ src)
         SRCDIR=/tmp/xidel-$VERSION-src
         rm -R $SRCDIR || true
         cp -r $PUBLICHG $SRCDIR
+        cp xidelbuilddata.inc $SRCDIR/programs/internet/xidel/
         cd /tmp
         rm -Rvf $SRCDIR/programs/internet/VideLibri $SRCDIR/programs/internet/sourceforgeresponder/
         
