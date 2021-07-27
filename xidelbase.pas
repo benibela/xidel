@@ -3714,6 +3714,8 @@ begin
   if (currentContext.parent = nil) and (baseContext.nextSibling = currentContext) and (length(baseContext.dataSources) = 0) and (length(currentContext.actions) = 0) and (currentContext.follow = '') then begin
     //wrap command lines exactly like -e query data1 data2... to data1 data2... -e query, (for e.g. xargs)
     currentContext.actions := baseContext.actions;
+    for i := 0 to high(currentContext.actions) do
+      currentContext.actions[i].parent := currentContext;
     if (length(currentContext.actions) <> 0) and not (currentContext.actions[high(currentContext.actions)] is TProcessingContext) then
       currentContext.actions[high(currentContext.actions)].readOptions(cmdlineWrapper); //last options wrap back, unless in [ ]
     SetLength(baseContext.actions,0);
