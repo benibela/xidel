@@ -2828,7 +2828,7 @@ function loadModuleFromAtUrl(const at, base: string): IXQuery; forward;
 
 procedure traceCall({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; value, info: IXQValue);
 begin
-  if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
+  if assigned(info) and not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
   writeln(stderr, value.toXQuery());
 end;
 
