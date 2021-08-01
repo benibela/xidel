@@ -42,19 +42,6 @@ uses //heaptrc,
  { TTemplateReaderBreaker }
 
 
-function prepareInternet(const userAgent, proxy: string; hasProxySettings: boolean; onReact: TTransferReactEvent): TInternetAccess;
-begin
-  defaultInternetConfiguration.userAgent:=userAgent;
-  defaultInternetConfiguration.setProxy(proxy);
-  defaultInternetConfiguration.tryDefaultConfig := not hasProxySettings;
-  if assigned(internetaccess.defaultInternet.internetConfig) then begin
-    internetaccess.defaultInternet.internetConfig^.userAgent := userAgent;
-    internetaccess.defaultInternet.internetConfig^.setProxy(proxy);
-  end;
-  result := internetaccess.defaultInternet;
-  defaultInternetAccessClass := TInternetAccessClass( result.ClassType);
-  result.OnTransferReact := onReact;
-end;
 
 function retrieve(const method, url, post, headers: string): string;
 var
@@ -91,7 +78,6 @@ begin
   xidelbase.cgimode := false;
   xidelbase.allowInternetAccess := true;
   xidelbase.mycmdline := TCommandLineReader.create;
-  xidelbase.onPrepareInternet := @prepareInternet;
   xidelbase.onRetrieve := @retrieve;
 
 

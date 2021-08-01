@@ -55,7 +55,6 @@ var cgimode: boolean = false;
 
 var
     onPostParseCmdLine: procedure ();
-    onPrepareInternet: function (const useragent, proxy: string; hasProxySettings: boolean; onReact: TTransferReactEvent): tinternetaccess;
     onRetrieve: function (const method, url, postdata, headers: string): string;
     onPreOutput: procedure (extractionKind: TExtractionKind);
 
@@ -164,8 +163,11 @@ end;
 
 /////////////////////////////////////////////////////
 
-var
-    internet: TInternetAccess;
+function internet: TInternetAccess;
+begin
+  if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
+  result := defaultInternet;
+end;
 
 type TInputFormat = (ifAuto, ifXML, ifHTML, ifXMLStrict, ifJSON, ifJSONStrict, ifPlainText);
 
@@ -598,6 +600,8 @@ TProcessingContext = class(TDataProcessing)
   noOptimizations: boolean;
 
   yieldDataToParent: boolean;
+
+  procedure configureInternet;
 
   procedure printStatus(s: string);
 
@@ -1097,8 +1101,7 @@ var
   i: Integer;
   d: TDataObject;
 begin
-  if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
-  if assigned(onPrepareInternet) then  internet := onPrepareInternet(parent.userAgent, parent.proxy,  parent.hasProxySettings, @parent.httpReact);
+  parent.configureInternet;
   if (parent.loadCookies <> '') then begin
     internet.cookies.loadFromFile(parent.loadCookies);
     parent.loadCookies := ''; //only need to load them once?
@@ -1669,6 +1672,15 @@ begin
 end;
 
 { TProcessingRequest }
+
+procedure TProcessingContext.configureInternet;
+begin
+  if not allowInternetAccess then raise EXidelException.Create('Internet access not permitted');
+  defaultInternetConfiguration.userAgent:=userAgent;
+  defaultInternetConfiguration.setProxy(proxy);
+  defaultInternetConfiguration.tryDefaultConfig := not hasProxySettings;
+  defaultInternet.OnTransferReact := @httpReact;
+end;
 
 procedure TProcessingContext.printStatus(s: string);
 begin
@@ -2491,11 +2503,12 @@ begin
         htmlparser.oldVariableChangeLog.setOverride(defaultName, value);
       end;
     end;
-    ekMultipage: if assigned (onPrepareInternet) then begin
+    ekMultipage: begin
       xpathparser.ParsingOptions.StringEntities:=xqseIgnoreLikeXPath;
       multipage.onPageProcessed:=@pageProcessed;
       if parent.silent then multipage.onLog := nil else multipage.onLog := @multipage.selfLog;
-      multipage.internet := onPrepareInternet(parent.userAgent, parent.proxy, parent.hasProxySettings,@parent.httpReact);
+      parent.configureInternet();
+      multipage.internet := internet;
       multipagetemp := TMultiPageTemplate.create();
       if extract = '' then raise Exception.Create('Multipage-action-template is empty');
       multipagetemp.loadTemplateFromString(extract, ExtractFileName(extractBaseUri), ExtractFileDir(extractBaseUri));
@@ -3753,8 +3766,8 @@ begin
 
 
 
-  if allowInternetAccess and assigned(onPrepareInternet) then begin
-    onPrepareInternet(baseContext.userAgent, baseContext.proxy, baseContext.hasProxySettings,@baseContext.httpReact);
+  if allowInternetAccess then begin
+    baseContext.configureInternet;
     defaultInternetConfiguration.checkSSLCertificates := not mycmdLine.readFlag('no-check-certificate');
     defaultInternetConfiguration.CAFile := mycmdLine.readString('ca-certificate');
     if defaultInternetConfiguration.CAFile = '' then begin
