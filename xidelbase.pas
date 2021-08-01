@@ -629,7 +629,7 @@ private
   procedure loadDataForQueryPreParse(const data: IData);
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
   function evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
-  procedure httpReact (sender: TInternetAccess; var {%H-}method: string; var {%H-}url: TDecodedUrl; var {%H-}data:TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
+  procedure httpReact (sender: TInternetAccess; var transfer: TTransfer; var reaction: TInternetAccessReaction);
 end;
 
 var globalCurrentExtraction: TExtraction;
@@ -1123,14 +1123,14 @@ begin
   if parent.printReceivedHeaders and assigned(internet) then begin
     parent.printStatus('** Headers: (status: '+inttostr(internet.lastHTTPResultCode)+')**');
     for i:=0 to internet.lastHTTPHeaders.Count-1 do
-      wln(internet.lastHTTPHeaders[i]);
+      wln(internet.lastHTTPHeaders.Strings[i]);
   end;
   if Assigned(internet) then begin
     d := (result as TDataObject);
     d.fcontenttype := internet.getLastContentType;
     d.fheaders := TStringList.Create;
     for i := 0 to internet.lastHTTPHeaders.count - 1 do
-      d.fheaders.Add(internet.lastHTTPHeaders[i]);
+      d.fheaders.Add(internet.lastHTTPHeaders.Strings[i]);
   end;
   with result as TDataObject do begin
     finputFormat := self.inputFormat;
@@ -2183,8 +2183,7 @@ begin
   end;
 end;
 
-procedure TProcessingContext.httpReact(sender: TInternetAccess; var method: string; var url: TDecodedUrl;
-  var data: TInternetAccessDataBlock; var reaction: TInternetAccessReaction);
+procedure TProcessingContext.httpReact(sender: TInternetAccess; var transfer: TTransfer; var reaction: TInternetAccessReaction);
 begin
   stupidHTTPReactionHackFlag := 0;
   case TInternetAccess.reactFromCodeString(errorHandling, sender.lastHTTPResultCode, reaction) of
