@@ -1680,6 +1680,7 @@ begin
   defaultInternetConfiguration.setProxy(proxy);
   defaultInternetConfiguration.tryDefaultConfig := not hasProxySettings;
   defaultInternet.OnTransferReact := @httpReact;
+  defaultInternet.config := @defaultInternetConfiguration;
 end;
 
 procedure TProcessingContext.printStatus(s: string);
@@ -3997,11 +3998,9 @@ begin
     end;
 
   finally
-    defaultInternetConfiguration := oldInternetConfig;
     if assigned(internetaccess.defaultInternet) then begin
-      if assigned(internetaccess.defaultInternet.internetConfig) then
-        internetaccess.defaultInternet.internetConfig^ := oldInternetConfig; //this is not necessary??
-      internetaccess.defaultInternet.OnTransferReact := oldReact; //this is. otherwise it points to fakeContext and the next download might crash
+      internetaccess.defaultInternet.config := @oldInternetConfig;
+      internetaccess.defaultInternet.OnTransferReact := oldReact;
     end;
 
 
