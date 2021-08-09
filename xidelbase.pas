@@ -3922,6 +3922,7 @@ begin
   try
     proc.Options := proc.Options + [poUsePipes] - [poWaitOnExit];
     proc.Execute;
+    proc.CloseInput;
     while proc.Running do begin
       readPipes;
       if totalcount = 0 then sleep(100);
