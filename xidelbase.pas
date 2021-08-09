@@ -31,7 +31,7 @@ interface
 
 uses
   Classes,         {$ifdef windows} windows, {$endif}
-  extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
+  extendedhtmlparser,  xquery, sysutils, bbutils, bbutilsbeta, simplehtmltreeparser, multipagetemplate,
   internetaccess, contnrs, simplexmltreeparserfpdom,
   xquery_module_file,
   //xquery_module_binary,
@@ -3894,14 +3894,44 @@ var
   builder: TStrBuilder;
   Buffer:  array[1..BUF_SIZE] of byte;
   count, totalcount: LongInt;
+  inputData, tempXQV: TXQValue;
+  inputEncoding: TSystemCodePage = CP_UTF8;
+  outputEncoding: TSystemCodePage = CP_UTF8;
+
+  procedure writeInputPipe;
+  var view: TCharArrayView;
+      tempstr: string;
+  begin
+    case inputData.kind of
+      pvkString: begin
+        tempstr := inputdata.toString;
+        if inputEncoding <> CP_UTF8 then tempstr := strConvert(tempstr, CP_UTF8, inputEncoding);
+        view := tempstr.unsafeView();
+      end;
+      pvkBinary: view := inputdata.toBinaryBytes.unsafeView();
+      else raise EXQEvaluationException.create('pxp:system', 'Invalid value for stdin');
+    end;
+    proc.Input.Write(view.data^, view.length);
+
+  end;
 
   procedure readPipes;
+    procedure convertStdoutEncoding;
+    var temp: widestring = '';
+        temp2: RawByteString = '';
+    begin
+      widestringmanager.Ansi2WideMoveProc(@buffer[1], outputEncoding, temp, count);
+      widestringmanager.Wide2AnsiMoveProc(@temp[1], temp2, CP_UTF8, length(temp));
+      builder.append(temp2);
+    end;
+
   begin
     count := min(proc.Output.NumBytesAvailable, BUF_SIZE);
     totalcount := count;
     if count > 0 then begin
       count := proc.Output.Read(buffer{%H-}, count);
-      builder.append(@buffer[1], count);
+      if outputEncoding = CP_UTF8 then builder.append(@buffer[1], count)
+      else convertStdoutEncoding;
     end;
     if proc.Stderr <> nil then begin
       count := min(proc.Stderr.NumBytesAvailable, BUF_SIZE);
@@ -3913,15 +3943,21 @@ var
     end;
   end;
 
+
 begin
   if cgimode or not allowFileAccess then exit(xqvalue('Are you trying to hack an OSS project? Shame on you!'));
-  requiredArgCount(argc, 1);
+  requiredArgCount(argc, 1, 2);
   proc := TProcess.Create(nil);
   proc.CommandLine := args[0].toString;
   builder.init(@temps);
   try
     proc.Options := proc.Options + [poUsePipes] - [poWaitOnExit];
     proc.Execute;
+    if (argc = 2) then begin
+      if args[1].hasProperty('stdout-encoding', @tempXQV) then outputEncoding := strEncodingFromName(tempXQV.toString);
+      if args[1].hasProperty('stdin-encoding', @tempXQV) then inputEncoding := strEncodingFromName(tempXQV.toString);
+      if args[1].hasProperty('stdin', @inputData) then writeInputPipe;
+    end;
     proc.CloseInput;
     while proc.Running do begin
       readPipes;
@@ -4236,7 +4272,7 @@ initialization
 
   with globalTypes do begin
     pxp := TXQueryEngine.findNativeModule(XMLNamespaceUrl_MyExtensionsNew).parents[0];
-    pxp.registerBasicFunction('system', @xqfSystem, [stringt, stringt]);
+    pxp.registerFunction('system', @xqfSystem).setVersionsShared([stringt, stringt], [stringt, map, stringt]);
     pxp.registerBasicFunction('read', @xqfRead, [untypedAtomic]);
     pxpx := TXQueryEngine.findNativeModule(XMLNamespaceURL_MyExtensionsNew);
     pxpx.registerFunction('request', @xqfRequest, [xqcdContextOther]).setVersionsShared([itemStar, mapStar]);
