@@ -2932,8 +2932,10 @@ procedure TXQTracer.printLastContext;
 //  vars: TXQVariableChangeLog;
 begin
   writeln(stderr, 'Dynamic context: ');
-  if lastContext.RootElement <> nil then writeln(stderr, '  root node: ', lastContext.ParentElement.toString());
-  if lastContext.ParentElement <> nil then writeln(stderr, '  parent node: ', lastContext.ParentElement.toString());
+  if lastContext.extensionContext <> nil then begin
+    if lastContext.extensionContext^.RootElement <> nil then writeln(stderr, '  root node: ', lastContext.extensionContext^.ParentElement.toString());
+    if lastContext.extensionContext^.ParentElement <> nil then writeln(stderr, '  parent node: ', lastContext.extensionContext^.ParentElement.toString());
+  end;
   if lastContext.SeqValue <> nil then writeln(stderr, '  context item (.): ', lastContext.SeqValue.toXQuery());
   writeln(stderr, '  position()/last(): ', lastContext.SeqIndex, ' / ', lastContext.SeqLength);
   {vars := lastContext.temporaryVariables;
