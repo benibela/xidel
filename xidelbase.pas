@@ -2837,7 +2837,7 @@ begin
 end;
 
 var modulePaths: TStringArray;
-function loadModuleFromAtUrl(const at, base: string): IXQuery; forward;
+function loadAndImportModuleFromAtUrl(const at, base: string): IXQuery; forward;
 
 procedure traceCall({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; value, info: IXQValue);
 begin
@@ -3233,14 +3233,14 @@ procedure variableRead({%H-}pseudoself: TObject; sender: TObject; const name, va
     i := pos('=', value);
     if i > 0 then prefix := strSplitGet('=', value)
     else prefix := '';
-    q := loadModuleFromAtUrl(value, xpathparser.StaticContext.baseURI);
+    q := loadAndImportModuleFromAtUrl(value, xpathparser.StaticContext.baseURI);
     if q = nil then raise Exception.Create('Failed to load module ' + value);
     namespace := (q as TXQuery).getStaticContext.moduleNamespace;
     if namespace = nil then raise Exception.Create('File ' + value + ' is not a module (it should start with "module namespace ... ;" ).');
     xpathparser.registerModule(q);
     if xpathparser.staticContext.importedModules = nil then xpathparser.staticContext.importedModules := TXQMapStringObject.Create;
     if prefix = '' then prefix := namespace.getPrefix;
-    xpathparser.staticContext.importedModules.AddObject(prefix, q as txquery);
+    xpathparser.staticContext.importedModules.AddObject(prefix, xpathparser.findModule(namespace.getURL));
   end;
 
 var
@@ -3424,8 +3424,9 @@ begin
 end;
 
 var baseContext: TProcessingContext;
+    loadedModules: array of string;
 
-function loadModuleFromAtUrl(const at, base: string): IXQuery;
+function loadAndImportModuleFromAtUrl(const at, base: string): IXQuery;
 var d: IData;
   ft: TFollowTo;
   url, oldBaseUri: String;
@@ -3449,7 +3450,10 @@ begin
     if d <> nil then break;
   end;
   baseContext.silent := oldSilent;
-  if d = nil then exit(nil);
+  if (d = nil) or (d.rawData = '') then exit(nil);
+  for i := 0 to high(loadedModules) do
+    if loadedModules[i] = d.rawData then exit(nil); //do not load identical modules twice
+  SetLength(loadedModules, length(loadedModules) + 1); loadedModules[high(loadedModules)] := d.rawData;
   oldBaseUri := xpathparser.StaticContext.baseURI;
   xpathparser.StaticContext.baseURI := url;
   result := xpathparser.parseQuery(d.rawData, xqpmXQuery3_1);
@@ -3468,17 +3472,11 @@ end;
 
 procedure importModule({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; context: TXQStaticContext; const namespace: string; const at: array of string);
 var
-  q: IXQuery;
   i: SizeInt;
 begin
   if xpathparser.findModule(namespace) <> nil then exit;
-  for i := 0 to high(at) do begin
-    q := loadModuleFromAtUrl(at[i], context.baseURI);
-    if q <> nil then begin
-      xpathparser.registerModule(q);
-      exit
-    end;
-  end;
+  for i := 0 to high(at) do
+    loadAndImportModuleFromAtUrl(at[i], context.baseURI);
 end;
 
 procedure OnWarningDeprecated({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; warning: string);
