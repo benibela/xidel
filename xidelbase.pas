@@ -4249,7 +4249,7 @@ begin
   fn.findComplexFunction('doc-available', 1).func:=@xqFunctionBlocked;
   for i := 1 to 2 do begin
     fn.findComplexFunction('unparsed-text', i).func:=@xqFunctionBlocked;
-    fn.findInterpretedFunction('unparsed-text-lines', i).source:='"not available in cgi mode"';
+    fn.findInterpretedFunction('unparsed-text-lines', i).sourceImplementation:='"not available in cgi mode"';
     fn.findComplexFunction('unparsed-text-available', i).func:=@xqFunctionBlocked;
   end;
   fn.findBasicFunction('environment-variable', 1).func:=@xqFunctionBlockedSimple;
