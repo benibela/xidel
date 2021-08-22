@@ -518,6 +518,7 @@ TExtraction = class(TDataProcessing)
  printTypeAnnotations,  hideVariableNames: boolean;
  printedNodeFormat: TTreeNodeSerialization;
  printedJSONFormat: (jisDefault, jisPretty, jisCompact);
+ printedJSONKeyOrder: TXQKeyOrder;
  inplaceOverride: boolean;
 
  inputFormat: TInputFormat;
@@ -1654,6 +1655,8 @@ begin
       'compact': printedJSONFormat := jisCompact;
     end;
   end;
+  if reader.read('output-key-order', tempstr) then
+    printedJSONKeyOrder:=XQKeyOrderFromString(tempstr);
 
   reader.read('input-format', inputFormat);
 
@@ -2278,6 +2281,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
             else tempSerializer.insertWhitespace := xqsiwIndent;
           jisCompact: tempSerializer.insertWhitespace := xqsiwConservative;
         end;
+        tempSerializer.keyOrderExtension := printedJSONKeyOrder;
         v.jsonSerialize(tempSerializer);
         tempSerializer.final;
         result := escape(result);
@@ -2552,6 +2556,7 @@ begin
   hideVariableNames := other.hideVariableNames;
   printedNodeFormat := other.printedNodeFormat;
   printedJSONFormat := other.printedJSONFormat;
+  printedJSONKeyOrder := other.printedJSONKeyOrder;
 
   inputFormat := inputFormat;
 end;
@@ -3644,6 +3649,8 @@ begin
   mycmdLine.declareString('output-separator', 'Separator between multiple items (default: line break)', LineEnding);
   mycmdLine.declareString('output-header', '2nd header for the output. (e.g. <html>)', '');
   mycmdLine.declareString('output-footer', 'Footer for the output. (e.g. </html>)', '');
+  mycmdLine.declareString('output-key-order', 'Order of JSON keys', 'insertion');
+  mycmdline.addEnumerationValues(['insertion', 'ascending', 'descending']);
   mycmdLine.declareString('color', 'Coloring option (never,always,json,xml)', ifthen(cgimode, 'never', 'auto'));
 
   mycmdLine.declareString('stdin-encoding', 'Character encoding of stdin', 'utf-8');
