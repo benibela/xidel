@@ -2252,6 +2252,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
   end;
 
   function singletonToString(const v: IXQValue): string;
+  var tempSerializer: TXQSerializer;
   begin
     case v.kind of
       pvkNode: begin
@@ -2267,7 +2268,19 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper(mycmdline);
-        result := escape(v.jsonSerialize(printedNodeFormat, (printedJSONFormat = jisPretty) or (not invariable and (printedJSONFormat <> jisCompact))));
+        tempSerializer.init(@result);
+        tempSerializer.nodeFormat := printedNodeFormat;
+        case printedJSONFormat of
+          jisPretty: tempSerializer.insertWhitespace := xqsiwIndent;
+          jisDefault:
+            if outputFormat in [ofBash, ofWindowsCmd] then tempSerializer.insertWhitespace := xqsiwNever {see gh#71}
+            else if invariable then tempSerializer.insertWhitespace := xqsiwConservative
+            else tempSerializer.insertWhitespace := xqsiwIndent;
+          jisCompact: tempSerializer.insertWhitespace := xqsiwConservative;
+        end;
+        v.jsonSerialize(tempSerializer);
+        tempSerializer.final;
+        result := escape(result);
       end;
       else if not printTypeAnnotations then begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper(mycmdline);
