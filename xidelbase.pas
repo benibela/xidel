@@ -64,7 +64,7 @@ procedure perform;
 implementation
 
 uses process, strutils, bigdecimalmath, xquery_json, xquery__regex, xquery.internals.common, xquery.namespaces, xidelcrt,
-  xquery__serialization, xquery__serialization_nodes;
+  xquery__serialization, xquery__serialization_nodes, fastjsonreader;
 //{$R xidelbase.res}
 
 
@@ -642,7 +642,7 @@ var globalCurrentExtraction: TExtraction;
 
 type EInvalidArgument = Exception;
 
-var GlobalJSONParseOptions: TXQJsonParser.TOptions = [];
+var GlobalJSONParseOptions: TJSONParserOptions = [];
 procedure setJSONFormat(format: TInputFormat);
 begin
   case format of //todo: cache?
