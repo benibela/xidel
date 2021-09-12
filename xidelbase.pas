@@ -1919,10 +1919,10 @@ begin
 end;
 
 const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingModel = (
-  xqpmXQuery3_1, xqpmXQuery3_1,
+  xqpmXQuery4_0, xqpmXQuery4_0,
   xqpmXPath2, xqpmXPath3_0, xqpmXPath3_1, xqpmXPath4_0,
   xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1, xqpmXQuery4_0,
-  xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
+  xqpmXPath4_0, xqpmXPath4_0, xqpmXPath4_0, xqpmXPath4_0 //filler
 );
 var GlobalDebugInfo: TObjectList;
 type
@@ -3476,7 +3476,7 @@ begin
   SetLength(loadedModules, length(loadedModules) + 1); loadedModules[high(loadedModules)] := d.rawData;
   oldBaseUri := xpathparser.StaticContext.baseURI;
   xpathparser.StaticContext.baseURI := url;
-  result := xpathparser.parseQuery(d.rawData, xqpmXQuery3_1);
+  result := xpathparser.parseQuery(d.rawData, xqpmXQuery4_0);
   xpathparser.StaticContext.baseURI := oldBaseUri;
 
 
