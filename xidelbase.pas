@@ -741,7 +741,7 @@ begin
     ekDefault: begin
       xpathparser.ParsingOptions.StringEntities:=xqseResolveLikeXQueryButIgnoreInvalid
     end;
-    ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
+    ekXPath2, ekXPath3_0, ekXPath3_1, ekXPath4_0, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1, ekXQuery4_0: begin
       xpathparser.ParsingOptions.StringEntities:=xqseDefault;
     end;
     ekMultipage: ;
@@ -1596,6 +1596,8 @@ begin
     'xquery', 'xquery3', 'xquery3.1': result :=ekXQuery3_1;
     'xpath3.0': result :=ekXPath3_0;
     'xquery3.0': result :=ekXQuery3_0;
+    'xpath4.0': result := ekXPath4_0;
+    'xquery4.0': result :=ekXQuery4_0;
     'css': result :=ekCSS;
     'template', 'pattern', 'html-pattern': result :=ekPatternHTML;
     'xml-pattern': result := ekPatternXML;
@@ -1918,8 +1920,8 @@ end;
 
 const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingModel = (
   xqpmXQuery3_1, xqpmXQuery3_1,
-  xqpmXPath2, xqpmXPath3_0, xqpmXPath3_1,
-  xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1,
+  xqpmXPath2, xqpmXPath3_0, xqpmXPath3_1, xqpmXPath4_0,
+  xqpmXQuery1, xqpmXQuery3_0, xqpmXQuery3_1, xqpmXQuery4_0,
   xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1, xqpmXPath3_1 //filler
 );
 var GlobalDebugInfo: TObjectList;
@@ -2494,7 +2496,7 @@ begin
       prepareForOutput(data);
       pageProcessed(nil,htmlparser);
     end;
-    ekDefault, ekXPath2, ekXPath3_0, ekXPath3_1, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1: begin
+    ekDefault, ekXPath2, ekXPath3_0, ekXPath3_1, ekXPath4_0, ekCSS, ekXQuery1, ekXQuery3_0, ekXQuery3_1, ekXQuery4_0: begin
       xpathparser.StaticContext.BaseUri := fileNameExpandToURI(data.baseUri);
       parent.loadDataForQueryPreParse(data);
       if extractQueryCache = nil then begin
