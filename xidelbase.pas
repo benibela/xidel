@@ -3920,6 +3920,40 @@ var
   inputEncoding: TSystemCodePage = CP_UTF8;
   outputEncoding: TSystemCodePage = CP_UTF8;
 
+  procedure initCommandLine;
+  var cmd: string;
+      shell: string = '';
+      shellArg: TStringArray = nil;
+      tempXQV: TXQValue;
+      s: String;
+  begin
+    cmd := args[0].toString;
+    {$ifdef unix}
+    shell := '/bin/sh';
+    shellArg := ['-c'];
+    {$endif}
+    {$ifdef windows}
+    shell := GetEnvironmentVariableUTF8('COMSPEC');
+    if shell = '' then shell := 'CMD';
+    shellArg := ['/C'];
+    {$endif}
+    if argc >= 2 then begin
+      if args[1].hasProperty('shell', @tempXQV) then if tempxqv.getSequenceCount = 1 then shell := tempxqv.toString;
+      if args[1].hasProperty('shell-args', @tempXQV) then shellArg := tempxqv.toStringArray;
+    end;
+    if shell = '' then proc.CommandLine := args[0].toString
+    else begin
+      {$ifdef unix}
+      proc.Executable:=shell;
+      for s in shellArg do proc.Parameters.Add(s);
+      proc.Parameters.Add(cmd);
+      {$else}
+      proc.CommandLine := shell + ' ' + strJoin(shellArg, ' ') + ' ' + cmd;
+      {$endif}
+    end;
+
+  end;
+
   procedure writeInputPipe;
   var view: TCharArrayView;
       tempstr: string;
@@ -3970,7 +4004,7 @@ begin
   if cgimode or not allowFileAccess then exit(xqvalue('Are you trying to hack an OSS project? Shame on you!'));
   requiredArgCount(argc, 1, 2);
   proc := TProcess.Create(nil);
-  proc.CommandLine := args[0].toString;
+  initCommandLine();
   builder.init(@temps);
   try
     proc.Options := proc.Options + [poUsePipes] - [poWaitOnExit];
