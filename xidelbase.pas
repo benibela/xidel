@@ -3930,12 +3930,14 @@ var
     cmd := args[0].toString;
     {$ifdef unix}
     shell := '/bin/sh';
-    shellArg := ['-c'];
+    SetLength(shellArg, 1);
+    shellArg[0] := '-c';
     {$endif}
     {$ifdef windows}
     shell := GetEnvironmentVariableUTF8('COMSPEC');
     if shell = '' then shell := 'CMD';
-    shellArg := ['/C'];
+    SetLength(shellArg, 1);
+    shellArg[0] := '/C';
     {$endif}
     if argc >= 2 then begin
       if args[1].hasProperty('shell', @tempXQV) then if tempxqv.getSequenceCount = 1 then shell := tempxqv.toString;
