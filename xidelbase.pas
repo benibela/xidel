@@ -1495,7 +1495,7 @@ begin
       isPureDataSource := true;
       for key in keys do
         case key of
-          'header', 'headers', 'post', 'data', 'url', 'form', 'method', 'input-format': ;
+          'header', 'headers', 'post', 'data', 'input', 'url', 'form', 'method', 'input-format': ;
           else begin
             isPureDataSource := false;
             break;
@@ -1505,7 +1505,7 @@ begin
       if isPureDataSource then begin
         if dest.hasProperty('url', @tempv) then
           addObject( tempv.toString, basedata.baseUri, dest as TXQValueMapLike, parent.followInputFormat)
-        else if dest.hasProperty('data', @tempv) then
+        else if dest.hasProperty('input', @tempv) or dest.hasProperty('data', @tempv) then
           addObject(tempv.toString, basedata.baseUri, dest as TXQValueMapLike, parent.followInputFormat );
       end else add(TFollowToXQVObject.create(basedata, dest));
     end;
@@ -1806,7 +1806,7 @@ begin
   end;            }
   if obj.hasProperty('url', @temp) then
     readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader)
-  else if obj.hasProperty('data', @temp) then
+  else if obj.hasProperty('input', @temp) or obj.hasProperty('data', @temp)  then
     readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader);
   tempreader.free;
 end;
@@ -3342,7 +3342,8 @@ begin
     importModule(value);
   end else if name = 'module-path' then begin
     arrayAdd(modulePaths, value);
-  end else if (name = '') or (name = 'data') then begin
+  end else if (name = '') or (name = 'data') or (name = 'input') then begin
+    if name = 'data' then writeln(stderr, '--data is deprecated. use --input');
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
       currentContext := TProcessingContext.Create;
@@ -3561,7 +3562,8 @@ begin
   mycmdline.onOptionRead:=TOptionReadEvent(procedureToMethod(TProcedure(@variableRead)));
   mycmdline.allowOverrides:=true;
 
-  mycmdLine.declareString('data', 'Data/URL/File/Stdin(-) to process (--data= prefix can be omitted)');
+  mycmdLine.declareString('input', 'Data/URL/File/Stdin(-) to process (--input= prefix can be omitted)');
+  mycmdLine.declareString('data', 'Deprecated option for --input');
   mycmdLine.declareString('download', 'Downloads/saves the data to a given filename (- prints to stdout, . uses the filename of the url)');
 
   mycmdLine.beginDeclarationCategory('Extraction options:');
