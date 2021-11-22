@@ -621,7 +621,7 @@ TProcessingContext = class(TDataProcessing)
 
   function last: TProcessingContext; //returns the last context in this sibling/follow chain
 
-  procedure insertFictiveDatasourceIfNeeded(canUseStdin: boolean); //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
+  procedure insertFictiveDatasourceIfNeeded(canUseStdin: boolean; options: TOptionReaderWrapper); //if no data source is given in an expression (or an subexpression), but an aciton is there, <empty/> is added as data source
 
   function process(data: IData): TFollowToList; override;
 
@@ -1907,10 +1907,11 @@ begin
   exit(self);
 end;
 
-procedure TProcessingContext.insertFictiveDatasourceIfNeeded(canUseStdin: boolean);
+procedure TProcessingContext.insertFictiveDatasourceIfNeeded(canUseStdin: boolean; options: TOptionReaderWrapper);
 var
   i: Integer;
   needDatasource: Boolean;
+  data: string;
 begin
   if Length(dataSources) > 0 then exit();
   if Length(actions) = 0 then exit();
@@ -1921,10 +1922,15 @@ begin
       break;
     end;
   if needDatasource then begin
-    readNewDataSource(TFollowTo.createFromRetrievalAddress(IfThen(canUseStdin, '-', '<empty/>')), nil)
+    if canUseStdin then data := '-'
+    else begin
+      data := '<empty/>';
+      options := nil;
+    end;
+    readNewDataSource(TFollowTo.createFromRetrievalAddress(data), options)
    end else for i := 0 to high(actions) do
     if actions[i] is TProcessingContext then
-      TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded(false);
+      TProcessingContext(actions[i]).insertFictiveDatasourceIfNeeded(false, options);
 end;
 
 const EXTRACTION_KIND_TO_PARSING_MODEL: array[TExtractionKind] of TXQParsingModel = (
@@ -3815,12 +3821,12 @@ begin
     defaultInternetConfiguration.CAPath := mycmdLine.readString('ca-directory');
   end;
 
-  cmdlineWrapper.Free;
-
 
   initOutput(mycmdline);
 
-  baseContext.insertFictiveDatasourceIfNeeded(not isStdinTTY); //this allows data less evaluations, like xidel -e 1+2+3
+  baseContext.insertFictiveDatasourceIfNeeded(not isStdinTTY, cmdlineWrapper); //this allows data less evaluations, like xidel -e 1+2+3
+
+  cmdlineWrapper.Free;
 
   if mycmdline.readFlag('debug-arguments') then
     debugPrintContext(baseContext);
