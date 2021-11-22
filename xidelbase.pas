@@ -1638,24 +1638,26 @@ begin
 
   if reader.read('print-variables', tempstr) then setVariables(tempstr);
 
-  if reader.read('printed-node-format', tempstr) then begin
+  if reader.read('output-node-format', tempstr) or reader.read('printed-node-format', tempstr)  then begin
       case tempstr of
         'text': printedNodeFormat:=tnsText;
         'xml': printedNodeFormat:=tnsXML;
         'html': printedNodeFormat:=tnsHTML;
         else raise EInvalidArgument.create('Unknown node format option: '+tempstr);
       end;
+      if reader.read('printed-node-format', tempstr) then writeln(stderr, '--printed-node-format is deprecated, use --output-node-format');
     end else if reader.read('output-format', tempstr) then
       case tempstr of
         'xml': printedNodeFormat:=tnsXML;
         'html': printedNodeFormat:=tnsHTML;
       end;
 
-  if reader.read('printed-json-format', tempstr) then begin
+  if reader.read('output-json-indent', tempstr) or reader.read('printed-json-format', tempstr) then begin
     case tempstr of
       'pretty': printedJSONFormat := jisPretty;
       'compact': printedJSONFormat := jisCompact;
     end;
+    if reader.read('printed-json-format', tempstr) then writeln(stderr, '--printed-json-format is deprecated, use --output-json-indent');
   end;
   if reader.read('output-key-order', tempstr) then
     printedJSONKeyOrder:=XQKeyOrderFromString(tempstr);
@@ -3650,8 +3652,10 @@ begin
   mycmdLine.declareFlag('hide-variable-names','Do not print the name of variables defined in an extract template');
   mycmdLine.declareString('variable','Declares a variable (value taken from environment if not given explicitely) (multiple variables are preliminary)');
   mycmdLine.declareString('xmlns','Declares a namespace');
-  mycmdLine.declareString('printed-node-format', 'Format of an extracted node: text, html or xml');
-  mycmdline.declareString('printed-json-format', 'Format of JSON items: pretty or compact');
+  mycmdLine.declareString('output-node-format', 'Format of an extracted node: text, html or xml');
+  mycmdLine.declareString('printed-node-format', 'deprecated');
+  mycmdline.declareString('output-json-indent', 'Format of JSON items: pretty or compact');
+  mycmdline.declareString('printed-json-format', 'deprecated');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8, latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
