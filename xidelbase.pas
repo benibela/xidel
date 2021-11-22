@@ -519,7 +519,7 @@ TExtraction = class(TDataProcessing)
  printedNodeFormat: TTreeNodeSerialization;
  printedJSONFormat: (jisDefault, jisPretty, jisCompact);
  printedJSONKeyOrder: TXQKeyOrder;
- inplaceOverride: boolean;
+ outputIndentXML, inplaceOverride: boolean;
 
  inputFormat: TInputFormat;
 
@@ -1662,6 +1662,8 @@ begin
   if reader.read('output-key-order', tempstr) then
     printedJSONKeyOrder:=XQKeyOrderFromString(tempstr);
 
+  reader.read('output-node-indent', outputIndentXML);
+
   reader.read('input-format', inputFormat);
 
   reader.read('in-place', inplaceOverride);
@@ -2271,8 +2273,8 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
         if (outputFormat <> ofAdhoc) and (printTypeAnnotations or (not (v.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText))) and not invariable then needRawWrapper(mycmdline);
         case printedNodeFormat of
           tnsText: result := escape(v.toString);
-          tnsXML: result := cmdescape(v.toNode.outerXML());
-          tnsHTML: result := cmdescape(v.toNode.outerHTML());
+          tnsXML: result := cmdescape(v.toNode.outerXML(outputIndentXML));
+          tnsHTML: result := cmdescape(v.toNode.outerHTML(outputIndentXML));
         end;
         if printTypeAnnotations then
           if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
@@ -2566,6 +2568,7 @@ begin
   printedNodeFormat := other.printedNodeFormat;
   printedJSONFormat := other.printedJSONFormat;
   printedJSONKeyOrder := other.printedJSONKeyOrder;
+  outputIndentXML := other.outputIndentXML;
 
   inputFormat := inputFormat;
 end;
@@ -3656,6 +3659,7 @@ begin
   mycmdLine.declareString('printed-node-format', 'deprecated');
   mycmdline.declareString('output-json-indent', 'Format of JSON items: pretty or compact');
   mycmdline.declareString('printed-json-format', 'deprecated');
+  mycmdline.declareFlag('output-node-indent', 'Pretty  print XML or HTML');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
   mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8, latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
