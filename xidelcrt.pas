@@ -253,7 +253,7 @@ begin
   if xidelOutputFileName = n then exit;
   if xidelOutputFileName <> '' then begin
     if outputfooter <> '' then wcolor(outputFooter, colorizing)
-    else if not mycmdline.existsProperty('output-footer') and not firstItem then wln();
+    else if not mycmdline.existsProperty('output-footer') and not firstItem and not implicitLineBreakAfterDeclaration then wln();
     flush(xidelOutputFile);
     if not striBeginsWith(xidelOutputFileName, 'stdout:') then CloseFile(xidelOutputFile);
   end;
