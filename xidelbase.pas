@@ -2285,6 +2285,8 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
         if printTypeAnnotations then
           if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
             result := 'text{' + xqvalue(result).toXQuery + '}';
+        if firstItem and (outputFormat in [ofXMLWrapped, ofRawXML, ofRawHTML]) and (v.toNode.typ = tetOpen) and (outputHeader <> '') then
+          writeLineBreakAfterDeclaration;
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper(mycmdline);
@@ -2630,6 +2632,7 @@ begin
          end;
     end;
     ofRawXML: begin
+      writeLineBreakAfterDeclaration;
       if vars.count > 1 then needRawWrapper(mycmdline);
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
@@ -2640,6 +2643,7 @@ begin
          end;
     end;
     ofRawHTML: begin
+      writeLineBreakAfterDeclaration;
       if vars.count > 1 then needRawWrapper(mycmdline);
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
@@ -2694,6 +2698,7 @@ begin
     end;
     ofXMLWrapped: begin
       if hideVariableNames then begin
+        writeLineBreakAfterDeclaration;
         wcolor('<seq>', cXML);
         first := true;
         for i:=0 to vars.count-1 do begin

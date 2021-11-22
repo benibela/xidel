@@ -31,6 +31,7 @@ procedure w(const s: string);
 procedure wln(const s: string = '');
 type TColorOptions = (cAuto, cNever, cAlways, cJSON, cXML);
 procedure wcolor(const s: string; color: TColorOptions);
+procedure writeLineBreakAfterDeclaration;
 procedure writeItem(const s: string; color: TColorOptions = cNever);
 procedure writeVarName(const s: string; color: TColorOptions = cNever);
 procedure werr(const s: string);
@@ -61,6 +62,8 @@ var
 
   colorizing: TColorOptions;
 
+  firstItem: boolean = true;
+  implicitLineBreakAfterDeclaration: boolean = false;
 implementation
 uses bbutils
   {$ifdef unix}, termio{$endif}
@@ -78,7 +81,6 @@ var
   stacklen: SizeInt;
   stack: TLongintArray;
 
-  firstItem: boolean = true;
 
 
 
@@ -144,24 +146,26 @@ procedure initOutput(mycmdline: TCommandLineReader);
 var
   consoleBuffer: TConsoleScreenBufferInfo;
 {$endif}
+var
+  outputDeclaration: String;
 begin
-  outputHeader := mycmdline.readString('output-declaration') + mycmdline.readString('output-header');
-  if (outputHeader <> '') and not mycmdline.existsProperty('output-header') then outputHeader += LineEnding;
+  outputDeclaration := mycmdline.readString('output-declaration');
+  outputHeader :=  mycmdline.readString('output-header');
   outputSeparator := mycmdline.readString('output-separator');
   outputFooter := mycmdline.readString('output-footer');
   case mycmdLine.readString('output-format') of
     'adhoc': outputFormat:=ofAdhoc;
     'html': begin
       outputFormat:=ofRawHTML;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<!DOCTYPE html>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<!DOCTYPE html>';
     end;
     'xml': begin
       outputFormat:=ofRawXML;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>';
     end;
     'xml-wrapped': begin
       outputFormat:=ofXMLWrapped;
-      if not mycmdline.existsProperty('output-declaration') then outputHeader:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>'+LineEnding+outputHeader;
+      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>';
     end;
     'json', 'json-wrapped': begin
       outputFormat:=ofJsonWrapped;
@@ -184,6 +188,9 @@ begin
     end;
     else raise EXidelInvalidArgument.Create('Unknown output format: ' + mycmdLine.readString('output-format'));
   end;
+  if (outputHeader <> '') and (outputDeclaration <> '') then outputDeclaration += LineEnding
+  else implicitLineBreakAfterDeclaration := outputFormat in [ofRawHTML, ofRawXML, ofXMLWrapped];
+  outputHeader := outputDeclaration + outputHeader;
 
   case mycmdline.readString('color') of
     'auto': colorizing := cAuto;
@@ -288,6 +295,7 @@ var
 begin
   if hasRawWrapper then exit;
   hasRawWrapper := true;
+  writeLineBreakAfterDeclaration;
   if not mycmdline.existsProperty('output-header') then begin
     if not mycmdline.existsProperty('output-separator') then le := LineEnding
     else le := '';
@@ -509,6 +517,13 @@ end;
 
 
 
+procedure writeLineBreakAfterDeclaration;
+begin
+  if implicitLineBreakAfterDeclaration then begin
+    wln();
+    implicitLineBreakAfterDeclaration := false;
+  end;
+end;
 
 procedure writeItem(const s: string; color: TColorOptions = cNever);
 begin
