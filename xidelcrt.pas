@@ -15,7 +15,7 @@ EXidelException = class(Exception);
 EXidelInvalidArgument = class(EXidelException);
 
 
-TConsoleColors = (ccNormal, ccRedBold, ccGreenBold, ccBlueBold, ccPurpleBold, ccYellowBold, ccCyanBold,
+TConsoleColors = (ccNormal, ccWhiteBold, ccRedBold, ccGreenBold, ccBlueBold, ccPurpleBold, ccYellowBold, ccCyanBold,
                               ccRed, ccGreen, ccBlue, ccPurple, ccYellow
  );
 
@@ -33,7 +33,8 @@ type TColorOptions = (cAuto, cNever, cAlways, cJSON, cXML);
 procedure wcolor(const s: string; color: TColorOptions);
 procedure writeItem(const s: string; color: TColorOptions = cNever);
 procedure writeVarName(const s: string; color: TColorOptions = cNever);
-procedure wstderr(const s: string);
+procedure werr(const s: string);
+procedure werrln(const s: string);
 
 function strReadFromStdin: string;
 
@@ -86,15 +87,15 @@ var
 procedure setTerminalColor(err: boolean; color: TConsoleColors);
 {$ifdef unix}
 const colorCodes: array[TConsoleColors] of string = (
-   #27'[0m', #27'[1;31m', #27'[1;32m', #27'[1;34m', #27'[1;35m', #27'[1;33m', #27'[1;36m',
-             #27'[0;31m', #27'[0;32m', #27'[0;34m', #27'[0;35m', #27'[0;33m'
+   #27'[0m', #27'[1;37m', #27'[1;31m', #27'[1;32m', #27'[1;34m', #27'[1;35m', #27'[1;33m', #27'[1;36m',
+                          #27'[0;31m', #27'[0;32m', #27'[0;34m', #27'[0;35m', #27'[0;33m'
    );
 var
   f: TextFile;
 {$endif}
 {$ifdef windows}
 const colorCodes: array[TConsoleColors] of integer = (
-   FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE,
+   FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE, FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE or FOREGROUND_INTENSITY,
      FOREGROUND_RED or FOREGROUND_INTENSITY, FOREGROUND_GREEN or FOREGROUND_INTENSITY, FOREGROUND_BLUE or FOREGROUND_INTENSITY, FOREGROUND_RED or FOREGROUND_BLUE or FOREGROUND_INTENSITY, FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_INTENSITY, FOREGROUND_BLUE or FOREGROUND_GREEN or FOREGROUND_INTENSITY,
      FOREGROUND_RED, FOREGROUND_GREEN, FOREGROUND_BLUE, FOREGROUND_RED or FOREGROUND_BLUE, FOREGROUND_RED or FOREGROUND_GREEN
    );
@@ -494,11 +495,18 @@ else w(s);
 end;
 end;
 
-procedure wstderr(const s: string);
+procedure werr(const s: string);
+begin
+  if not firstItem then writeln(stderr);
+  write(stderr, s);
+end;
+
+procedure werrln(const s: string);
 begin
   if not firstItem then writeln(stderr);
   writeln(stderr, s);
 end;
+
 
 
 
@@ -516,6 +524,7 @@ begin
   writeItem(s, color);
   firstItem := true; //prevent another line break / separator
 end;
+
 
 type
   FileFunc = Procedure(var t : TextRec);
