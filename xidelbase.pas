@@ -2439,13 +2439,13 @@ var
   i: Integer;
 begin
   if pvFinal in printVariables then
-    printExtractedVariables(parser.variables, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
+    printExtractedVariables(parser.variables, 'Current variable state', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
 
   if pvLog in printVariables then
-    printExtractedVariables(parser.variableChangeLog, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
+    printExtractedVariables(parser.variableChangeLog, 'Variable log', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
 
   if pvCondensedLog in printVariables then
-    printExtractedVariables(parser.VariableChangeLogCondensed, '** Current variable state: **', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
+    printExtractedVariables(parser.VariableChangeLogCondensed, 'Assigned variable log', showDefaultVariableOverride or parser.hasRealVariableDefinitions);
 
   for i := 0 to parser.variableChangeLog.count-1 do
     if parser.variableChangeLog.getName(i) = '_follow' then begin
