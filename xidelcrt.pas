@@ -161,11 +161,11 @@ begin
     end;
     'xml': begin
       outputFormat:=ofRawXML;
-      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>';
+      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(xidelOutputFile))+'"?>';
     end;
     'xml-wrapped': begin
       outputFormat:=ofXMLWrapped;
-      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(Output))+'"?>';
+      if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(xidelOutputFile))+'"?>';
     end;
     'json', 'json-wrapped': begin
       outputFormat:=ofJsonWrapped;
