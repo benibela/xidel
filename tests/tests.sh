@@ -444,6 +444,7 @@ tests/test.sh system -e 'system("echo 123") * 8'
 #echo 101 | tests/test.sh read -e 'read() * 8' --strict-type-checking
 echo '{"a": 1, "b": 2}' |  tests/test.sh jsonassign - -e '($json).a := 10'
 tests/test.sh jsonreassign -e '$json := [1,2,3]'
+echo '{}' | tests/test.sh jsonmultiassign -e '$json("a") := 12, $json("b") := 34'
 tests/test.sh namespace1 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml
 tests/test.sh namespace2 '<c xmlns="foobar">def</c>' -e / --printed-node-format xml --ignore-namespaces
 tests/test.sh repetitionoff tests/a.xml tests/a.xml -e //title
