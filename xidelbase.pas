@@ -529,6 +529,7 @@ TExtraction = class(TDataProcessing)
 
  procedure setVariables(v: string);
 
+
  procedure printExtractedValue(value: IXQValue; invariable: boolean);
  procedure printCmdlineVariable(const name: string; const value: IXQValue);
  procedure printExtractedVariables(vars: TXQVariableChangeLog; state: string; showDefaultVariable: boolean);
@@ -1680,6 +1681,7 @@ begin
   if arrayIndexOf(tempSplitted, 'final') >= 0 then include(printVariables, pvFinal);
 end;
 
+
 { TProcessingRequest }
 
 procedure TProcessingContext.configureInternet;
@@ -2248,6 +2250,9 @@ begin
                               [rfReplaceAll]);
 end;
 
+var globalTempSerializer: TXQSerializer;
+    globalTempSerializerBuffer: string;
+
 procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
   function cmdescape(s: string): string;
   begin
@@ -2272,15 +2277,19 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
   end;
 
   function singletonToString(const v: IXQValue): string;
-  var tempSerializer: TXQSerializer;
   begin
     case v.kind of
       pvkNode: begin
         if (outputFormat <> ofAdhoc) and (printTypeAnnotations or (not (v.toNode.typ in [tetOpen,tetDocument]) or (printedNodeFormat = tnsText))) and not invariable then needRawWrapper(mycmdline);
-        case printedNodeFormat of
-          tnsText: result := escape(v.toString);
-          tnsXML: result := cmdescape(v.toNode.outerXML(outputIndentXML));
-          tnsHTML: result := cmdescape(v.toNode.outerHTML(outputIndentXML));
+        if printedNodeFormat = tnsText then
+          result := escape(v.toString)
+        else begin
+          if outputIndentXML then globalTempSerializer.insertWhitespace := xqsiwIndent
+          else globalTempSerializer.insertWhitespace := xqsiwNever;
+          globalTempSerializer.clear;
+          serializeNodes(v.toNode, globalTempSerializer, true, printedNodeFormat = tnsHTML, nil);
+          globalTempSerializer.final;
+          result := cmdescape(globalTempSerializerBuffer);
         end;
         if printTypeAnnotations then
           if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
@@ -2290,20 +2299,20 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper(mycmdline);
-        tempSerializer.init(@result);
-        tempSerializer.nodeFormat := printedNodeFormat;
+        globalTempSerializer.clear;
+        globalTempSerializer.nodeFormat := printedNodeFormat;
         case printedJSONFormat of
-          jisPretty: tempSerializer.insertWhitespace := xqsiwIndent;
+          jisPretty: globalTempSerializer.insertWhitespace := xqsiwIndent;
           jisDefault:
-            if outputFormat in [ofBash, ofWindowsCmd] then tempSerializer.insertWhitespace := xqsiwNever {see gh#71}
-            else if invariable then tempSerializer.insertWhitespace := xqsiwConservative
-            else tempSerializer.insertWhitespace := xqsiwIndent;
-          jisCompact: tempSerializer.insertWhitespace := xqsiwConservative;
+            if outputFormat in [ofBash, ofWindowsCmd] then globalTempSerializer.insertWhitespace := xqsiwNever {see gh#71}
+            else if invariable then globalTempSerializer.insertWhitespace := xqsiwConservative
+            else globalTempSerializer.insertWhitespace := xqsiwIndent;
+          jisCompact: globalTempSerializer.insertWhitespace := xqsiwConservative;
         end;
-        tempSerializer.keyOrderExtension := printedJSONKeyOrder;
-        v.jsonSerialize(tempSerializer);
-        tempSerializer.final;
-        result := escape(result);
+        globalTempSerializer.keyOrderExtension := printedJSONKeyOrder;
+        v.jsonSerialize(globalTempSerializer);
+        globalTempSerializer.final;
+        result := escape(globalTempSerializerBuffer);
       end;
       else if not printTypeAnnotations then begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper(mycmdline);
@@ -3573,6 +3582,9 @@ begin
   //registerModuleBinary;
   registerModuleUCAICU;
   {$ifdef windows}systemEncodingIsUTF8:=getACP = CP_UTF8;{$endif}
+
+  globalTempSerializer.init(@globalTempSerializerBuffer);
+  {$ifdef windows}globalTempSerializer.lineEnding := xleCRLF;{$endif}
 
   //TXQueryEngine.dumpFunctions;
 
