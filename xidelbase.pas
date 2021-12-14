@@ -2292,8 +2292,8 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
           result := cmdescape(globalTempSerializerBuffer);
         end;
         if printTypeAnnotations then
-          if (printedNodeFormat = tnsText) or (v.toNode.typ = tetText) then
-            result := 'text{' + xqvalue(result).toXQuery + '}';
+          if (v.toNode.typ = tetText) then result := 'text{' + xqvalue(result).toXQuery + '}'
+          else if (printedNodeFormat = tnsText) then result := xqvalue(result).toXQuery;
         if firstItem and (outputFormat in [ofXMLWrapped, ofRawXML, ofRawHTML]) and (v.toNode.typ = tetOpen) and (outputHeader <> '') then
           writeLineBreakAfterDeclaration;
       end;
