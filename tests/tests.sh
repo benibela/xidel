@@ -4,6 +4,8 @@
 rm /tmp/xidel-tests-state-ok
 rm /tmp/xidel-tests-state-failed
 
+
+
 tests/test.sh t1   tests/a.xml
 tests/test.sh te   tests/a.xml -e //title 
 tests/test.sh te   -e //title tests/a.xml 
@@ -264,6 +266,19 @@ tests/test.sh separator-html --output-format html --output-separator x -e '(1,2)
 
 tests/test.sh separator-xml2 --output-format xml --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
 tests/test.sh separator-html2 --output-format html --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+
+
+tests/test.sh linebreaksXMLElementNodes-NoDecl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml --output-node-indent
+tests/test.sh linebreaksXMLElementNodes-Decl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml --output-node-indent --output-declaration='<?xml?>'
+tests/test.sh linebreaksXMLElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml 
+tests/test.sh linebreaksXMLElementNodes-Decl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml --output-declaration='<?xml?>'
+
+tests/test.sh linebreaksXMLOutput-ElementNodes-NoDecl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-node-indent
+tests/test.sh linebreaksXMLOutput-ElementNodes-Decl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-node-indent --output-declaration='<?xml?>'
+tests/test.sh linebreaksXMLOutput-ElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml 
+tests/test.sh linebreaksXMLOutput-ElementNodes-Decl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-declaration='<?xml?>'
+
+
 
 tests/test.sh adhoc10  '<x><a>1</a><a>2</a><a>3</a></x>' -e '<a>{.}</a>+' -e '<a>{.}</a>' -e 7
 tests/test.sh xml10  --output-format xml-wrapped  '<x><a>1</a><a>2</a><a>3</a></x>' -e '<a>{.}</a>+' -e '<a>{.}</a>' -e 7

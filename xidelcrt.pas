@@ -251,8 +251,10 @@ begin
     ofRawXML, ofXMLWrapped:
       if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(xidelOutputFile))+'"?>';
   end;
-  if (outputHeader <> '') and (outputDeclaration <> '') then outputDeclaration += LineEnding
-  else implicitLineBreakAfterDeclaration := outputFormat in [ofRawHTML, ofRawXML, ofXMLWrapped];
+  if (outputHeader <> '') and (outputDeclaration <> '') then
+    outputDeclaration += LineEnding
+  else if outputDeclaration <> '' then
+    implicitLineBreakAfterDeclaration := (outputFormat in [ofRawHTML, ofRawXML, ofXMLWrapped]) or (mycmdline.readFlag('output-node-indent'));
   outputHeader := outputDeclaration + outputHeader;
   if outputHeader <> '' then wcolor(outputHeader, colorizing);
 end;
