@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><html><head/><body><r>
+<?xml version="1.0" encoding="UTF-8"?>
+<html><head/><body><r>
 
   &quot;.$row[&apos;ID&apos;].&quot;. &quot;;
 ?&gt;

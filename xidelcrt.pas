@@ -538,7 +538,7 @@ procedure writeItem(const s: string; color: TColorOptions = cNever);
 begin
   if not firstItem then begin
     w(outputSeparator);
-  end;
+  end else if (outputHeader <> '') and (outputSeparator = LineEnding) and (s <> '') and not (s[1] in [#13,#10]) then writeLineBreakAfterDeclaration;
   wcolor(s, color);
   firstItem := false;
 end;
