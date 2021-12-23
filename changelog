@@ -3,7 +3,8 @@ Some important changes:
 
 --------Xidel 0.9.9 --------
 (under development)
-- support for XPath/XQuery 3.1, for example ? operator, => operator, map:/array: functions, string constructor
+- support 99.6% of XPath/XQuery 3.1, for example ? operator, => operator, map:/array: functions, string constructor
+- support some XPath 4.0 syntax, that is: extended ? operator, -> operator, otherwise operator, for member, functions: some, all, identity, characters, replicate, map:filter, index-where, is-NaN
 - --json-mode option to switch between XPath 3.1 or JSONiq syntax for JSON processing, or (default) a mix of both
 - New extension functions: 
     * x:request-decode to parse the parameters of a HTTP request
