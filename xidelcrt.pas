@@ -63,6 +63,7 @@ var
   colorizing: TColorOptions;
 
   firstItem: boolean = true;
+  lastWrittenChar: char = #0;
   implicitLineBreakAfterDeclaration: boolean = false;
 implementation
 uses bbutils
@@ -264,7 +265,7 @@ begin
   if xidelOutputFileName = n then exit;
   if xidelOutputFileName <> '' then begin
     if outputfooter <> '' then wcolor(outputFooter, colorizing)
-    else if not mycmdline.existsProperty('output-footer') and not firstItem and not implicitLineBreakAfterDeclaration then wln();
+    else if not mycmdline.existsProperty('output-footer') and not firstItem and not (lastWrittenChar in [#13,#10]) then wln();
     flush(xidelOutputFile);
     if not striBeginsWith(xidelOutputFileName, 'stdout:') then CloseFile(xidelOutputFile);
   end;
@@ -532,6 +533,7 @@ procedure writeLineBreakAfterDeclaration;
 begin
   if implicitLineBreakAfterDeclaration then begin
     wln();
+    lastWrittenChar := #10;
     implicitLineBreakAfterDeclaration := false;
   end;
 end;
@@ -543,6 +545,7 @@ begin
   end else if (outputHeader <> '') and (outputSeparator = LineEnding) and (s <> '') and not (s[1] in [#13,#10]) then writeLineBreakAfterDeclaration;
   wcolor(s, color);
   firstItem := false;
+  if s <> '' then lastWrittenChar := s[length(s)];
 end;
 
 procedure writeVarName(const s: string; color: TColorOptions = cNever);
