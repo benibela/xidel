@@ -278,6 +278,9 @@ tests/test.sh linebreaksXMLOutput-ElementNodes-Decl-Indent -e 'element nodes {(1
 tests/test.sh linebreaksXMLOutput-ElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml 
 tests/test.sh linebreaksXMLOutput-ElementNodes-Decl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-declaration='<?xml?>'
 
+tests/test.sh linebreaksXMLOutput-input-newline-NoDecl-NoIndent tests/input-newline.xml -e . --xml
+
+tests/test.sh linebreaksHTMLOutput-NoDecl-Indent -e '(<html><head><script/><link/></head><body><a/><table><tr><td>a</td><td>b</td></tr></table></body></html>)' --html --output-node-indent
 
 
 tests/test.sh adhoc10  '<x><a>1</a><a>2</a><a>3</a></x>' -e '<a>{.}</a>+' -e '<a>{.}</a>' -e 7
