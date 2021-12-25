@@ -1046,7 +1046,8 @@ begin
     color := colorizing;
     if color in [cAlways, cAuto] then
       case data.inputFormat of
-        ifHTML, ifXML, ifXMLStrict: color := cXML;
+        ifXML, ifXMLStrict: color := cXML;
+        ifHTML: color := cHTML;
         ifJSON, ifJSONStrict: color := cJSON;
         ifAuto, ifPlainText: ;
       end;
@@ -2328,7 +2329,10 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
     color := colorizing;
     if (color in [cAuto,cAlways]) and (outputFormat = ofAdhoc) then
       case value.get(1).kind of
-        pvkNode: if printedNodeFormat <> tnsText then color := cXML;
+        pvkNode: case printedNodeFormat of
+          tnsXML: color := cXML;
+          tnsHTML: color := cHTML;
+        end;
         pvkArray,pvkObject: color := cJSON;
         else;
       end;
@@ -2348,7 +2352,8 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
     params.done;
     SetCodePage(temp, CP_UTF8, false); //unnecessary?
     case params.method of
-      xqsmXML,xqsmHTML,xqsmXHTML: wcolor(temp, cXML);
+      xqsmXML,xqsmXHTML: wcolor(temp, cXML);
+      xqsmHTML: wcolor(temp, cHTML);
       xqsmJSON: wcolor(temp, cJSON);
       else wcolor(temp, cNever);
     end;
@@ -2657,9 +2662,9 @@ begin
       for i:=0 to vars.count-1 do
          if acceptName(vars.Names[i])  then begin
            isShown := showVar(i);
-           if isShown then writeVarName('<span class="'+vars.Names[i] + '">', cXML);
+           if isShown then writeVarName('<span class="'+vars.Names[i] + '">', cHTML);
            printExtractedValue(vars.get(i), isShown );
-           if isShown then wcolor('</span>', cXML);
+           if isShown then wcolor('</span>', cHTML);
          end;
     end;
     ofJsonWrapped:

@@ -29,7 +29,7 @@ procedure endOutput(mycmdline: TCommandLineReader);
 
 procedure w(const s: string);
 procedure wln(const s: string = '');
-type TColorOptions = (cAuto, cNever, cAlways, cJSON, cXML);
+type TColorOptions = (cAuto, cNever, cAlways, cJSON, cXML, cHTML);
 procedure wcolor(const s: string; color: TColorOptions);
 procedure writeLineBreakAfterDeclaration;
 procedure writeItem(const s: string; color: TColorOptions = cNever);
@@ -189,6 +189,7 @@ begin
     'always': colorizing := cAlways;
     'json': colorizing := cJSON;
     'xml': colorizing := cXML;
+    'html': colorizing := cHTML;
     else raise EXidelInvalidArgument.Create('Invalid color: '+mycmdline.readString('color'));
   end;
   {$ifdef unix}
@@ -219,7 +220,8 @@ begin
   case colorizing of
     cAuto, cAlways: begin
       case outputFormat of
-        ofXMLWrapped, ofRawHTML, ofRawXML: colorizing := cXML;
+        ofXMLWrapped, ofRawXML: colorizing := cXML;
+        ofRawHTML: colorizing := cHTML;
         ofJsonWrapped: colorizing := cJSON;
       end;
     end;
@@ -296,8 +298,11 @@ var hasRawWrapper: boolean = false;
 procedure needRawWrapper(mycmdline: TCommandLineReader);
   procedure setHeaderFooter(const h, f: string);
   begin
-    if outputFormat = ofJsonWrapped then wcolor(h, cJSON)
-    else wcolor(h, cXML);
+    case outputFormat of
+      ofJsonWrapped: wcolor(h, cJSON);
+      ofRawHTML: wcolor(h, cHTML);
+      else wcolor(h, cXML);
+    end;
     if outputSeparator = LineEnding then wln();
     if not mycmdline.existsProperty('output-footer') then outputFooter := f + LineEnding;
   end;
@@ -449,7 +454,7 @@ cJSON: begin
   end;
   colorChange(ccNormal)
 end;
-cXML: begin
+cXML,cHTML: begin
   pos := 1;
   lastpos := 1;
   scriptSpecialCase := false;
@@ -470,7 +475,7 @@ cXML: begin
             end;
           end;
         end;
-        scriptSpecialCase := striBeginsWith(@s[pos], '<script');
+        scriptSpecialCase := (color = chtml) and striBeginsWith(@s[pos], '<script');
         while (pos <= length(s)) and not (s[pos] in ['>','/','?',#0..#32]) do inc(pos);
         while (pos <= length(s)) do begin
           case s[pos] of
