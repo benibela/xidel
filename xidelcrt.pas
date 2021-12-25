@@ -4,7 +4,7 @@ unit xidelcrt;
 
 interface
 
-uses rcmdline, sysutils;
+uses rcmdline, sysutils, simplehtmlparser;
 
 var
   allowFileAccess: boolean = true;
@@ -369,6 +369,96 @@ begin
 end;
 
 
+type TMLHighlighter = class
+  data: string;
+  marker: pchar;
+  procedure writeHighlighted(const s: string; mode: TColorOptions);
+  procedure writeHighlighted(start: pchar; len: SizeInt; color: TConsoleColors);
+  function enterTag(tagName: pchar; tagNameLen: SizeInt; properties: THTMLProperties):TParsingResult;
+  function leaveTag(tagName: pchar; tagNameLen: SizeInt):TParsingResult;
+  function commentNode(comment: pchar; commentLen: SizeInt):TParsingResult;
+  procedure docType(name: pchar; nameLen: SizeInt; more: pchar; moreLen: SizeInt);
+  function textNode(text: pchar; textLen: SizeInt; textFlags: TTextFlags):TParsingResult;
+  function processingInstruction(text: pchar; textLen: SizeInt; textFlags: TTextFlags):TParsingResult;
+end;
+var globalMLHighlighter: TMLHighlighter;
+
+const
+  XML_COLOR_COMMENT: TConsoleColors = ccBlue;
+  XML_COLOR_TAG: TConsoleColors = ccYellowBold;
+  XML_COLOR_ATTRIB_NAME: TConsoleColors = ccPurpleBold;
+  XML_COLOR_ATTRIB_VALUE: TConsoleColors = ccGreenBold;
+
+procedure TMLHighlighter.writeHighlighted(const s: string; mode: TColorOptions);
+var options: TParsingOptions;
+begin
+  if s = '' then exit;
+  data := s;
+  marker := @data[1];
+  if mode = cHTML then options := [poRespectHTMLCDATAElements,poRespectHTMLProcessingInstructions]
+  else options := [poRespectXMLProcessingInstructions];
+  parseML(data, options, @enterTag, @leaveTag, @textNode, @commentNode, @processingInstruction, @docType);
+  writeHighlighted(@data[1] + length(data), 0, ccNormal);
+end;
+
+procedure TMLHighlighter.writeHighlighted(start: pchar; len: SizeInt; color: TConsoleColors);
+var
+  overlap: sizeint;
+begin
+  if marker < start then begin
+    setTerminalColor(false, ccNormal);
+    w(strFromPchar(marker, start - marker));
+  end else if marker >= start then begin
+    overlap := marker - start;
+    len := len - overlap;
+    start := start + overlap;
+  end;
+  if len > 0 then begin
+    setTerminalColor(false, color);
+    w(strFromPchar(start, len));
+  end;
+  marker := start + len;
+end;
+
+function TMLHighlighter.enterTag(tagName: pchar; tagNameLen: SizeInt; properties: THTMLProperties): TParsingResult;
+var
+  i: sizeint;
+begin
+  result := prContinue;
+  writeHighlighted(tagName, tagNameLen, XML_COLOR_TAG);
+  for i := 0 to high(properties) do begin
+    writeHighlighted(properties[i].name, properties[i].nameLen, XML_COLOR_ATTRIB_NAME);
+    writeHighlighted(properties[i].value, properties[i].valueLen, XML_COLOR_ATTRIB_VALUE);
+  end;
+end;
+function TMLHighlighter.leaveTag(tagName: pchar; tagNameLen: SizeInt): TParsingResult;
+begin
+  result := prContinue;
+  writeHighlighted(tagName, tagNameLen, XML_COLOR_TAG);
+end;
+function TMLHighlighter.commentNode(comment: pchar; commentLen: SizeInt): TParsingResult;
+begin
+  result := prContinue;
+  writeHighlighted(comment, commentLen, XML_COLOR_COMMENT);
+end;
+procedure TMLHighlighter.docType(name: pchar; nameLen: SizeInt; more: pchar; moreLen: SizeInt);
+begin
+  writeHighlighted(name, nameLen, XML_COLOR_ATTRIB_NAME);
+end;
+function TMLHighlighter.textNode(text: pchar; textLen: SizeInt; textFlags: TTextFlags): TParsingResult;
+begin
+  result := prContinue;
+end;
+function TMLHighlighter.processingInstruction(text: pchar; textLen: SizeInt; textFlags: TTextFlags): TParsingResult;
+var
+  nameEnd: sizeint;
+begin
+  result := prContinue;
+  nameEnd := 0;
+  while (nameEnd < textLen) and not (text[nameEnd] in WHITE_SPACE) do inc(nameEnd);
+  writeHighlighted(text, nameEnd, XML_COLOR_TAG);
+  writeHighlighted(text + nameEnd, textLen - nameEnd, XML_COLOR_ATTRIB_VALUE);
+end;
 
 
 procedure wcolor(const s: string; color: TColorOptions);
@@ -385,10 +475,6 @@ const JSON_COLOR_OBJECT_PAREN: TConsoleColors = ccYellowBold;
   JSON_STATE_OBJECTVALUE = 2;
   JSON_STATE_OBJECTKEY = 3;
 
-  XML_COLOR_COMMENT: TConsoleColors = ccBlue;
-  XML_COLOR_TAG: TConsoleColors = ccYellowBold;
-  XML_COLOR_ATTRIB_NAME: TConsoleColors = ccPurpleBold;
-  XML_COLOR_ATTRIB_VALUE: TConsoleColors = ccGreenBold;
 
 
 var pos, lastpos: integer;
@@ -400,8 +486,6 @@ setTerminalColor(false, c);
 lastpos:=pos;
 end;
 
-var    quote: Char;
-scriptSpecialCase: Boolean;
 begin
 case color of
 cJSON: begin
@@ -455,66 +539,8 @@ cJSON: begin
   colorChange(ccNormal)
 end;
 cXML,cHTML: begin
-  pos := 1;
-  lastpos := 1;
-  scriptSpecialCase := false;
-  while pos <= length(s) do begin
-    case s[pos] of
-      '<': if scriptSpecialCase and not striBeginsWith(@s[pos], '</script') then inc(pos)
-      else begin
-        colorChange(XML_COLOR_TAG);
-        if (pos + 1) <= length(s) then begin
-          case s[pos+1] of
-            '/', '?': inc(pos,2);
-            '!': if strBeginsWith(@s[pos], '<!--') then begin
-              colorChange(XML_COLOR_COMMENT);
-              inc(pos,3);
-              while (pos + 3 <= length(s)) and ((s[pos] <> '-') or (s[pos+1] <> '-')or (s[pos+2] <> '>')) do inc(pos);
-              inc(pos);
-              continue;
-            end;
-          end;
-        end;
-        scriptSpecialCase := (color = chtml) and striBeginsWith(@s[pos], '<script');
-        while (pos <= length(s)) and not (s[pos] in ['>','/','?',#0..#32]) do inc(pos);
-        while (pos <= length(s)) do begin
-          case s[pos] of
-            '>','/','?': begin
-              colorChange(XML_COLOR_TAG);
-              if s[pos] <> '>' then inc(pos);
-              break;
-            end;
-             #0..#32: ;
-             else begin
-               colorChange(XML_COLOR_ATTRIB_NAME);
-               while (pos <= length(s)) and not (s[pos] in ['=','/','>']) do inc(pos);
-               colorChange(XML_COLOR_TAG);
-               if s[pos] <> '=' then break;
-               inc(pos);
-               while (pos <= length(s)) and (s[pos] in [#0..#32]) do inc(pos);
-               colorChange(XML_COLOR_ATTRIB_VALUE);
-               if (pos <= length(s)) then
-                 case s[pos] of
-                   '''', '"': begin
-                     quote := s[pos];
-                     inc(pos);
-                     while (pos <= length(s)) and (s[pos] <> quote) do inc(pos);
-                     inc(pos);
-                   end;
-                   else while (pos <= length(s)) and not (s[pos] in [#0..#32]) do inc(pos);
-                 end;
-               continue;
-             end;
-          end;
-          inc(pos);
-        end;
-        inc(pos);
-        colorChange(ccNormal);
-      end;
-      else inc(pos);
-    end;
-  end;
-  colorChange(ccNormal)
+  if globalMLHighlighter = nil then globalMLHighlighter := TMLHighlighter.Create;
+  globalMLHighlighter.writeHighlighted(s, color);
 end;
 else w(s);
 end;
@@ -600,6 +626,8 @@ begin
   sb.final;
 end;
 
+finalization
+  if globalMLHighlighter <> nil then globalMLHighlighter.free
 
 end.
 
