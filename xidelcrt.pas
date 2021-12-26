@@ -408,6 +408,7 @@ begin
   if marker < start then begin
     setTerminalColor(false, ccNormal);
     w(strFromPchar(marker, start - marker));
+    marker := start;
   end else if marker >= start then begin
     overlap := marker - start;
     len := len - overlap;
@@ -416,8 +417,8 @@ begin
   if len > 0 then begin
     setTerminalColor(false, color);
     w(strFromPchar(start, len));
+    marker := start + len;
   end;
-  marker := start + len;
 end;
 
 function TMLHighlighter.enterTag(tagName: pchar; tagNameLen: SizeInt; properties: THTMLProperties): TParsingResult;
