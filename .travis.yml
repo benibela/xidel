@@ -16,7 +16,7 @@ install:
   - sudo apt-get install fakeroot lintian
   - mkdir import
   - git clone https://github.com/benibela/flre.git import/flre; 
-  - git clone https://github.com/BeRo1985/pasdblstrutils.git import/pasdblstrutils
+  - mkdir -p import/pasdblstrutils/src && curl https://raw.githubusercontent.com/BeRo1985/pasdblstrutils/master/src/PasDblStrUtils.pas > import/pasdblstrutils/src/PasDblStrUtils.pas
   - svn checkout http://svn.code.sf.net/p/synalist/code/synapse/40/ import/synapse; 
   - git clone https://github.com/benibela/rcmdline.git rcmdline
   - git clone https://github.com/benibela/internettools.git internettools
