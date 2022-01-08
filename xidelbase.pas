@@ -635,7 +635,7 @@ private
   procedure loadDataForQueryPreParse(const data: IData);
   procedure loadDataForQuery(const data: IData; const query: IXQuery);
   function evaluateQuery(const query: IXQuery; const data: IData; const allowWithoutReturnValue: boolean = false): IXQValue;
-  procedure httpReact (sender: TInternetAccess; var transfer: TTransfer; var reaction: TInternetAccessReaction);
+  procedure httpReact (sender: TInternetAccess; var {%H-}transfer: TTransfer; var reaction: TInternetAccessReaction);
 end;
 
 var globalCurrentExtraction: TExtraction;

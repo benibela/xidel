@@ -372,14 +372,16 @@ end;
 type TMLHighlighter = class
   data: string;
   marker: pchar;
+  //print string s highlighed as XML or HTML
   procedure writeHighlighted(const s: string; mode: TColorOptions);
+  //internally used to print a word some color
   procedure writeHighlighted(start: pchar; len: SizeInt; color: TConsoleColors);
   function enterTag(tagName: pchar; tagNameLen: SizeInt; properties: THTMLProperties):TParsingResult;
   function leaveTag(tagName: pchar; tagNameLen: SizeInt):TParsingResult;
   function commentNode(comment: pchar; commentLen: SizeInt):TParsingResult;
   procedure docType(name: pchar; nameLen: SizeInt; more: pchar; moreLen: SizeInt);
   function textNode(text: pchar; textLen: SizeInt; textFlags: TTextFlags):TParsingResult;
-  function processingInstruction(text: pchar; textLen: SizeInt; textFlags: TTextFlags):TParsingResult;
+  function processingInstruction(text: pchar; textLen: SizeInt; {%H-}textFlags: TTextFlags):TParsingResult;
 end;
 var globalMLHighlighter: TMLHighlighter;
 
@@ -444,10 +446,16 @@ begin
 end;
 procedure TMLHighlighter.docType(name: pchar; nameLen: SizeInt; more: pchar; moreLen: SizeInt);
 begin
+  ignore(more);
+  ignore(moreLen);
+  ignore(text);
+  ignore(textLen);
   writeHighlighted(name, nameLen, XML_COLOR_ATTRIB_NAME);
 end;
 function TMLHighlighter.textNode(text: pchar; textLen: SizeInt; textFlags: TTextFlags): TParsingResult;
 begin
+  ignore(text);
+  ignore(textLen);
   result := prContinue;
 end;
 function TMLHighlighter.processingInstruction(text: pchar; textLen: SizeInt; textFlags: TTextFlags): TParsingResult;
