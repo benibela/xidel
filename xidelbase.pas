@@ -3030,6 +3030,7 @@ var
   tobj: Pointer;
   j: SizeInt;
   i: Integer;
+  s: string;
 begin
   case outputFormat of
     ofJsonWrapped: begin
@@ -3077,6 +3078,8 @@ begin
         sayln( 'Partial matches:');
         temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
         for j := 0 to high(temp) do  sayln( temp[j]);
+        sayln('');
+        sayln('Hint: Xidel has performed pattern matching, searching the nodes of the query in the input document. If you are trying to run XQuery, surround the query with (parentheses). ')
       end;
     end;
   end;
@@ -3109,6 +3112,11 @@ begin
   if (e is EXQParsingException) and (EXQParsingException(e).next <> nil) then begin
     sayln('');
     displayError(EXQParsingException(e).next);
+  end;
+  if assigned(multipage) and (multipage.actionTrace.count > 0) then begin
+    sayln(LineEnding + 'Multipage action trace:');
+    for s in multipage.actionTrace do
+      sayln(s);
   end;
 end;
 
