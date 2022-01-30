@@ -391,10 +391,18 @@ const
   XML_COLOR_ATTRIB_NAME: TConsoleColors = ccPurpleBold;
   XML_COLOR_ATTRIB_VALUE: TConsoleColors = ccGreenBold;
 
+procedure writeColorReset;
+begin
+  if not isStdoutTTY then exit;
+  lastConsoleColor := ccYellow;
+  setTerminalColor(false, ccNormal);
+end;
+
 procedure TMLHighlighter.writeHighlighted(const s: string; mode: TColorOptions);
 var options: TParsingOptions;
 begin
   if s = '' then exit;
+  writeColorReset;
   data := s;
   marker := @data[1];
   if mode = cHTML then options := [poRespectHTMLCDATAElements,poRespectHTMLProcessingInstructions]
