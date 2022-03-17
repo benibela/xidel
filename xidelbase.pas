@@ -180,7 +180,7 @@ function rawData: string;
 function baseUri: string;
 function displayBaseUri: string;
 function contenttype: string;
-function headers: TStringList;
+function headers: THTTPHeaderList;
 function recursionLevel: integer;
 function inputFormat: TInputFormat;
 end;
@@ -353,13 +353,13 @@ private
   fcontenttype: string;
   frecursionLevel: integer;
   finputformat: TInputFormat;
-  fheaders: TStringList;
+  fheaders: THTTPHeaderList;
 public
   function rawData: string;
   function baseUri: string;
   function displayBaseUri: string;
   function contentType: string;
-  function headers: TStringList;
+  function headers: THTTPHeaderList;
   function recursionLevel: integer;
   function inputFormat: TInputFormat;
   constructor create(somedata: string; aurl: string; acontenttype: string = '');
@@ -852,7 +852,7 @@ begin
   result := fcontenttype;
 end;
 
-function TDataObject.headers: TStringList;
+function TDataObject.headers: THTTPHeaderList;
 begin
   result := fheaders;
 end;
@@ -1011,6 +1011,8 @@ begin
   realUrl := data.baseUri;
   if guessType(realUrl) = rtRemoteURL then realurl := decodeURL(realUrl).path;
 
+  if data.headers.getContentDispositionFileNameTry(realPath) then
+    realUrl := realPath;
   j := strRpos('/', realUrl);
   if j = 0 then begin
     realPath := '';
@@ -1134,9 +1136,8 @@ begin
   if Assigned(internet) then begin
     d := (result as TDataObject);
     d.fcontenttype := internet.getLastContentType;
-    d.fheaders := TStringList.Create;
-    for i := 0 to internet.lastHTTPHeaders.count - 1 do
-      d.fheaders.Add(internet.lastHTTPHeaders.Strings[i]);
+    d.fheaders := THTTPHeaderList.Create;
+    d.fheaders.Assign(internet.lastHTTPHeaders);
   end;
   with result as TDataObject do begin
     finputFormat := self.inputFormat;
