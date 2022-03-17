@@ -1021,6 +1021,12 @@ begin
     realPath := copy(realUrl, 1, j);
     realFile := copy(realUrl, j + 1, length(realUrl) - j)
   end;
+  if realPath.Contains('..') then begin
+    while strBeginsWith(realPath, '/') do delete(realPath,1,1);
+    realPath := StringReplace(realPath, '\' , '/', [rfReplaceAll]);
+    realPath := strResolveURI(realPath, 'file:///');
+    realPath := strAfter(realPath, 'file:');
+  end;
   while strBeginsWith(realPath, '/') do delete(realPath,1,1);
 
   downloadTo := parent.replaceEnclosedExpressions(data, Self.downloadTarget);
