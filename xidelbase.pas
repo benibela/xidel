@@ -4015,16 +4015,16 @@ var
   end;
 
   procedure writeInputPipe;
-  var view: TCharArrayView;
+  var view: TPCharView;
       tempstr: string;
   begin
     case inputData.kind of
       pvkString: begin
         tempstr := inputdata.toString;
         if inputEncoding <> CP_UTF8 then tempstr := strConvert(tempstr, CP_UTF8, inputEncoding);
-        view := tempstr.unsafeView();
+        view := tempstr.pcharView();
       end;
-      pvkBinary: view := inputdata.toBinaryBytes.unsafeView();
+      pvkBinary: view := inputdata.toBinaryBytes.pcharView();
       else raise EXQEvaluationException.create('pxp:system', 'Invalid value for stdin');
     end;
     proc.Input.Write(view.data^, view.length);
