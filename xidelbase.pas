@@ -31,7 +31,7 @@ interface
 
 uses
   Classes,         {$ifdef windows} windows, {$endif}
-  extendedhtmlparser,  xquery, sysutils, bbutils, bbutilsbeta, simplehtmltreeparser, multipagetemplate,
+  extendedhtmlparser,  xquery, sysutils, bbutils, simplehtmltreeparser, multipagetemplate,
   internetaccess, contnrs, simplexmltreeparserfpdom,
   xquery_module_file,
   //xquery_module_binary,
@@ -734,6 +734,7 @@ begin
   mycopy.setUnknownToDefault(kind);
   mycopy.configureParsers();
   case kind of
+    ekAuto: ;
     ekPatternHTML, ekPatternXML: begin
       if kind = ekPatternHTML then htmlparser.TemplateParser.parsingModel := pmHTML
       else htmlparser.TemplateParser.parsingModel := pmStrict;
@@ -2337,6 +2338,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
     if (color in [cAuto,cAlways]) and (outputFormat = ofAdhoc) then
       case value.get(1).kind of
         pvkNode: case printedNodeFormat of
+          tnsText: ;
           tnsXML: color := cXML;
           tnsHTML: color := cHTML;
         end;
@@ -3557,7 +3559,7 @@ end;
 type TGlobalCallbackHolder = class
   procedure OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
 end;
-var GlobalCallbackHolder: TGlobalCallbackHolder;
+var GlobalCallbackHolder: TGlobalCallbackHolder = nil;
 procedure TGlobalCallbackHolder.OnDeclareExternalVariable(const context: TXQStaticContext; sender: TObject; const namespaceUrl, variable: string; var value: IXQValue);
 var
   env: String;

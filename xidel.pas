@@ -30,7 +30,7 @@ program xidel;
 {$endif}
 
 uses //heaptrc,
-     internetaccess, multipagetemplate, bbutils,
+     internetaccess, bbutils,
      xidelbase,
      rcmdline, //<< if you don't have this command line parser unit, you can download it from www.benibela.de
      xquery_module_file
