@@ -216,6 +216,7 @@ begin
       isStdoutTTY := true;
       isStderrTTY := true;
     end;
+    cAuto, cJSON, cXML, cHTML: ;
   end;
   case colorizing of
     cAuto, cAlways: begin
@@ -223,8 +224,10 @@ begin
         ofXMLWrapped, ofRawXML: colorizing := cXML;
         ofRawHTML: colorizing := cHTML;
         ofJsonWrapped: colorizing := cJSON;
+        ofAdhoc, ofBash, ofWindowsCmd: ;
       end;
     end;
+    cNever, cJSON, cXML, cHTML: ;
   end;
   {$ifdef windows}
   if colorizing <> cNever then begin
@@ -253,6 +256,7 @@ begin
       if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<!DOCTYPE html>';
     ofRawXML, ofXMLWrapped:
       if not mycmdline.existsProperty('output-declaration') then outputDeclaration:='<?xml version="1.0" encoding="'+ strEncodingName(GetTextCodePage(xidelOutputFile))+'"?>';
+    ofAdhoc, ofJsonWrapped, ofBash, ofWindowsCmd: ;
   end;
   if (outputHeader <> '') and (outputDeclaration <> '') then
     outputDeclaration += LineEnding
@@ -321,6 +325,7 @@ begin
       ofRawXML: setHeaderFooter('<xml>', le + '</xml>');
       ofJsonWrapped: setHeaderFooter('[', le + ']');
       ofXMLWrapped: setHeaderFooter('<seq>', '</seq>');
+      ofAdhoc, ofBash, ofWindowsCmd: ;
     end;
   end;
 end;
