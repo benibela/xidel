@@ -64,6 +64,7 @@ var
 
   firstItem: boolean = true;
   lastWrittenChar: char = #0;
+  lastWrittenToStderr: boolean = false;
   implicitLineBreakAfterDeclaration: boolean = false;
 implementation
 uses bbutils
@@ -568,14 +569,15 @@ end;
 
 procedure werr(const s: string);
 begin
-  if not firstItem then writeln(stderr);
+  if not lastWrittenToStderr and not firstItem then writeln(stderr);
   write(stderr, s);
+  lastWrittenToStderr := true;
 end;
 
 procedure werrln(const s: string);
 begin
-  if not firstItem then writeln(stderr);
-  writeln(stderr, s);
+  werr(s);
+  werr(LineEnding);
 end;
 
 
@@ -596,6 +598,7 @@ begin
   end else if (outputHeader <> '') and (outputSeparator = LineEnding) and (s <> '') and not (s[1] in [#13,#10]) then writeLineBreakAfterDeclaration;
   wcolor(s, color);
   firstItem := false;
+  lastWrittenToStderr := false;
   if s <> '' then lastWrittenChar := s[length(s)];
 end;
 
