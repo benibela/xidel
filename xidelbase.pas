@@ -568,6 +568,8 @@ TXQueryCompatibilityOptions = record
   procedure configureParsers(kind: TExtractionKind);
 end;
 
+TStatusInfo = (sDefault, sProcessingInformation);
+
 //Processing is done in processing contexts
 //A processing context can have its own data sources (TFollowTo or data sources of a nested processing context) or receive the data from its parent
 //To every data source actions are applied (e.g. tdownload or textraction). These actions can also yield new data sources (e.g. follow := assignments or nested processing contexts with yieldDataToParent)
@@ -605,7 +607,7 @@ TProcessingContext = class(TDataProcessing)
 
   procedure configureInternet;
 
-  procedure printStatus(header, status: string);
+  procedure printStatus(header, status: string; statusInfo: TStatusInfo);
 
   procedure readOptions(reader: TOptionReaderWrapper); override;
   procedure mergeWithObject(obj: TXQValueMapLike); override;
@@ -1068,7 +1070,7 @@ begin
   else if strEndsWith(downloadTo, '/') then downloadTo := downloadTo + '/' + realPath + realFile
   else if DirectoryExists(downloadTo) or (downloadTo = '.' { <- redunant check, but safety first }) then downloadTo := downloadTo + '/' + realFile;
   if strEndsWith(downloadTo, '/') or (downloadTo = '') then downloadTo += 'index.html'; //sometimes realFile is empty
-  parent.printStatus('Save as', downloadTo);
+  parent.printStatus('Save as', downloadTo, sProcessingInformation);
   if pos('/', downloadTo) > 0 then
     ForceDirectories(StringReplace(StringReplace(copy(downloadTo, 1, strRpos('/', downloadTo)-1), '//', '/', [rfReplaceAll]), '/', DirectorySeparator, [rfReplaceAll]));
   strSaveToFileUTF8(StringReplace(downloadTo, '/', DirectorySeparator, [rfReplaceAll]), data.rawdata);
@@ -1120,8 +1122,8 @@ begin
   end;
   escapedURL := url;
   if not rawURL then escapedURL := TInternetAccess.urlEncodeData(url, ueXPathHTML4);
-  parent.printStatus('Retrieving ('+method+')', escapedURL);
-  if parent.printPostData and (data <> '') then parent.printStatus('Data', data);
+  parent.printStatus('Retrieving ('+method+')', escapedURL, sProcessingInformation);
+  if parent.printPostData and (data <> '') then parent.printStatus('Data', data, sProcessingInformation);
   result := TDataObject.create('', escapedURL);
   if assigned(onRetrieve) then begin
     parent.stupidHTTPReactionHackFlag := 0;
@@ -1136,7 +1138,7 @@ begin
     end;
   end;
   if parent.printReceivedHeaders and assigned(internet) then begin
-    parent.printStatus('Headers', '(HTTP code: '+inttostr(internet.lastHTTPResultCode)+')');
+    parent.printStatus('Headers', '(HTTP code: '+inttostr(internet.lastHTTPResultCode)+')', sDefault);
     for i:=0 to internet.lastHTTPHeaders.Count-1 do
       wln(internet.lastHTTPHeaders.Strings[i]);
   end;
@@ -1295,7 +1297,7 @@ end;
 function TFileRequest.retrieve(parent: TProcessingContext; arecursionLevel: integer): IData;
 begin
   if not allowFileAccess then raise EXidelException.Create('File access not permitted');
-  parent.printStatus('Retrieving', url);
+  parent.printStatus('Retrieving', url, sProcessingInformation);
   result := TDataObject.create(strLoadFromFileUTF8(url), url);
   with result as TDataObject do begin
     fbaseurl:=fileNameExpandToURI(fbaseurl);
@@ -1703,8 +1705,13 @@ begin
   defaultInternet.config := @defaultInternetConfiguration;
 end;
 
-procedure TProcessingContext.printStatus(header, status: string);
+var globalDataSourceCount: SizeInt = 0;
+procedure TProcessingContext.printStatus(header, status: string; statusInfo: TStatusInfo);
 begin
+  if (statusInfo = sProcessingInformation) and not (printPostData {verbose}) then begin
+    if globalDataSourceCount = 1 then exit;
+  end;
+
   if not silent then begin
     setTerminalColor(true, ccWhiteBold);
     werr(header);
@@ -1836,6 +1843,7 @@ begin
   SetLength(dataSources, length(dataSources) + 1);
   dataSources[high(dataSources)] := source;
   dataSources[high(dataSources)].parent := self;
+  inc(globalDataSourceCount);
 end;
 
 procedure TProcessingContext.readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
@@ -2014,10 +2022,10 @@ var next, res: TFollowToList;
     followKind: TExtractionKind;
   begin
     if data = nil then exit;
-    if follow <> '' then printStatus('Processing', data.displayBaseUri)
+    if follow <> '' then printStatus('Processing', data.displayBaseUri, sProcessingInformation)
     else for i := skipActions to high(actions) do
       if actions[i] is TExtraction then begin
-        printStatus('Processing', data.displayBaseUri);
+        printStatus('Processing', data.displayBaseUri, sProcessingInformation);
         break; //useless printing message if no extraction is there
       end;
 
@@ -2644,7 +2652,7 @@ var
 begin
   writeBeginGroup;
   jsonItselfAssigned := false;
-  parent.printStatus(state, '');
+  parent.printStatus(state, '', sDefault);
   case outputFormat of
     ofAdhoc: begin
       for i:=0 to vars.count-1 do
@@ -3340,6 +3348,7 @@ begin
       currentContext.followTo.assignOptions(currentContext);
       currentContext.followTo.parent := currentcontext;
       currentContext := currentContext.followTo;
+      inc(globalDataSourceCount);
     end else begin
       //sibling (later commands form a new context, unrelated to the previous one)
       currentContext.nextSibling := TProcessingContext.Create;
