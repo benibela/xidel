@@ -12,13 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      matrix:
-        include:
-        - operating-system: ubuntu-latest
-        - operating-system: windows-latest
+  build-ubuntu:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - run: .github/download-dependencies.sh
@@ -26,9 +21,24 @@ jobs:
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
         lazarus-version: stable
-    - name: Ubuntu
-      if: ${{ matrix.operating-system == 'ubuntu-latest' }}
-      uses: ./.github/workflows/ubuntu.yml
-    - name: Windows
-      if: ${{ matrix.operating-system == 'windows-latest' }}
-      uses: ./.github/workflows/windows.yml
+    - run: lazbuild --add-package internettools/internettools.lpk
+    - run: ./manage.sh linux64
+    - name: Test Xidel
+      run: ./tests/tests.sh
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: .github/download-dependencies.sh
+    - name: Install Lazarus
+      uses: gcarreno/setup-lazarus@v3.0.16
+      with:
+        lazarus-version: stable
+    - run: lazbuild --add-package internettools/internettools.lpk
+    - run: ./manage.sh win64
+    - name: Test Xidel 64
+      run: ./tests/tests.sh
+    - run: ./manage.sh win32
+    - name: Test Xidel 32
+      run: ./tests/tests.sh
