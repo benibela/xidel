@@ -29,7 +29,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: xidel.linux64.tar.gz
-        path: xidel*.tar.gz
+        path: xidelpackage/*
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
@@ -55,8 +55,13 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: xidel.win64.zip
-        path: xidel*.zip
+        path: xidelpackage/*
     - run: bash ./manage.sh win32
     - name: Test Xidel 32
       run: ./tests/tests.sh
       shell: bash
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.win32.zip
+        path: xidelpackage/*
