@@ -19,9 +19,9 @@ cat >> $FPCCFG <<EOF
 
 
 # for cross compiling
--Fu/usr/local/lib/fpc/$fpcversion/units/$fpctarget
--Fu/usr/local/lib/fpc/$fpcversion/units/$fpctarget/*
--Fu/usr/local/lib/fpc/$fpcversion/units/$fpctarget/rtl
+-Fu/usr/local/lib/fpc/\$fpcversion/units/\$fpctarget
+-Fu/usr/local/lib/fpc/\$fpcversion/units/\$fpctarget/*
+-Fu/usr/local/lib/fpc/\$fpcversion/units/\$fpctarget/rtl
 
 
 #ifdef cpui386
