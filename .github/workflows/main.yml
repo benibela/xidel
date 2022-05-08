@@ -49,14 +49,15 @@ jobs:
     - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh 
       shell: bash
     - run: lazbuild --add-package internettools/internettools.lpk
-    - run: ./manage.sh win64
+    - run: bash ./manage.sh win64
     - name: Test Xidel 64
-      run: ./tests/tests.sh
+      run: bash ./tests/tests.sh
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
         name: xidel.win64.zip
         path: xidel*.zip
-    - run: ./manage.sh win32
+    - run: bash ./manage.sh win32
     - name: Test Xidel 32
       run: ./tests/tests.sh
+      shell: bash
