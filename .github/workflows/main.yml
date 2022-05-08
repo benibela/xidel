@@ -14,7 +14,6 @@ on:
 jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
-    shell: bash
     steps:
     - uses: actions/checkout@v3
     - name: Install Lazarus
@@ -26,6 +25,7 @@ jobs:
     - run: ./manage.sh linux64
     - name: Test Xidel
       run: ./tests/tests.sh
+      shell: bash
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
@@ -40,7 +40,6 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    shell: bash
     steps:
     - uses: actions/checkout@v3
     - name: Install Lazarus
@@ -48,6 +47,7 @@ jobs:
       with:
         lazarus-version: stable
     - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh 
+      shell: bash
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: ./manage.sh win64
     - name: Test Xidel 64
