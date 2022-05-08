@@ -25,6 +25,17 @@ jobs:
     - run: ./manage.sh linux64
     - name: Test Xidel
       run: ./tests/tests.sh
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linux64.tar.gz
+        path: xidel*.tar.gz
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linux64.deb
+        path: xidel*.deb
+
 
   build-windows:
     runs-on: windows-latest
@@ -34,11 +45,16 @@ jobs:
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
         lazarus-version: stable
-    - run: .github/download-dependencies.sh && .github/setup-fpc-cfg.sh 
+    - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh 
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: ./manage.sh win64
     - name: Test Xidel 64
       run: ./tests/tests.sh
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.win64.zip
+        path: xidel*.zip
     - run: ./manage.sh win32
     - name: Test Xidel 32
       run: ./tests/tests.sh
