@@ -48,6 +48,9 @@ jobs:
         sudo make crossinstall OS_TARGET=linux CPU_TARGET=i386 PP=$localcompiler 
         sudo make crossinstall OS_TARGET=linux CPU_TARGET=arm PP=$localcompiler
         sudo make crossinstall OS_TARGET=linux CPU_TARGET=aarch64 PP=$localcompiler 
+        sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcrossa64 /usr/bin/
+        sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcross386 /usr/bin/
+        sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcrossarm /usr/bin/
     - name: 'Cross compile Xidel 32-Bit'
       run: ./manage.sh linux32
     - name: 'Upload '
