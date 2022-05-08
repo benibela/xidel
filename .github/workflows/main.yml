@@ -28,7 +28,7 @@ jobs:
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
-        name: xidel.linux64.tar.gz
+        name: xidel.linux64.zip
         path: xidelpackage/*
     - name: 'Upload '
       uses: actions/upload-artifact@v3
