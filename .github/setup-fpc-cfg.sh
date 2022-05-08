@@ -17,6 +17,13 @@ echo -Fu$CURPATH/rcmdline/                    >> $FPCCFG
 cat >> $FPCCFG <<EOF
 #ifdef linux
 
+
+# for cross compiling
+-Fu/usr/local/lib/fpc/$fpcversion/units/$fpctarget
+-Fu/usr/local/lib/fpc/$fpcversion/units/$fpctarget/*
+-Fu/usr/local/lib/fpc/$fpcversion/units/$fpctarget/rtl
+
+
 #ifdef cpui386
 -XPi686-linux-gnu-
 -Xr/usr/i686-linux-gnu/lib/
