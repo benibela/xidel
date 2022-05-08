@@ -99,6 +99,11 @@ linuxarm)
         release linuxarm
         ;;
 
+linuxarm64)
+        lazcompile --os=linux --ws=nogui --cpu=aarch64
+        release linuxaarch64
+        ;;
+
 win32)
         exesuffix=.exe
         lazcompile --os=win32 --ws=win32 --cpu=i386 --build-mode=win32
@@ -108,6 +113,11 @@ win32synapse|win32openssl)
         exesuffix=.exe
         lazcompile --os=win32 --ws=win32 --cpu=i386 --build-mode=win32synapse
         release openssl.win32
+        ;;
+win64)
+        exesuffix=.exe
+        lazcompile --os=win64 --ws=win64 --cpu=x86_64 --build-mode=win32
+        release win64
         ;;
 
 androidarm)
@@ -132,8 +142,10 @@ release)
         ./manage.sh linux32
         ./manage.sh linux64        
         ./manage.sh linuxarm
+        ./manage.sh linuxarm64
         ./manage.sh win32
         ./manage.sh win32synapse
+        ./manage.sh win64
         ./manage.sh androidarm
         ./manage.sh androidarm64
         ./manage.sh mirror
