@@ -1,0 +1,40 @@
+name: CD
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        lazarus-versions: [stable]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Lazarus
+      uses: gcarreno/setup-lazarus@v3.0.16
+      with:
+        lazarus-version: ${{ matrix.lazarus-versions }}
+    - name: Download dependencies
+      run: .github/download.dependencies.sh
+    - name: Build Xidel (Windows)
+      if: ${{ matrix.operating-system == 'windows-latest' }}
+      run: lazbuild -B "xidel.lpi"
+    - name: Build Xidel (Ubuntu)
+      if: ${{ matrix.operating-system == 'ubuntu-latest' }}
+      run: |
+        sudo apt update
+        sudo apt install lintian -y
+        ./build.sh -t
+    - name: Build the Main Application (macOS)
+      if: ${{ matrix.operating-system == 'macos-latest' }}
+      run: lazbuild -B xidel.lpi
