@@ -24,8 +24,7 @@ jobs:
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: ./manage.sh linux64
     - name: Test Xidel
-      run: ./tests/tests.sh
-      shell: bash
+      run: bash ./tests/tests.sh
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
@@ -46,7 +45,7 @@ jobs:
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
         lazarus-version: stable
-    - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh 
+    - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh "D:/a/_temp/lazarus/fpc/3.2.2/bin/x86_64-win64/fpc.cfg"
       shell: bash
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: bash ./manage.sh win64
