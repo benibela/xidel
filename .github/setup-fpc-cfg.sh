@@ -9,3 +9,5 @@ echo -Fi$PWD/internettools/               >> $FPCCFG
 echo -Fu$PWD/internettools/               >> $FPCCFG
 echo -Fu$PWD/rcmdline/                    >> $FPCCFG
 
+
+cat $FPCCFG
