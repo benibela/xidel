@@ -28,15 +28,51 @@ jobs:
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
-        name: xidel.linux64.zip
+        name: xidel.linux64
         path: xidelpackage/*
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
         name: xidel.linux64.deb
         path: xidel*.deb
+    - name: 'Cross compile FreePascal'
+      run: |
+        sudo apt install libc6-dev-i386-cross binutils-i686-linux-gnu libc6-dev-armel-cross binutils-arm-linux-gnueabi libc6-dev-arm64-cross binutils-aarch64-linux-gnu
+        dpkg -L libc6-dev-i386-cross binutils-i686-linux-gnu libc6-dev-armel-cross binutils-arm-linux-gnueabi libc6-dev-arm64-cross binutils-aarch64-linux-gnu
+        cd /usr/share/fpcsrc/3.2*/
+        localcompiler=/usr/bin/fpc
+        sudo make crossinstall OS_TARGET=linux CPU_TARGET=i386 PP=$localcompiler 
+        sudo make crossinstall OS_TARGET=linux CPU_TARGET=arm PP=$localcompiler
+        sudo make crossinstall OS_TARGET=linux CPU_TARGET=aarch64 PP=$localcompiler 
+    - name: 'Cross compile Xidel 32-Bit'
+      run: ./manage.sh linux32
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linux32
+        path: xidelpackage/*
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linux32.deb
+        path: xidel*.deb
+    - name: 'Cross compile Xidel ARM'
+      run: ./manage.sh linuxarm
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linuxarm
+        path: xidelpackage/*
+    - name: 'Cross compile Xidel AARCH64' 
+      run: ./manage.sh linuxarm64
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linuxarm64
+        path: xidelpackage/*
 
-
+      
+ 
   build-windows:
     runs-on: windows-latest
     steps:
@@ -54,7 +90,7 @@ jobs:
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
-        name: xidel.win64.zip
+        name: xidel.win64
         path: xidelpackage/*
 #    - run: bash ./manage.sh win32
 #    - name: Test Xidel 32
@@ -63,5 +99,5 @@ jobs:
 #    - name: 'Upload '
 #      uses: actions/upload-artifact@v3
 #      with:
-#        name: xidel.win32.zip
+#        name: xidel.win32
 #        path: xidelpackage/*

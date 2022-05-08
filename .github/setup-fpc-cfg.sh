@@ -14,4 +14,32 @@ echo -Fu$CURPATH/internettools/               >> $FPCCFG
 echo -Fu$CURPATH/rcmdline/                    >> $FPCCFG
 
 
+cat >> $FPCCFG <<EOF
+#ifdef linux
+
+#ifdef cpui386
+-XPi686-linux-gnu-
+-Xr/usr/i686-linux-gnu/lib/
+-Fl/usr/i686-linux-gnu/lib/
+#endif
+
+#ifdef cpuarm
+-XParm-linux-gnueabi-
+-Xr/usr/arm-linux-gnueabi/lib/
+-Fl/usr/arm-linux-gnueabi/lib/
+#endif
+
+
+#ifdef cpuaarch64
+-XPaarch64-linux-gnu-
+-Xr/usr/aarch64-linux-gnu/lib
+-Fl/usr/aarch64-linux-gnu/lib
+-Fl/usr/lib/gcc-cross/aarch64-linux-gnu/10/
+#endif
+
+
+
+#endif
+EOF
+
 cat $FPCCFG
