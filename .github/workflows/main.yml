@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: .github/download-dependencies.sh && .github/setup-fpc-cfg.sh 
     - name: Install Lazarus
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
         lazarus-version: stable
+    - run: .github/download-dependencies.sh && .github/setup-fpc-cfg.sh 
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: ./manage.sh linux64
     - name: Test Xidel
@@ -30,11 +30,11 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
-    - run: .github/download-dependencies.sh && .github/setup-fpc-cfg.sh 
     - name: Install Lazarus
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
         lazarus-version: stable
+    - run: .github/download-dependencies.sh && .github/setup-fpc-cfg.sh 
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: ./manage.sh win64
     - name: Test Xidel 64
