@@ -16,25 +16,19 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        lazarus-versions: [stable]
+        include:
+        - operating-system: ubuntu-latest
+        - operating-system: windows-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Download dependencies
-      run: .github/download-dependencies.sh
+    - run: .github/download-dependencies.sh
     - name: Install Lazarus
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
-        lazarus-version: ${{ matrix.lazarus-versions }}
-    - name: Build Xidel (Windows)
-      if: ${{ matrix.operating-system == 'windows-latest' }}
-      run: lazbuild -B "xidel.lpi"
-    - name: Build Xidel (Ubuntu)
+        lazarus-version: stable
+    - name: Ubuntu
       if: ${{ matrix.operating-system == 'ubuntu-latest' }}
-      run: |
-        sudo apt update
-        sudo apt install lintian -y
-        ./build.sh -t
-    - name: Build the Main Application (macOS)
-      if: ${{ matrix.operating-system == 'macos-latest' }}
-      run: lazbuild -B xidel.lpi
+      uses: .github/workflows/linux.yml
+    - name: Windows
+      if: ${{ matrix.operating-system == 'windows-latest' }}
+      uses: .github/workflows/windows.yml

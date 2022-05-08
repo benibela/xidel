@@ -1,0 +1,14 @@
+on:
+  workflow_call:
+
+jobs:
+  ubuntu:
+    steps:
+    - name: Ubuntu update 
+      run: |
+        sudo apt update
+        sudo apt install lintian -y
+    - name: Build Xidel
+      run: ./manage.sh linux64
+    - name: Test Xidel
+      run: ./tests/tests.sh
