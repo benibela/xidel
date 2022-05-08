@@ -56,12 +56,12 @@ jobs:
       with:
         name: xidel.win64.zip
         path: xidelpackage/*
-    - run: bash ./manage.sh win32
+#    - run: bash ./manage.sh win32
 #    - name: Test Xidel 32
 #      run: ./tests/tests.sh
 #      shell: bash
-    - name: 'Upload '
-      uses: actions/upload-artifact@v3
-      with:
-        name: xidel.win32.zip
-        path: xidelpackage/*
+#    - name: 'Upload '
+#      uses: actions/upload-artifact@v3
+#      with:
+#        name: xidel.win32.zip
+#        path: xidelpackage/*
