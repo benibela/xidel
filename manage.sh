@@ -6,6 +6,9 @@ if [[ -f $DIR/../../../manageUtils.sh ]]; then source $DIR/../../../manageUtils.
 else
   function sfProject(){ echo; }
   function fileUpload(){ echo; }
+  if [[ $GITHUB_ACTIONS = "true" ]]; then 
+    function zip(){ echo; }
+  fi
 fi
 
 set -e
@@ -18,6 +21,7 @@ function getVersion(){
   else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
   UPLOAD_PATH="/Xidel/Xidel\ $VERSION/"
   BUILDDATE=`date +%Y%m%d`.`hg log -l 1 | head -1 | sed -e 's/^[^:]*: *//' | tr : .`
+  if [[ $GITHUB_ACTIONS = "true" ]]; then BUILDDATE="$BUILDDATE".git$(git describe); fi
   echo "writeln('($BUILDDATE)');" > xidelbuilddata.inc
   ISPRERELEASE=""
   if [[ $BUILD_VERSION = 1 ]] || [[ $BUILD_VERSION = 3 ]] || [[ $BUILD_VERSION = 5 ]] || [[ $BUILD_VERSION = 7 ]] || [[ $BUILD_VERSION = 9 ]]; then 
@@ -33,6 +37,8 @@ action=2
 
 BASE=$HGROOT/programs/internet/xidel
 exesuffix=
+
+TMP_PACKAGE_DIR=xidelpackage/
 
 function pushhg(){
 	VIDELIBRIBASE=$HGROOT/programs/internet/VideLibri
@@ -50,19 +56,23 @@ function lazcompile(){
 
 function release(){
   if [ $action -lt 2 ]; then exit; fi
+  rm -rf "$TMP_PACKAGE_DIR"
+  mkdir -p "$TMP_PACKAGE_DIR"
   packagesuffix=$1
   if [ ! -f meta/cacert.pem ]; then curl https://curl.se/ca/cacert.pem > meta/cacert.pem; fi
   case "$exesuffix" in
     .exe) 
-       package=xidel-$VERSION.$packagesuffix.zip
-       zip -v $package xidel.exe changelog readme.txt 
-       if [ $packagesuffix = "openssl.win32" ]; then
-         cd meta; zip -v ../$package cacert.pem; cd ..
-       fi
+       cp xidel.exe changelog readme.txt $TMP_PACKAGE_DIR
+       if [ $packagesuffix = "openssl.win32" ]; then cp meta/cacert.pem $TMP_PACKAGE_DIR; fi
+       package=$PWD/xidel-$VERSION.$packagesuffix.zip
+       cd $TMP_PACKAGE_DIR
+       zip -v $package *
+       cd -
      ;;
     *) 
+       cp xidel readme.txt changelog install.sh meta/cacert.pem $TMP_PACKAGE_DIR
        package=xidel-$VERSION.$packagesuffix.tar.gz
-       tar -vczf $package xidel readme.txt changelog install.sh -C meta cacert.pem
+       tar -vczf $package $TMP_PACKAGE_DIR/*  --transform 's:.*/::'
      ;;
   esac
   fileUpload $package "$UPLOAD_PATH"
