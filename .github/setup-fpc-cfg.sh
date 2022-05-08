@@ -1,13 +1,17 @@
 #!/bin/bash
 FPCCFG="$1"
+CURPATH="$2"
 if [[ -z "$FPCCFG" ]]; then FPCCFG=~/.fpc.cfg; fi
 if [[ ! -e "$FPCCFG" ]]; then echo '#INCLUDE /etc/fpc.cfg' > $FPCCFG; fi 
-echo -Fu$PWD/import/flre/src/             >> $FPCCFG
-echo -Fu$PWD/import/pasdblstrutils/src/   >> $FPCCFG
-echo -Fu$PWD/import/synapse/              >> $FPCCFG
-echo -Fi$PWD/internettools/               >> $FPCCFG
-echo -Fu$PWD/internettools/               >> $FPCCFG
-echo -Fu$PWD/rcmdline/                    >> $FPCCFG
+
+if [[ -z "$CURPATH" ]]; then CURPATH=$PWD; fi
+
+echo -Fu$CURPATH/import/flre/src/             >> $FPCCFG
+echo -Fu$CURPATH/import/pasdblstrutils/src/   >> $FPCCFG
+echo -Fu$CURPATH/import/synapse/              >> $FPCCFG
+echo -Fi$CURPATH/internettools/               >> $FPCCFG
+echo -Fu$CURPATH/internettools/               >> $FPCCFG
+echo -Fu$CURPATH/rcmdline/                    >> $FPCCFG
 
 
 cat $FPCCFG

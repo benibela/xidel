@@ -45,7 +45,7 @@ jobs:
       uses: gcarreno/setup-lazarus@v3.0.16
       with:
         lazarus-version: stable
-    - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh "D:/a/_temp/lazarus/fpc/3.2.2/bin/x86_64-win64/fpc.cfg"
+    - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh "D:/a/_temp/lazarus/fpc/3.2.2/bin/x86_64-win64/fpc.cfg" "D:/a/xidel/xidel/"
       shell: bash
     - run: lazbuild --add-package internettools/internettools.lpk
     - run: bash ./manage.sh win64
