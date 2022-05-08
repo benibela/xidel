@@ -28,7 +28,7 @@ jobs:
         lazarus-version: stable
     - name: Ubuntu
       if: ${{ matrix.operating-system == 'ubuntu-latest' }}
-      uses: .github/workflows/linux.yml
+      uses: ./.github/workflows/ubuntu.yml
     - name: Windows
       if: ${{ matrix.operating-system == 'windows-latest' }}
-      uses: .github/workflows/windows.yml
+      uses: ./.github/workflows/windows.yml
