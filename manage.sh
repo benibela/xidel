@@ -2,7 +2,11 @@
 
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/../../../manageUtils.sh
+if [[ -f $DIR/../../../manageUtils.sh ]]; then source $DIR/../../../manageUtils.sh
+else
+  function sfProject(){ echo; }
+  function fileUpload(){ echo; }
+fi
 
 set -e
 
