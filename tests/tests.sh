@@ -47,8 +47,8 @@ tests/test.sh sibling2  '<a>123</a>' '<a>456</a>' -e '<a>{$x}</a>'
 tests/test.sh sibling2  -e '<a>{$x}</a>' '<a>123</a>' '<a>456</a>' 
 tests/test.sh sibling2b '<a>123</a>' -e '<a>{$x}</a>' '<a>456</a>' 
 tests/test.sh sibling3a '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")'
-tests/test.sh sibling3b -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' #extract applied to previous data (think that is good, right?)
-tests/test.sh sibling3c -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")' 
+ echo '<x/>' | tests/test.sh sibling3b -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' #extract applied to previous data (think that is good, right?)
+ echo '<x/>' | tests/test.sh sibling3c -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")' 
 tests/test.sh sibling4 tests/a.xml  -f //a     -e //title   tests/dpre.xml -f //a     -e //title  
 
 tests/test.sh tfe  tests/a.xml -f //a     -e //title
@@ -642,3 +642,5 @@ tests/test.sh eval  --xquery 'declare variable $outer := 456; let $a := 123 retu
 echo
 echo Results: 
 wc -l /tmp/xidel-tests-state-ok /tmp/xidel-tests-state-failed 2> /dev/null | grep tests  | sed -Ee 's/([0-9]+).*-([^-]+)/\1 \2/'
+
+if [[ -s /tmp/xidel-tests-state-failed ]] ; then exit 1 ; else exit 0 ; fi 
