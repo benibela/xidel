@@ -165,6 +165,10 @@ release)
 preparepackage)
         release
         ;;
+
+preparebuild)
+        getVersion
+        ;;
         
 hg)     pushhg
         ;;

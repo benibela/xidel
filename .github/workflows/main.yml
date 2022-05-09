@@ -126,8 +126,9 @@ jobs:
     - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh
       shell: bash
     - run: lazbuild --add-package internettools/internettools.lpk
+    - run: ./manage.sh preparebuild
     - run: lazbuild xidel.lpi
-    - run: ./preparepackage
+    - run: ./manage.sh preparepackage
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
