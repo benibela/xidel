@@ -20,6 +20,7 @@ cat >> $FPCCFG <<EOF
 -Fu/usr/local/lib/fpc/\$fpcversion/units/\$fpctarget/*
 -Fu/usr/local/lib/fpc/\$fpcversion/units/\$fpctarget/rtl
 
+-dCOMPILE_SYNAPSE_INTERNETACCESS
 
 #ifdef linux
 

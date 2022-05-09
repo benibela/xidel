@@ -72,7 +72,10 @@ function release(){
     *) 
        cp xidel readme.txt changelog install.sh meta/cacert.pem $TMP_PACKAGE_DIR
        package=xidel-$VERSION.$packagesuffix.tar.gz
-       tar -vczf $package $TMP_PACKAGE_DIR/*  --transform 's:.*/::'
+       fullpackage=$PWD/$package
+       cd $TMP_PACKAGE_DIR
+       tar -vczf $fullpackage *
+       cd -
      ;;
   esac
   fileUpload $package "$UPLOAD_PATH"
