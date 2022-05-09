@@ -115,7 +115,7 @@ jobs:
         name: xidel.win64
         path: xidelpackage/*
 
-  build-windows:
+  build-macos:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
