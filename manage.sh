@@ -21,7 +21,7 @@ function getVersion(){
   else VERSION=$MAJOR_VERSION.$MINOR_VERSION.$BUILD_VERSION ; fi
   UPLOAD_PATH="/Xidel/Xidel\ $VERSION/"
   BUILDDATE=`date +%Y%m%d`.`hg log -l 1 | head -1 | sed -e 's/^[^:]*: *//' | tr : .`
-  if [[ $GITHUB_ACTIONS = "true" ]]; then BUILDDATE="$BUILDDATE".git$GITHUB_SHA; fi
+  if [[ $GITHUB_ACTIONS = "true" ]]; then BUILDDATE="$BUILDDATE"git$GITHUB_SHA; fi
   echo "writeln('($BUILDDATE)');" > xidelbuilddata.inc
   ISPRERELEASE=""
   if [[ $BUILD_VERSION = 1 ]] || [[ $BUILD_VERSION = 3 ]] || [[ $BUILD_VERSION = 5 ]] || [[ $BUILD_VERSION = 7 ]] || [[ $BUILD_VERSION = 9 ]]; then 
@@ -59,7 +59,7 @@ function release(){
   rm -rf "$TMP_PACKAGE_DIR"
   mkdir -p "$TMP_PACKAGE_DIR"
   packagesuffix=$1
-  if [ ! -f meta/cacert.pem ]; then curl https://curl.se/ca/cacert.pem > meta/cacert.pem; fi
+  if [ ! -f meta/cacert.pem ]; then curl https://curl.se/ca/cacert.pem > meta/cacert.pem; chmod -x meta/cacert.pem; fi
   case "$exesuffix" in
     .exe) 
        cp xidel.exe changelog readme.txt $TMP_PACKAGE_DIR
@@ -160,6 +160,10 @@ release)
         ./manage.sh androidarm64
         ./manage.sh mirror
         mv oldxidel xidel
+        ;;
+        
+preparepackage)
+        release
         ;;
         
 hg)     pushhg

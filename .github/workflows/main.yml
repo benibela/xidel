@@ -45,6 +45,7 @@ jobs:
         sudo ln -sr $(which arm-linux-gnueabi-ld) /usr/bin/arm-linux-ld
         sudo ln -sr $(which aarch64-linux-gnu-as) /usr/bin/aarch64-linux-as
         sudo ln -sr $(which aarch64-linux-gnu-ld) /usr/bin/aarch64-linux-ld
+        sudo make crossinstall OS_TARGET=win32 CPU_TARGET=i386 PP=$localcompiler 
         sudo make crossinstall OS_TARGET=linux CPU_TARGET=i386 PP=$localcompiler 
         sudo make crossinstall OS_TARGET=linux CPU_TARGET=arm PP=$localcompiler
         sudo make crossinstall OS_TARGET=linux CPU_TARGET=aarch64 PP=$localcompiler 
@@ -77,6 +78,20 @@ jobs:
       with:
         name: xidel.linuxarm64
         path: xidelpackage/*
+    - name: 'Cross compile Xidel Win32'
+      run: ./manage.sh win32
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.win32
+        path: xidelpackage/*
+    - name: 'Cross compile Xidel Win32 OpenSSL'
+      run: ./manage.sh win32openssl
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.openssl.win32
+        path: xidelpackage/*
 
       
  
@@ -99,12 +114,23 @@ jobs:
       with:
         name: xidel.win64
         path: xidelpackage/*
-#    - run: bash ./manage.sh win32
-#    - name: Test Xidel 32
-#      run: ./tests/tests.sh
-#      shell: bash
-#    - name: 'Upload '
-#      uses: actions/upload-artifact@v3
-#      with:
-#        name: xidel.win32
-#        path: xidelpackage/*
+
+  build-windows:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Lazarus
+      uses: gcarreno/setup-lazarus@v3.0.16
+      with:
+        lazarus-version: stable
+    - run: . .github/download-dependencies.sh && . .github/setup-fpc-cfg.sh
+      shell: bash
+    - run: lazbuild --add-package internettools/internettools.lpk
+    - run: lazbuild xidel.lpi
+    - run: ./preparepackage
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.mac
+        path: xidelpackage/*
+        
