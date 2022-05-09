@@ -28,12 +28,14 @@ cat >> $FPCCFG <<EOF
 -XPi686-linux-gnu-
 -Xr/usr/i686-linux-gnu/lib/
 -Fl/usr/i686-linux-gnu/lib/
+-Fl/usr/lib/gcc-cross/i686-linux-gnu/10/
 #endif
 
 #ifdef cpuarm
 -XParm-linux-gnueabi-
 -Xr/usr/arm-linux-gnueabi/lib/
 -Fl/usr/arm-linux-gnueabi/lib/
+-Fl/usr/lib/gcc-cross/arm-linux-gnueabi/10
 #endif
 
 
