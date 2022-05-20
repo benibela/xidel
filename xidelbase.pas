@@ -1014,7 +1014,7 @@ begin
   realUrl := data.baseUri;
   if guessType(realUrl) = rtRemoteURL then realurl := decodeURL(realUrl).path;
 
-  if data.headers.getContentDispositionFileNameTry(realPath) then
+  if assigned(data.headers) and data.headers.getContentDispositionFileNameTry(realPath) then
     realUrl := realPath;
   j := strRpos('/', realUrl);
   if j = 0 then begin
@@ -4149,7 +4149,7 @@ begin
         obj := TXQValueStringMap.create();
         obj.setMutable('url', data.baseUri);
         obj.setMutable('type', data.contenttype);
-        obj.setMutable('headers', xqvalue(data.headers));
+        if data.headers <> nil then obj.setMutable('headers', xqvalue(data.headers));
         obj.setMutable('raw', xqvalue(data.rawData));
         case data.inputFormat of
           ifJSON,ifJSONStrict: obj.setMutable('json', parseJSON(data));
