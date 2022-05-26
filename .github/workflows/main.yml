@@ -95,6 +95,7 @@ jobs:
         path: xidelpackage/*
     - name: 'Debug version'
       run: cp ~/.fpc.cfg.debug ~/.fpc.cfg
+    - run: find -name "*.o" -or -name "*.ppu" -delete
     - name: 'Cross compile Xidel 32-Bit'
       run: ./manage.sh linux32
     - name: 'Upload '
@@ -158,6 +159,7 @@ jobs:
         name: xidel.win64
         path: xidelpackage/*
     - run: find -name "*.o" -or -name "*.ppu" -delete
+      shell: bash
     - run: cp D:/a/_temp/lazarus/fpc/3.2.2/bin/x86_64-win64/fpc.cfg.debug D:/a/_temp/lazarus/fpc/3.2.2/bin/x86_64-win64/fpc.cfg 
     - run: bash ./manage.sh win64
 #    - name: Test Xidel 64
@@ -191,6 +193,7 @@ jobs:
         path: xidelpackage/*
     - name: 'Debug version'
       run: cp ~/.fpc.cfg.debug ~/.fpc.cfg
+    - run: find -name "*.o" -or -name "*.ppu" -delete
     - run: lazbuild xidel.lpi
     - run: ./manage.sh preparepackage
     - name: 'Upload '
