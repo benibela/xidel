@@ -178,6 +178,10 @@ hg)     pushhg
 
 mirror) 
         pushhg || true
+        set +e
+        (cd $HGROOT/components/pascal; ./manage.internettools.sh mirror; ./manage.synapse.sh mirror;  ./manage.synapse.sh mirror; ./manage.rcmdline.sh mirror;  )
+        echo $PWD
+        echo ???
         SF_PROJECT= 
         mirroredProject xidel
         syncHg $BASE/_hg.filemap
