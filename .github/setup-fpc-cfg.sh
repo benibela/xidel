@@ -51,4 +51,17 @@ cat >> $FPCCFG <<EOF
 #endif
 EOF
 
+cp $FPCCFG $FPCCFG.debug
+echo '-dDEBUG' >> $FPCCFG.debug
+echo '-Crtoi' >> $FPCCFG.debug
+echo '-gl' >> $FPCCFG.debug
+echo '-O1' >> $FPCCFG.debug
+
+cp $FPCCFG $FPCCFG.release
+echo '-dRELEASE' >> $FPCCFG.release
+echo '-O4' >> $FPCCFG.release
+echo '-Xs' >> $FPCCFG.release
+echo '-XX' >> $FPCCFG.release
+
+
 cat $FPCCFG
