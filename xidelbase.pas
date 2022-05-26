@@ -3445,12 +3445,17 @@ begin
 end;
 
 procedure printVersion;
+var
+  compiler: String;
 begin
   writeln('Xidel '+getVersionString);
   {$I xidelbuilddata.inc} //more version information to print. if you do not have the file, just create an empty one or remove this line
+  compiler := 'FPC' + {$INCLUDE %FPCVERSION%} + ' ' + {$INCLUDE %FPCTargetCPU%}+'-'+{$INCLUDE %FPCTargetOS%}+ ' ';
+  compiler += ''{$ifdef debug} + 'debug '{$endif} {$ifdef release}+'release '{$endif} {$IfOpt R+}+'R+'{$endif} {$IfOpt S+}+'S+'{$endif} {$IfOpt O+}+'O+'{$endif} {$IfOpt Q+}+'Q+'{$endif} {$IfOpt M+}+'M+'{$endif} {$IfOpt C+}+'C+'{$endif};
+  if compiler <> '' then writeln('Compiled with ', compiler );
   writeln('');
-  writeln('http://www.videlibri.de/xidel.html');
-  writeln('by Benito van der Zander <benito@benibela.de>');
+  writeln('https://www.videlibri.de/xidel.html');
+  writeln('by Benito van der Zander <benito AT benibela.de>');
   writeln();
 end;
 
