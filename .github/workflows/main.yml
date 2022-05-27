@@ -25,16 +25,6 @@ jobs:
     - run: ./manage.sh linux64
     - name: Test Xidel
       run: bash ./tests/tests.sh
-    - name: 'Upload '
-      uses: actions/upload-artifact@v3
-      with:
-        name: xidel.linux64
-        path: xidelpackage/*
-    - name: 'Upload '
-      uses: actions/upload-artifact@v3
-      with:
-        name: xidel.linux64.deb
-        path: xidel*.deb
     - name: 'Cross compile FreePascal'
       run: |
         sudo apt install libc6-dev-i386-cross libgcc-10-dev-i386-cross binutils-i686-linux-gnu libc6-dev-armel-cross libgcc-10-dev-armel-cross binutils-arm-linux-gnueabi libc6-dev-arm64-cross libgcc-10-dev-arm64-cross binutils-aarch64-linux-gnu
@@ -53,8 +43,20 @@ jobs:
         sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcross386 /usr/bin/
         sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcrossarm /usr/bin/
         cp ~/.fpc.cfg.release ~/.fpc.cfg
+    - run: ./manage.sh linux64 && strip --strip-all xidelpackage/xidel
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linux64
+        path: xidelpackage/*
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel.linux64.deb
+        path: xidel*.deb
+    - run: rm *.deb
     - name: 'Cross compile Xidel 32-Bit'
-      run: ./manage.sh linux32
+      run: ./manage.sh linux32 && strip --strip-all xidelpackage/xidel
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
@@ -65,29 +67,30 @@ jobs:
       with:
         name: xidel.linux32.deb
         path: xidel*.deb
+    - run: rm *.deb
     - name: 'Cross compile Xidel ARM'
-      run: ./manage.sh linuxarm
+      run: ./manage.sh linuxarm && strip --strip-all xidelpackage/xidel
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
         name: xidel.linuxarm
         path: xidelpackage/*
     - name: 'Cross compile Xidel AARCH64' 
-      run: ./manage.sh linuxarm64
+      run: ./manage.sh linuxarm64 && strip --strip-all xidelpackage/xidel
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
         name: xidel.linuxarm64
         path: xidelpackage/*
     - name: 'Cross compile Xidel Win32'
-      run: ./manage.sh win32
+      run: ./manage.sh win32 && strip --strip-all xidelpackage/xidel.exe
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
         name: xidel.win32
         path: xidelpackage/*
     - name: 'Cross compile Xidel Win32 OpenSSL'
-      run: ./manage.sh win32openssl
+      run: ./manage.sh win32openssl && strip --strip-all xidelpackage/xidel.exe
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
@@ -96,6 +99,18 @@ jobs:
     - name: 'Debug version'
       run: cp ~/.fpc.cfg.debug ~/.fpc.cfg
     - run: find -name "*.o" -or -name "*.ppu" -delete
+    - run: ./manage.sh linux64
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel-debug.linux64
+        path: xidelpackage/*
+    - name: 'Upload '
+      uses: actions/upload-artifact@v3
+      with:
+        name: xidel-debug.linux64.deb
+        path: xidel*.deb
+    - run: rm *.deb
     - name: 'Cross compile Xidel 32-Bit'
       run: ./manage.sh linux32
     - name: 'Upload '
@@ -108,6 +123,7 @@ jobs:
       with:
         name: xidel-debug.linux32.deb
         path: xidel*.deb
+    - run: rm *.deb
     - name: 'Cross compile Xidel ARM'
       run: ./manage.sh linuxarm
     - name: 'Upload '
@@ -192,8 +208,10 @@ jobs:
         name: xidel.mac
         path: xidelpackage/*
     - name: 'Debug version'
-      run: cp ~/.fpc.cfg.debug ~/.fpc.cfg
-    - run: find -name "*.o" -or -name "*.ppu" -delete
+      run: |
+        cp ~/.fpc.cfg.debug ~/.fpc.cfg
+        find -name "*.o" -delete
+        find -name "*.ppu" -delete
     - run: lazbuild xidel.lpi
     - run: ./manage.sh preparepackage
     - name: 'Upload '
