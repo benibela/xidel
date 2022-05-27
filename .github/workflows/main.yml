@@ -69,14 +69,14 @@ jobs:
         path: xidel*.deb
     - run: rm *.deb
     - name: 'Cross compile Xidel ARM'
-      run: ./manage.sh linuxarm && strip --strip-all xidelpackage/xidel
+      run: ./manage.sh linuxarm && arm-linux-gnueabi-strip --strip-all xidelpackage/xidel
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
         name: xidel.linuxarm
         path: xidelpackage/*
     - name: 'Cross compile Xidel AARCH64' 
-      run: ./manage.sh linuxarm64 && strip --strip-all xidelpackage/xidel
+      run: ./manage.sh linuxarm64 && aarch64-linux-gnu-strip --strip-all xidelpackage/xidel
     - name: 'Upload '
       uses: actions/upload-artifact@v3
       with:
@@ -210,8 +210,7 @@ jobs:
     - name: 'Debug version'
       run: |
         cp ~/.fpc.cfg.debug ~/.fpc.cfg
-        find -name "*.o" -delete
-        find -name "*.ppu" -delete
+        find . -name "*.o" -or -name "*.ppu" -delete
     - run: lazbuild xidel.lpi
     - run: ./manage.sh preparepackage
     - name: 'Upload '
