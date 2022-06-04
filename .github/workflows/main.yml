@@ -43,6 +43,8 @@ jobs:
         sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcross386 /usr/bin/
         sudo ln -sr /usr/local/lib/fpc/3.2.2/ppcrossarm /usr/bin/
         cp ~/.fpc.cfg.release ~/.fpc.cfg
+        find -name "*.o" -or -name "*.ppu" -delete
+        ./xidel --xml xidel.lpi -e='x:replace-nodes((//Checks,//Optimizations),())' --in-place
     - run: ./manage.sh linux64 && strip --strip-all xidelpackage/xidel
     - name: 'Upload '
       uses: actions/upload-artifact@v3
