@@ -50,7 +50,7 @@ function pushhg(){
 function lazcompile(){
   getVersion
   rm xidel$exesuffix || true
-  lazbuild "$@" xidel.lpi || lazbuild "$@" xidel.lpi || (echo "FAILED!"; exit)
+  lazbuild --verbose "$@" xidel.lpi || lazbuild --verbose "$@" xidel.lpi || (echo "FAILED!"; exit)
   echo > xidelbuilddata.inc   
 }
 
