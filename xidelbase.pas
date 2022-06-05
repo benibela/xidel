@@ -3096,7 +3096,7 @@ begin
         temp := strSplit(htmlparser.debugMatchings(50), LineEnding); //print line by line, or the output "disappears"
         for j := 0 to high(temp) do  sayln( temp[j]);
         sayln('');
-        sayln('Hint: Xidel has performed pattern matching, searching the nodes of the query in the input document. If you are trying to run XQuery, surround the query with (parentheses). ')
+        sayln('Hint: Xidel has performed pattern matching, searching the nodes of the query in the input document. If you are trying to run XQuery, use --xquery or surround the query with (parentheses). ')
       end;
     end;
   end;
@@ -3684,7 +3684,7 @@ begin
 
     mycmdLine.declareFloat('wait', 'Wait a certain count of seconds between requests');
     mycmdLine.declareString('user-agent', 'Useragent used in http request', defaultUserAgent);
-    mycmdLine.declareString('proxy', 'Proxy used for http/s requests');
+    mycmdLine.declareString('proxy', 'Proxy used for requests. (prepend socks= for SOCKS proxy)');
     mycmdLine.declareString('post', joined(['Post request to send (url encoded). Multiple close occurrences are joined. If the new argument starts with &, it will always be joined. If it is empty, it will clear the previous parameters. ']));
     mycmdline.addAbbreviation('d');
     mycmdLine.declareString('form', 'Post request to send (multipart encoded). See --usage. Can be used multiple times like --post.');
@@ -3720,7 +3720,7 @@ begin
   mycmdline.declareString('printed-json-format', 'deprecated');
   mycmdline.declareFlag('output-node-indent', 'Pretty  print XML or HTML');
   mycmdLine.declareString('output-format', 'Output format: adhoc (simple human readable), xml, html, xml-wrapped (machine readable version of adhoc), json-wrapped, bash (export vars to bash), or cmd (export vars to cmd.exe) ', 'adhoc');
-  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8, latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)', 'utf-8');
+  mycmdLine.declareString('output-encoding', 'Character encoding of the output. utf-8, latin1, utf-16be, utf-16le, oem (windows console) or input (no encoding conversion)' {$ifdef windows}+' (default: utf-8 for files, oem for console)', ''{$else},'utf-8'{$endif});
   mycmdLine.declareString('output-declaration', 'Header for the output. (e.g. <!DOCTYPE html>, default depends on output-format)', '');
   mycmdLine.declareString('output-separator', 'Separator between multiple items (default: line break)', LineEnding);
   mycmdLine.declareString('output-header', '2nd header for the output. (e.g. <html>)', '');
