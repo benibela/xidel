@@ -7,14 +7,14 @@ rm /tmp/xidel-tests-state-failed
 
 
 tests/test.sh t1   tests/a.xml
-tests/test.sh te   tests/a.xml -e //title 
-tests/test.sh te   -e //title tests/a.xml 
+tests/test.sh te   tests/a.xml -e //title
+tests/test.sh te   -e //title tests/a.xml
 tests/test.sh texml --xml  tests/a.xml -e //title   #this is the recommended argument order
 tests/test.sh texml --xml  -e //title tests/a.xml
 tests/test.sh texml   tests/a.xml -e //title --xml  #but some other permutations might work as well
 tests/test.sh texml   tests/a.xml --xml -e //title
 tests/test.sh texml -e //title tests/a.xml --xml
-tests/test.sh texml -e //title --xml tests/a.xml 
+tests/test.sh texml -e //title --xml tests/a.xml
 #Follow all a, print all titles
 tests/test.sh tfe  tests/a.xml -f //a     -e //title
 tests/test.sh tfe2 tests/b.xml -f //a     -e //title
@@ -26,8 +26,8 @@ tests/test.sh tef  tests/a.xml -e //title -f //a
 tests/test.sh tefe tests/a.xml -e //title -f //a      -e //title
 
 tests/test.sh direct '<a>foobar</a>' -e '<a>{.}</a>'
-tests/test.sh direct_hidden_vars1 --hide-variable-names '<a>foobar</a>' -e '<a>{.}</a>' 
-tests/test.sh direct_hidden_vars2 '<a>foobar</a>' --hide-variable-names -e '<a>{.}</a>' 
+tests/test.sh direct_hidden_vars1 --hide-variable-names '<a>foobar</a>' -e '<a>{.}</a>'
+tests/test.sh direct_hidden_vars2 '<a>foobar</a>' --hide-variable-names -e '<a>{.}</a>'
 tests/test.sh direct_hidden_vars3 '<a>foobar</a>' -e '<a>{.}</a>' --hide-variable-names
 
 #follow max level
@@ -44,18 +44,18 @@ tests/test.sh sibling1c "<a/>"  -e "a:=17"  tests/a.xml -e 'a:=909' -e 'a:=10'
 tests/test.sh sibling1d "<a/>"  -e "a:=17" -e 'a:=$a+1'  tests/a.xml -e 'a:=$a+2' -e 'a:=$a+3'
 tests/test.sh sibling1e "<a/>"  -e "a:=17" -e 'a:=$a+1'  tests/a.xml -e 'a:=$a+2' -e 'a:=$a+3' '<b/>' -e 'a:=$a+4' -e 'a:=$a+5'
 tests/test.sh sibling2  '<a>123</a>' '<a>456</a>' -e '<a>{$x}</a>'
-tests/test.sh sibling2  -e '<a>{$x}</a>' '<a>123</a>' '<a>456</a>' 
-tests/test.sh sibling2b '<a>123</a>' -e '<a>{$x}</a>' '<a>456</a>' 
+tests/test.sh sibling2  -e '<a>{$x}</a>' '<a>123</a>' '<a>456</a>'
+tests/test.sh sibling2b '<a>123</a>' -e '<a>{$x}</a>' '<a>456</a>'
 tests/test.sh sibling3a '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")'
  echo '<x/>' | tests/test.sh sibling3b -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' #extract applied to previous data (think that is good, right?)
- echo '<x/>' | tests/test.sh sibling3c -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")' 
-tests/test.sh sibling4 tests/a.xml  -f //a     -e //title   tests/dpre.xml -f //a     -e //title  
+ echo '<x/>' | tests/test.sh sibling3c -e 'concat(/t, "a")' '<t>1</t>' -e 'concat(/t, "b")' '<t>2</t>' -e 'concat(/t, "c")'
+tests/test.sh sibling4 tests/a.xml  -f //a     -e //title   tests/dpre.xml -f //a     -e //title
 
 tests/test.sh tfe  tests/a.xml -f //a     -e //title
 tests/test.sh tfe2 tests/b.xml -f //a     -e //title
 
 #read title from both
-tests/test.sh 2urls tests/a.xml -e //title tests/b.xml -e //title 
+tests/test.sh 2urls tests/a.xml -e //title tests/b.xml -e //title
 #not separated urls
 tests/test.sh 2urls2read tests/a.xml tests/b.xml -e //title -e //title
 
@@ -63,10 +63,10 @@ tests/test.sh 2urls2read tests/a.xml tests/b.xml -e //title -e //title
 export environ1=1
 export environ2=xyz
 
-tests/test.sh var1 '<a>hello</a>' -e 'var:=.' 
+tests/test.sh var1 '<a>hello</a>' -e 'var:=.'
 tests/test.sh var2 '<a>hello</a>' -e 'var:=.' -e 'var2 := 17'
 tests/test.sh var3 '<a>hello</a>' -e 'var:=.' -e 'var2 := 17' -e '<a>{var3:=.}</a>'
-tests/test.sh novar '<a>hello</a>' -e '.' 
+tests/test.sh novar '<a>hello</a>' -e '.'
 tests/test.sh novar2 '<a>hello</a>' -e '.'  -e '<a>{.}</a>'
 tests/test.sh varmix '<a>hello</a>' -e '.'  -e '<a>{temp:=.}</a>' -e '3+4' -e 'res:=$result'
 tests/test.sh varmixb '<a>hello</a>' -e 'concat(">", ., "<")'  -e '<a>{temp:=$result}</a>' -e '3+4' -e 'res:=$result'
@@ -107,42 +107,42 @@ tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s>re
 tests/test.sh multipageShort   --extract-kind=multipage --extract '<action><s test="true()">result:=123</s></action>' --xpath 'get("result")'
 tests/test.sh multipageShortF  --extract-kind=multipage --extract '<action><s test="false()">result:=123</s></action>' --xpath 'get("result")'
 
-tests/test.sh multipageTry  --extract-kind=multipage --extract '<action> 
-  <try><s>int("f")</s><catch errors="err:FORG0001"><s>x:=1</s></catch></try> 
-  <try><s>int("f")</s><catch errors="x y z err:FORG0001"><s>x:=$x+1</s></catch></try> 
-  <try><s>int("f")</s><catch errors=""/><catch errors="*:FORG0001"><s>x:=$x+1</s></catch></try> 
-  <try><s>int("f")</s><catch errors="pxp:FORG0001"/><catch errors="*"><s>x:=$x+1</s></catch></try> 
-  <try><s>int("f")</s><catch errors="foo bar"/><catch errors="*:*"><s>x:=$x+1</s></catch></try> 
-  <try><s>int("f")</s><catch errors="FORG0001"/><catch errors="err:*"><s>x:=$x+1</s></catch></try> 
-  <try><s>int("f")</s><catch><s>x:=$x+1</s></catch></try> 
+tests/test.sh multipageTry  --extract-kind=multipage --extract '<action>
+  <try><s>int("f")</s><catch errors="err:FORG0001"><s>x:=1</s></catch></try>
+  <try><s>int("f")</s><catch errors="x y z err:FORG0001"><s>x:=$x+1</s></catch></try>
+  <try><s>int("f")</s><catch errors=""/><catch errors="*:FORG0001"><s>x:=$x+1</s></catch></try>
+  <try><s>int("f")</s><catch errors="pxp:FORG0001"/><catch errors="*"><s>x:=$x+1</s></catch></try>
+  <try><s>int("f")</s><catch errors="foo bar"/><catch errors="*:*"><s>x:=$x+1</s></catch></try>
+  <try><s>int("f")</s><catch errors="FORG0001"/><catch errors="err:*"><s>x:=$x+1</s></catch></try>
+  <try><s>int("f")</s><catch><s>x:=$x+1</s></catch></try>
   <try><s>int("f")</s><catch errors="*:FORG0001"><s>x:=$x+1</s></catch></try>  </action>'  --xpath '$x'
-tests/test.sh multipageTryHttp --extract-kind=multipage --extract '<action> 
-    <try><page url="http://example.org/invalid"/><catch errors="http"><s>x:=1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http300"/><catch errors="http404"><s>x:=$x+1</s></catch><catch errors="http404"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http:300"/><catch errors="http:404"><s>x:=$x+1</s></catch><catch errors="http:404"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http:3*"/><catch errors="http:4*"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http:3xx"/><catch errors="http:4xx"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="http:44*"/><catch errors="http:*"><s>x:=$x+1</s></catch></try> 
-    <try><page url="http://example.org/invalid"/><catch errors="err:*"/><catch errors="pxp:*"><s>x:=$x+1</s></catch></try> 
+tests/test.sh multipageTryHttp --extract-kind=multipage --extract '<action>
+    <try><page url="http://example.org/invalid"/><catch errors="http"><s>x:=1</s></catch></try>
+    <try><page url="http://example.org/invalid"/><catch errors="http300"/><catch errors="http404"><s>x:=$x+1</s></catch><catch errors="http404"><s>x:=$x+1</s></catch></try>
+    <try><page url="http://example.org/invalid"/><catch errors="http:300"/><catch errors="http:404"><s>x:=$x+1</s></catch><catch errors="http:404"><s>x:=$x+1</s></catch></try>
+    <try><page url="http://example.org/invalid"/><catch errors="http:3*"/><catch errors="http:4*"><s>x:=$x+1</s></catch></try>
+    <try><page url="http://example.org/invalid"/><catch errors="http:3xx"/><catch errors="http:4xx"><s>x:=$x+1</s></catch></try>
+    <try><page url="http://example.org/invalid"/><catch errors="http:44*"/><catch errors="http:*"><s>x:=$x+1</s></catch></try>
+    <try><page url="http://example.org/invalid"/><catch errors="err:*"/><catch errors="pxp:*"><s>x:=$x+1</s></catch></try>
 </action>'  --xpath '$x'
 tests/test.sh followCustomErrorHandling '<a/>' --error-handling=xxx=accept -f '{"url": "http://example.org", "error-handling": "xxx=accept"}' -e 'contains(//title, "Example")'
 tests/test.sh followCustomErrorHandling '<a/>'  -f '{"url": "http://example.org", "error-handling": "xxx=accept"}' -e 'contains(//title, "Example")'
 
 
 #output formats
-tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*" 
+tests/test.sh adhoc1 tests/a.xml --extract "<a>{.}</a>*"
 tests/test.sh xml1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml-wrapped
-tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json-wrapped 
+tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json1 tests/a.xml --extract "<a>{.}</a>*" --output-format json #deprecated
 tests/test.sh xmlraw1 tests/a.xml --extract "<a>{.}</a>*" --output-format xml
 tests/test.sh htmlraw1 tests/a.xml --extract "<a>{.}</a>*" --output-format html
 tests/test.sh bash1 tests/a.xml --extract "<a>{.}</a>*" --output-format bash
 tests/test.sh cmd1 tests/a.xml --extract "<a>{.}</a>*" --output-format cmd
-tests/test.sh xml1b tests/a.xml --output-format xml-wrapped --extract "<a>{.}</a>*" 
+tests/test.sh xml1b tests/a.xml --output-format xml-wrapped --extract "<a>{.}</a>*"
 tests/test.sh json1b tests/a.xml --output-format json-wrapped --extract "<a>{.}</a>*"
 tests/test.sh json1b tests/a.xml --output-format json --extract "<a>{.}</a>*"  #deprecated
-tests/test.sh xmlraw1b tests/a.xml --output-format xml --extract "<a>{.}</a>*" 
-tests/test.sh htmlraw1b tests/a.xml --output-format html --extract "<a>{.}</a>*" 
+tests/test.sh xmlraw1b tests/a.xml --output-format xml --extract "<a>{.}</a>*"
+tests/test.sh htmlraw1b tests/a.xml --output-format html --extract "<a>{.}</a>*"
 tests/test.sh xmlraw1c tests/a.xml --output-format xml --extract "<a>{.}</a>*"  --output-declaration="<?xml>"
 
 tests/test.sh adhoc2 tests/a.xml tests/b.xml -e "<a>{.}</a>*"
@@ -153,13 +153,13 @@ tests/test.sh xmlraw2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format x
 tests/test.sh htmlraw2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format html
 tests/test.sh bash2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format bash
 tests/test.sh cmd2 tests/a.xml tests/b.xml -e "<a>{.}</a>*" --output-format cmd
-tests/test.sh xml2b tests/a.xml tests/b.xml --output-format xml-wrapped -e "<a>{.}</a>*" 
-tests/test.sh json2b tests/a.xml tests/b.xml --output-format json-wrapped -e "<a>{.}</a>*" 
+tests/test.sh xml2b tests/a.xml tests/b.xml --output-format xml-wrapped -e "<a>{.}</a>*"
+tests/test.sh json2b tests/a.xml tests/b.xml --output-format json-wrapped -e "<a>{.}</a>*"
 tests/test.sh json2b tests/a.xml tests/b.xml --output-format json -e "<a>{.}</a>*"  #deprecated
-tests/test.sh xmlraw2b tests/a.xml tests/b.xml --output-format xml -e "<a>{.}</a>*" 
-tests/test.sh htmlraw2b tests/a.xml tests/b.xml --output-format html -e "<a>{.}</a>*" 
+tests/test.sh xmlraw2b tests/a.xml tests/b.xml --output-format xml -e "<a>{.}</a>*"
+tests/test.sh htmlraw2b tests/a.xml tests/b.xml --output-format html -e "<a>{.}</a>*"
 
-tests/test.sh adhoc3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*"  
+tests/test.sh adhoc3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*"
 tests/test.sh xml3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format xml-wrapped
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json-wrapped
 tests/test.sh json3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format json #deprecated option
@@ -168,7 +168,7 @@ tests/test.sh htmlraw3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</tit
 tests/test.sh bash3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format bash
 tests/test.sh cmd3 tests/a.xml tests/b.xml --extract "<title>{title:=.}</title><a>{.}</a>*" --output-format cmd
 
-tests/test.sh adhoc4 -e '"<foobar>"' 
+tests/test.sh adhoc4 -e '"<foobar>"'
 tests/test.sh xml4 -e '"<foobar>"' --output-format xml-wrapped
 tests/test.sh json4 -e '"<foobar>"' --output-format json-wrapped
 tests/test.sh xmlraw4 -e '"<foobar>"' --output-format xml
@@ -176,7 +176,7 @@ tests/test.sh htmlraw4 -e '"<foobar>"' --output-format html
 tests/test.sh bash4 -e '"<foobar>"' --output-format bash
 tests/test.sh cmd4 -e '"<foobar>"' --output-format cmd
 
-tests/test.sh adhoc4b -e 'xquery version "1.0"; <foobar/>' 
+tests/test.sh adhoc4b -e 'xquery version "1.0"; <foobar/>'
 tests/test.sh xml4b -e 'xquery version "1.0"; <foobar/>' --output-format xml-wrapped
 tests/test.sh json4b -e 'xquery version "1.0"; <foobar/>' --output-format json-wrapped
 tests/test.sh xmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format xml
@@ -184,29 +184,29 @@ tests/test.sh htmlraw4b -e 'xquery version "1.0"; <foobar/>' --output-format htm
 tests/test.sh bash4b -e 'xquery version "1.0"; <foobar/>' --output-format bash
 
    #testing, if text nodes are surrounded by a text and if node ares escaped
-tests/test.sh adhoc5 '<x>123</x>'  -e '/x/text()' 
+tests/test.sh adhoc5 '<x>123</x>'  -e '/x/text()'
 tests/test.sh xml5 '<x>123</x>' -e '/x/text()' --output-format xml-wrapped
 tests/test.sh json5 '<x>123</x>' -e '/x/text()' --output-format json-wrapped
 tests/test.sh xmlraw5 '<x>123</x>' -e '/x/text()' --output-format xml
 tests/test.sh htmlraw5 '<x>123</x>' -e '/x/text()' --output-format html
-tests/test.sh adhoc5 '<x>123</x>'  -e '/x' --printed-node-format text 
+tests/test.sh adhoc5 '<x>123</x>'  -e '/x' --printed-node-format text
 tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped --printed-node-format text
 tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped --printed-node-format text
 tests/test.sh xmlraw5 '<x>123</x>' -e '/x' --output-format xml --printed-node-format text
 tests/test.sh htmlraw5 '<x>123</x>' -e '/x' --output-format html --printed-node-format text
 tests/test.sh bash5 '<x>123</x>' -e '/x' --output-format bash
-tests/test.sh adhoc5 '<x>123</x>'  -e '/x' 
-tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped 
-tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped 
-tests/test.sh xmlraw5b '<x>123</x>' -e '/x' --output-format xml 
-tests/test.sh htmlraw5b '<x>123</x>' -e '/x' --output-format html 
+tests/test.sh adhoc5 '<x>123</x>'  -e '/x'
+tests/test.sh xml5 '<x>123</x>' -e '/x' --output-format xml-wrapped
+tests/test.sh json5 '<x>123</x>' -e '/x' --output-format json-wrapped
+tests/test.sh xmlraw5b '<x>123</x>' -e '/x' --output-format xml
+tests/test.sh htmlraw5b '<x>123</x>' -e '/x' --output-format html
 tests/test.sh adhoc5c '<x>123</x>'  -e '/x' --printed-node-format xml
 tests/test.sh xml5c '<x>123</x>' -e '/x' --output-format xml-wrapped --printed-node-format xml
 tests/test.sh json5c '<x>123</x>' -e '/x' --output-format json-wrapped --printed-node-format xml
 tests/test.sh xmlraw5c '<x>123</x>' -e '/x' --output-format xml --printed-node-format xml
 tests/test.sh htmlraw5c '<x>123</x>' -e '/x' --output-format html --printed-node-format xml
 
-tests/test.sh adhoc5d '<x>123</x>'  -e '<x>{temp:=text()}</x>' 
+tests/test.sh adhoc5d '<x>123</x>'  -e '<x>{temp:=text()}</x>'
 tests/test.sh xml5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml-wrapped
 tests/test.sh json5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format json-wrapped
 tests/test.sh xmlraw5d '<x>123</x>' -e '<x>{temp:=text()}</x>' --output-format xml
@@ -228,54 +228,54 @@ tests/test.sh htmlraw7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output
 tests/test.sh bash7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format bash
 tests/test.sh cmd7 '<x>&nbsp;&auml;&nbsp&uuml&xyz;&123;&</x>' -e /x --output-format cmd
 
-tests/test.sh adhoc8 -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18 
-tests/test.sh xml8 --output-format xml-wrapped -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18 
-tests/test.sh json8 --output-format json-wrapped --printed-json-format compact -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18 
-tests/test.sh json8p --output-format json-wrapped -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18 
+tests/test.sh adhoc8 -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
+tests/test.sh xml8 --output-format xml-wrapped -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
+tests/test.sh json8 --output-format json-wrapped --printed-json-format compact -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
+tests/test.sh json8p --output-format json-wrapped -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
 tests/test.sh xmlraw8 --output-format xml -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
 tests/test.sh htmlraw8 --output-format html -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
 tests/test.sh bash8 --output-format bash -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
 tests/test.sh cmd8 --output-format bash -e '(1,2)' -e 5 -e '()' -e 7 -e v:=18
 
 
-tests/test.sh adhoc9 -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh xml9 --output-format xml-wrapped  -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh json9 --output-format json-wrapped --printed-json-format compact -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh json9p --output-format json-wrapped -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh xmlraw9 --output-format xml -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh htmlraw9 --output-format html -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh bash9 --output-format bash -e '(1,2)' -e 5 -e '""' -e v:=18 
-tests/test.sh cmd9 --output-format bash -e '(1,2)' -e 5 -e '""' -e v:=18 
+tests/test.sh adhoc9 -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh xml9 --output-format xml-wrapped  -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh json9 --output-format json-wrapped --printed-json-format compact -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh json9p --output-format json-wrapped -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh xmlraw9 --output-format xml -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh htmlraw9 --output-format html -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh bash9 --output-format bash -e '(1,2)' -e 5 -e '""' -e v:=18
+tests/test.sh cmd9 --output-format bash -e '(1,2)' -e 5 -e '""' -e v:=18
 
-tests/test.sh adhoc9b --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
-tests/test.sh xml9b --output-format xml-wrapped --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
-tests/test.sh json9b --output-format json-wrapped --printed-json-format compact --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
-tests/test.sh json9bp --output-format json-wrapped --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
-tests/test.sh xmlraw9b --output-format xml --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
-#tests/test.sh htmlraw9b --output-format html --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
-tests/test.sh bash9b --output-format bash --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18 
+tests/test.sh adhoc9b --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
+tests/test.sh xml9b --output-format xml-wrapped --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
+tests/test.sh json9b --output-format json-wrapped --printed-json-format compact --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
+tests/test.sh json9bp --output-format json-wrapped --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
+tests/test.sh xmlraw9b --output-format xml --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
+#tests/test.sh htmlraw9b --output-format html --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
+tests/test.sh bash9b --output-format bash --print-type-annotations -e '(1,2)' -e 5 -e '()' -e '""' -e 7 -e v:=18
 
-tests/test.sh adhoc9c -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
-tests/test.sh xmlraw9c --output-format xml  -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
-tests/test.sh htmlraw9c --output-format html  -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
-tests/test.sh bash9c --output-format bash -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18 
+tests/test.sh adhoc9c -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18
+tests/test.sh xmlraw9c --output-format xml  -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18
+tests/test.sh htmlraw9c --output-format html  -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18
+tests/test.sh bash9c --output-format bash -e 'a:=(1,2)' -e b:=5 -e 'c:=()' -e 'd:=""' -e e:=7 -e v:=18
 
-tests/test.sh separator-adhoc --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
-tests/test.sh separator-xml --output-format xml --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
-tests/test.sh separator-html --output-format html --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+tests/test.sh separator-adhoc --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0
+tests/test.sh separator-xml --output-format xml --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0
+tests/test.sh separator-html --output-format html --output-separator x -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0
 
-tests/test.sh separator-xml2 --output-format xml --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
-tests/test.sh separator-html2 --output-format html --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0 
+tests/test.sh separator-xml2 --output-format xml --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0
+tests/test.sh separator-html2 --output-format html --output-separator '<br>' --output-header '<div>' --output-footer '</div>' -e '(1,2)' -e 5 -e '""' -e v:=18 -e 0
 
 
 tests/test.sh linebreaksXMLElementNodes-NoDecl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml --output-node-indent
 tests/test.sh linebreaksXMLElementNodes-Decl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml --output-node-indent --output-declaration='<?xml?>'
-tests/test.sh linebreaksXMLElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml 
+tests/test.sh linebreaksXMLElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml
 tests/test.sh linebreaksXMLElementNodes-Decl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-node-format=xml --output-declaration='<?xml?>'
 
 tests/test.sh linebreaksXMLOutput-ElementNodes-NoDecl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-node-indent
 tests/test.sh linebreaksXMLOutput-ElementNodes-Decl-Indent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-node-indent --output-declaration='<?xml?>'
-tests/test.sh linebreaksXMLOutput-ElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml 
+tests/test.sh linebreaksXMLOutput-ElementNodes-NoDecl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml
 tests/test.sh linebreaksXMLOutput-ElementNodes-Decl-NoIndent -e 'element nodes {(1 to 3) ! element node {attribute id {.},"value"||.}}' --output-format=xml --output-declaration='<?xml?>'
 
 tests/test.sh linebreaksXMLOutput-input-newline-NoDecl-NoIndent tests/input-newline.xml -e . --xml
@@ -297,12 +297,12 @@ tests/test.sh xmlraw11 --output-format xml --print-type-annotations -e '2,xs:int
 tests/test.sh adhoc-json -e '[1,2,3,{"a": 123,"b":"c"}]'
 tests/test.sh xml-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml
 tests/test.sh html-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format html
-tests/test.sh xmlw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml-wrapped 
-tests/test.sh jsonw-json --printed-json-format compact -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format json-wrapped 
+tests/test.sh xmlw-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format xml-wrapped
+tests/test.sh jsonw-json --printed-json-format compact -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format json-wrapped
 tests/test.sh bash-json -e '[1,2,3,{"a": 123,"b":"c"}]' --output-format bash
 
 tests/test.sh xml2-json -e '[1,2,3,{"a": 123,"b":"c<&>", "d<&>": 456}]' --output-format xml
-tests/test.sh xmlw2-json -e '[1,2,3,{"a": 123,"b":"c<&>", "d<&>": 456}]' --output-format xml-wrapped 
+tests/test.sh xmlw2-json -e '[1,2,3,{"a": 123,"b":"c<&>", "d<&>": 456}]' --output-format xml-wrapped
 
 tests/test.sh bash-escape1 --xquery '"1&#xA;2"' --output-format bash
 tests/test.sh bash-escape2 --xquery '"1&#xD;2"' --output-format bash
@@ -320,7 +320,7 @@ tests/test.sh bash-combining3 -e 1 -e '(2,3)' -e 'temp:=712' -e '4' -e 'temp:=18
 #JSON formats
 
 tests/test.sh jsonmode/standard --json-mode standard --json-mode standard --xquery 'let $x := <a><b>c</b></a>//b, $o := map {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(2))) )'
-tests/test.sh jsonmode/jsoniq --json-mode jsoniq  --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )' 
+tests/test.sh jsonmode/jsoniq --json-mode jsoniq  --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
 tests/test.sh jsonmode/deprecated  --json-mode deprecated --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
 tests/test.sh jsonmode/default  --json-mode unified --xquery 'let $x := <a><b>c</b></a>//b, $o := {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
 tests/test.sh jsonmode/default  --disable-no-extended-json --xquery 'let $x := <a><b>c</b></a>//b, $o := map {"a": (), "b": $x, "c": (1,2)}, $a := [(),$x,1 to 3] return (count($o?a), name(root($o?b)), count($o?c), "", array:size($a), string-join((1 to 3)! count($a(.))), name(root($a(1))) )'
@@ -344,7 +344,7 @@ tests/test.sh jsonmode/standard-stringvalue - --json-mode standard -e '$json || 
 tests/test.sh jsonmode/jsoniq-stringvalue - --json-mode jsoniq -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
 tests/test.sh jsonmode/deprecated-stringvalue - --json-mode deprecated -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
 tests/test.sh jsonmode/default-stringvalue - --json-mode unified -e '$json || $json(2) || join($json(2)) || "x"' < tests/data2.json
- 
+
 tests/test.sh jsonmode/standard-literals --json-mode standard -e 'true, false, null'
 tests/test.sh jsonmode/jsoniq-literals --json-mode jsoniq -e 'true, false, null'
 tests/test.sh jsonmode/deprecated-literals --json-mode deprecated -e 'true, false, null'
@@ -373,9 +373,9 @@ tests/test.sh nest0c tests/a.xml  [ ]
 tests/test.sh nest1a tests/a.xml  [ -e //title ]
 tests/test.sh nest1b tests/b.xml  [ -e //title ]
 tests/test.sh nest1ab tests/a.xml  tests/b.xml [ -e //title ]
-tests/test.sh nest1ab2 tests/a.xml  tests/b.xml -e //title [ -e //title ] 
+tests/test.sh nest1ab2 tests/a.xml  tests/b.xml -e //title [ -e //title ]
 tests/test.sh nest1ab3 tests/a.xml  tests/b.xml [ -e //title ] -e //title
-tests/test.sh nest1ab4 tests/a.xml  tests/b.xml -e 'concat("X", //title)' [ -e //title ] 
+tests/test.sh nest1ab4 tests/a.xml  tests/b.xml -e 'concat("X", //title)' [ -e //title ]
 tests/test.sh nest1ab5 tests/a.xml  tests/b.xml [ -e //title ] -e 'concat("Y", //title)'
 tests/test.sh nest2a tests/a.xml  [ -f //a -e //title ]
 tests/test.sh nest2a tests/a.xml  -f //a [ -e //title ]
@@ -389,18 +389,18 @@ tests/test.sh nest3a tests/a.xml tests/b.xml -e //title
 tests/test.sh nest3a tests/a.xml [ tests/b.xml -e //title ]
 tests/test.sh nest3a tests/a.xml [ tests/b.xml [ -e //title ] ]
 tests/test.sh nest3a -e //title tests/a.xml tests/b.xml
-tests/test.sh nest3a -e //title [ tests/a.xml tests/b.xml ] 
-tests/test.sh nest3a -e //title tests/a.xml [ tests/b.xml ]  
+tests/test.sh nest3a -e //title [ tests/a.xml tests/b.xml ]
+tests/test.sh nest3a -e //title tests/a.xml [ tests/b.xml ]
 tests/test.sh nest3a tests/a.xml -e //title  [ tests/b.xml ]  #brackets prevent sibling creation (good??)
-tests/test.sh nest3b tests/a.xml -e //title  tests/b.xml 
+tests/test.sh nest3b tests/a.xml -e //title  tests/b.xml
 tests/test.sh nest4 -e 1+2
 tests/test.sh nest4 [ -e 1+2 ]
 tests/test.sh nest4 [ [ -e 1+2 ] ]
-tests/test.sh nest4 [ [ [ -e 1+2 ] ] ] 
+tests/test.sh nest4 [ [ [ -e 1+2 ] ] ]
 tests/test.sh nest5a [ "<a/>"  -e "a:=17" ] [  tests/a.xml -e 'a:=909'  ]
-tests/test.sh nest5b [ "<a/>"  -e "a:=17" ] [  tests/a.xml -e 'a:=909'  ] [ -e '$a' ] 
+tests/test.sh nest5b [ "<a/>"  -e "a:=17" ] [  tests/a.xml -e 'a:=909'  ] [ -e '$a' ]
 tests/test.sh nest5c -e "a:=17"  tests/a.xml -e '<a>{z:=$a + 1}</a>'
-tests/test.sh nest6a [ -e 1+2 ] 
+tests/test.sh nest6a [ -e 1+2 ]
 tests/test.sh nest6b [ -e 1+2 ] [ -e 3+4 ]
 tests/test.sh nest6c [ -e 1+2 ] [ -e 3+4 ] [ -e 5+6 ]
 tests/test.sh nest7 [ tests/a.xml -f //a     -e //title ] [ tests/dpre.xml -f //a     -e //title ]
@@ -409,12 +409,12 @@ tests/test.sh nest8b tests/a.xml   -f //a  [  -e //title   tests/dpre.xml -f //a
 tests/test.sh nest9a tests/a.xml -f //a -e //title -f //a -e //title
 tests/test.sh nest9b tests/a.xml [ -f //a -e //title -f //a ] -e //title
 tests/test.sh nest9c tests/a.xml [ -f //a -e //title -f //a -e //title ] -e //title
-tests/test.sh nest10 tests/a.xml [ -e //title -f //a -e //title ] 
-tests/test.sh nest10 tests/a.xml -e //title [ -f //a -e //title ] 
-tests/test.sh nest10 [ tests/a.xml ] -e //title -f //a -e //title 
-tests/test.sh nest10 [ tests/a.xml  -e //title -f //a ] -e //title 
+tests/test.sh nest10 tests/a.xml [ -e //title -f //a -e //title ]
+tests/test.sh nest10 tests/a.xml -e //title [ -f //a -e //title ]
+tests/test.sh nest10 [ tests/a.xml ] -e //title -f //a -e //title
+tests/test.sh nest10 [ tests/a.xml  -e //title -f //a ] -e //title
 tests/test.sh nest10b [ tests/a.xml  -e //title -f //a ] -e 'concat(//title, "x")'
-tests/test.sh nest10 [ tests/a.xml  -e //title ] -f //a  -e //title 
+tests/test.sh nest10 [ tests/a.xml  -e //title ] -f //a  -e //title
 tests/test.sh nest10b [ tests/a.xml  -e //title ] -f //a -e 'concat(//title, "x")'
 tests/test.sh nest10b [ tests/a.xml ] -e //title  -f //a -e 'concat(//title, "x")'
 tests/test.sh nest10b tests/a.xml [ -e //title ] -f //a -e 'concat(//title, "x")'
@@ -450,10 +450,10 @@ tests/test.sh xpath8 '<a>3</a>' -e ' 3 + . '
 tests/test.sh xpath8 '<a>3</a>' -e ' . + 3 '
 tests/test.sh xpath9 '<a>3</a>' -e ' . '
 tests/test.sh xpath10 '<a>3</a>' -e ' . eq . '
- 
+
 #magic variables
 tests/test.sh varraw '<a>3</a>' -e '$raw'
-tests/test.sh varurlhostpath 'http://videlibri.sourceforge.net/xidelecho.php' -e 'concat($url, "||", $host, "||", $path)'
+tests/test.sh varurlhostpath 'https://videlibri.sourceforge.net/xidelecho.php' -e 'concat($url, "||", $host, "||", $path)'
 tests/test.sh varresult '<a>3</a>' -e '.'  -e 'concat("-", $result, "-")'
 
 #other stuff
@@ -479,7 +479,7 @@ tests/test.sh inputformatAutoA '<a>x</a>'  -e 'outer-xml(/)' --input-format auto
 tests/test.sh inputformatAutoC '<c>x</c>'  -e 'outer-xml(/)' --input-format auto
 tests/test.sh inputformatXml '<a>x</a>'  -e 'outer-xml(/)' --input-format xml
 tests/test.sh inputformatHtml  '<a>x</a>'  -e 'outer-xml(/)' --input-format html
-tests/test.sh inputformatAutoJson tests/data.json  -e '(($json).b, (.).c, .("d"), . ! e, . / f, . // property)' 
+tests/test.sh inputformatAutoJson tests/data.json  -e '(($json).b, (.).c, .("d"), . ! e, . / f, . // property)'
 
 tests/test.sh encodingJson tests/encodingUtf8.json -e '$raw || $json()'
 tests/test.sh encodingJson tests/encodingLatin1.json -e '$raw || $json()'
@@ -545,47 +545,47 @@ tests/test.sh pinode-html --input-format html tests/weirdpinode.xml -e / --outpu
 
 #Online tests
 tests/test.sh google http://www.google.de -e "count(//title[contains(text(),\"Google\")])"
-tests/test.sh get1  http://videlibri.sourceforge.net/xidelecho.php -e //meth
-#disallowed by server?: tests/test.sh get2a --post abc --method GET http://videlibri.sourceforge.net/xidelecho.php -e //meth
-#disallowed by server?: tests/test.sh get2b --post abc --method GET http://videlibri.sourceforge.net/xidelecho.php -e //raw 
-tests/test.sh post1a  --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
-tests/test.sh post1b  --post test http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh post2  --post "user=login&pass=password" http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh post3  --post "" http://videlibri.sourceforge.net/xidelecho.php -e //meth
-tests/test.sh post3b  --post "" http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh post3c  --post "" http://videlibri.sourceforge.net/xidelecho.php --download -
-tests/test.sh post4  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --post "456" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'
-tests/test.sh post4b  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'  http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'  #duplicated requests are ignored
-tests/test.sh post4c  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --method PUT http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' #keep the data option
-tests/test.sh post4d [  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ] --method GET http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' 
-tests/test.sh post4d [  --post "123" http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ]  http://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' 
-echo TEST | tests/test.sh post5  --post - http://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh get1  https://videlibri.sourceforge.net/xidelecho.php -e //meth
+#disallowed by server?: tests/test.sh get2a --post abc --method GET https://videlibri.sourceforge.net/xidelecho.php -e //meth
+#disallowed by server?: tests/test.sh get2b --post abc --method GET https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post1a  --post test https://videlibri.sourceforge.net/xidelecho.php -e //meth
+tests/test.sh post1b  --post test https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post2  --post "user=login&pass=password" https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post3  --post "" https://videlibri.sourceforge.net/xidelecho.php -e //meth
+tests/test.sh post3b  --post "" https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post3c  --post "" https://videlibri.sourceforge.net/xidelecho.php --download -
+tests/test.sh post4  --post "123" https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --post "456" https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'
+tests/test.sh post4b  --post "123" https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'  https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'  #duplicated requests are ignored
+tests/test.sh post4c  --post "123" https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' --method PUT https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' #keep the data option
+tests/test.sh post4d [  --post "123" https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ] --method GET https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'
+tests/test.sh post4d [  --post "123" https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)' ]  https://videlibri.sourceforge.net/xidelecho.php -e '(//meth,//raw)'
+echo TEST | tests/test.sh post5  --post - https://videlibri.sourceforge.net/xidelecho.php -e //raw
 
-tests/test.sh post6 '<foo>bar</foo>' -e 'v:=/foo' --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh post6 '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw 
-tests/test.sh post6b '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] # [ causes it to process both data. Does not make much sense, but is logical
-tests/test.sh post6c '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ -e "" --post 'data={$v}'  http://videlibri.sourceforge.net/xidelecho.php -e //raw ] 
+tests/test.sh post6 '<foo>bar</foo>' -e 'v:=/foo' --post 'data={$v}'  https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post6 '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' --post 'data={$v}'  https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh post6b '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ --post 'data={$v}'  https://videlibri.sourceforge.net/xidelecho.php -e //raw ] # [ causes it to process both data. Does not make much sense, but is logical
+tests/test.sh post6c '<x><foo>bar</foo><raw>OH</raw></x>' -e 'v:=//foo' [ -e "" --post 'data={$v}'  https://videlibri.sourceforge.net/xidelecho.php -e //raw ]
 
-tests/test.sh post7 -d "user=login" [ -d "&pass=password" http://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "a=b" http://videlibri.sourceforge.net/xidelecho.php -e /  ]
-tests/test.sh post8 -d "a=1" [ -d "" -d "b=2" http://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "c=3" http://videlibri.sourceforge.net/xidelecho.php -e /  ] -d d=4 http://videlibri.sourceforge.net/xidelecho.php -e / -d e=5 http://videlibri.sourceforge.net/xidelecho.php -e /
-
-
-tests/test.sh put1a  --method=PUT --post test http://videlibri.sourceforge.net/xidelecho.php -e //meth
-tests/test.sh put1a  --method=POST --post test --method=PUT http://videlibri.sourceforge.net/xidelecho.php -e //meth    #override last
-tests/test.sh put1b  --method=POST --post test --method=PUT http://videlibri.sourceforge.net/xidelecho.php -e //raw
-tests/test.sh foobarmeth --method delete  http://videlibri.sourceforge.net/xidelecho.php -e //meth
-echo options | tests/test.sh foobarmeth2 --method -  http://videlibri.sourceforge.net/xidelecho.php -e //meth
-
-tests/test.sh headers -d xxxx -H "foobar: abc" -H "Content-Type: text/test" http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e "(//CONTENT_TYPE,//HTTP_FOOBAR)" 
-
-tests/test.sh multipart1 --form a=b http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw -e "'CT:'" -e //env/CONTENT_TYPE
-tests/test.sh multipart2 --form 'a=b&c=d' --form e=f --form "f=@tests/output/post1a" --form "g=@tests/output/post1a;type=foo/bar" http://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw 
+tests/test.sh post7 -d "user=login" [ -d "&pass=password" https://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "a=b" https://videlibri.sourceforge.net/xidelecho.php -e /  ]
+tests/test.sh post8 -d "a=1" [ -d "" -d "b=2" https://videlibri.sourceforge.net/xidelecho.php -e / ]  [ -d "c=3" https://videlibri.sourceforge.net/xidelecho.php -e /  ] -d d=4 https://videlibri.sourceforge.net/xidelecho.php -e / -d e=5 https://videlibri.sourceforge.net/xidelecho.php -e /
 
 
-tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "something"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
-tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "http://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
+tests/test.sh put1a  --method=PUT --post test https://videlibri.sourceforge.net/xidelecho.php -e //meth
+tests/test.sh put1a  --method=POST --post test --method=PUT https://videlibri.sourceforge.net/xidelecho.php -e //meth    #override last
+tests/test.sh put1b  --method=POST --post test --method=PUT https://videlibri.sourceforge.net/xidelecho.php -e //raw
+tests/test.sh foobarmeth --method delete  https://videlibri.sourceforge.net/xidelecho.php -e //meth
+echo options | tests/test.sh foobarmeth2 --method -  https://videlibri.sourceforge.net/xidelecho.php -e //meth
 
-tests/test.sh regression_doconline --xquery '<a/> / doc("http://videlibri.sourceforge.net/xidelecho.php") // meth'
+tests/test.sh headers -d xxxx -H "foobar: abc" -H "Content-Type: text/test" https://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e "(//CONTENT_TYPE,//HTTP_FOOBAR)"
+
+tests/test.sh multipart1 --form a=b https://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw -e "'CT:'" -e //env/CONTENT_TYPE
+tests/test.sh multipart2 --form 'a=b&c=d' --form e=f --form "f=@tests/output/post1a" --form "g=@tests/output/post1a;type=foo/bar" https://videlibri.sourceforge.net/cgi-bin/xidelecho.pl -e //raw
+
+
+tests/test.sh multipageonline --extract '<action><variable name="obj">{"url": "https://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "something"}</variable><page url="{$obj}"><template><meth>{.}</meth></template></page></action>' --extract-kind=multipage
+tests/test.sh multipageonline2 --extract '<action><variable name="obj">{"url": "https://videlibri.sourceforge.net/xidelecho.php", "method": "PUT", "post": "foobar&123"}</variable><page url="{$obj}"><template><raw>{outer-xml(.)}</raw></template></page></action>' --extract-kind=multipage
+
+tests/test.sh regression_doconline --xquery '<a/> / doc("https://videlibri.sourceforge.net/xidelecho.php") // meth'
 tests/test.sh regression_doclocal --xquery '<a/> / doc("tests/a.xml") // title'
 tests/test.sh regression_doclocal --xquery 'doc("tests/a.xml") // title'
 
@@ -605,14 +605,14 @@ tests/test.sh regression_entity3b '<a>x</a>' -e '<a>{res := "&amp;amp;"}</a>'
 tests/test.sh regression_entity3c '<a>x</a>' -e '<a>{res := "&amp;amp;amp;"}</a>'
 tests/test.sh regression_entity3d '<a>x</a>' -e '<a>{res := "&amp;amp;amp;amp;"}</a>'
 
-tests/test.sh regression_object1 -e '$x := object(("b","c"))' -e '($x).b' 
+tests/test.sh regression_object1 -e '$x := object(("b","c"))' -e '($x).b'
 tests/test.sh regression_object1 -e '$x := {"b": "c"}' -e '($x).b'
 tests/test.sh regression_object2 -e '$x := object(("b","c"))' -e '($x).a' #allow accessing undefined properties
-tests/test.sh regression_object2 -e '$x := {"b": "c"}' -e '($x).a' 
-tests/test.sh regression_object2 --dot-notation=on -e '$x := {"b": "c"}' -e '$x.a' 
+tests/test.sh regression_object2 -e '$x := {"b": "c"}' -e '($x).a'
+tests/test.sh regression_object2 --dot-notation=on -e '$x := {"b": "c"}' -e '$x.a'
 
-tests/test.sh regression_mutablevariable1 -e '$x := 123' 
-tests/test.sh regression_mutablevariable1 -e 'false()[0 ! ((if (true()) then (($x := 123) > 100) else ())) ][0]' 
+tests/test.sh regression_mutablevariable1 -e '$x := 123'
+tests/test.sh regression_mutablevariable1 -e 'false()[0 ! ((if (true()) then (($x := 123) > 100) else ())) ][0]'
 tests/test.sh regression_mutablevariable1 -e 'declare function local:xx(){$x := 123}; local:xx()'
 tests/test.sh regression_mutablevariable1 -e 'declare function local:xx($x){$x := 123}; local:xx(100)'
 tests/test.sh regression_mutablevariable1 --xquery '$x := let <a>{$foo}</a> := <a>123</a> return $foo'
@@ -623,7 +623,7 @@ tests/test.sh regression_mutablevariable2 --xquery 'for <a>{$foo}</a> in <a>123<
 tests/test.sh regression_multipage1  -e "<action><page url=\"tests/a.xml\"><template><title>{concat(., \"'\", '\"')}</title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage2 -e "<action><page url=\"tests/a.xml\"><template><title><t:read var=\"res\" source=\" concat(., &quot;'&quot;, '&quot;')\"/></title></template></page></action>" --extract-kind=multipage
 tests/test.sh regression_multipage3 -e '<action><page url="http://example.org"><template><title>{resolve-uri("b.xml")}</title></template></page></action>' --extract-kind=multipage
-tests/test.sh regression_multipage3b -e '<action><page url="http://videlibri.sourceforge.net/test/reddit/index.html"><template><head>{resolve-uri("../b.xml")}</head></template></page></action>' --extract-kind=multipage
+tests/test.sh regression_multipage3b -e '<action><page url="https://videlibri.sourceforge.net/test/reddit/index.html"><template><head>{resolve-uri("../b.xml")}</head></template></page></action>' --extract-kind=multipage
 
 tests/test.sh regression_htmlparse  --input-format html '<ol><li>a<li>b<li>c</ol>' -e '//ol/li'
 
@@ -640,7 +640,7 @@ tests/test.sh eval  --xquery 'declare variable $outer := 456; let $a := 123 retu
 
 
 echo
-echo Results: 
+echo Results:
 wc -l /tmp/xidel-tests-state-ok /tmp/xidel-tests-state-failed 2> /dev/null | grep tests  | sed -Ee 's/([0-9]+).*-([^-]+)/\1 \2/'
 
-if [[ -s /tmp/xidel-tests-state-failed ]] ; then exit 1 ; else exit 0 ; fi 
+if test -s /tmp/xidel-tests-state-failed ; then exit 1 ; else exit 0 ; fi
