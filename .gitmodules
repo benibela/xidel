@@ -1,0 +1,15 @@
+[submodule "import/flre"]
+	path = import/flre
+	url = https://github.com/benibela/flre.git
+[submodule "import/synapse"]
+	path = import/synapse
+	url = https://github.com/benibela/ararat-synapse.git
+[submodule "rcmdline"]
+	path = rcmdline
+	url = https://github.com/benibela/rcmdline.git
+[submodule "internettools"]
+	path = internettools
+	url = https://github.com/benibela/internettools.git
+[submodule "import/pasdblstrutils"]
+	path = import/pasdblstrutils
+	url = https://github.com/BeRo1985/pasdblstrutils
