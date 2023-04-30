@@ -4199,29 +4199,6 @@ begin
   result := nil;
 end;
 
-function BigDecimalFromBase(const n: string; base: integer; negative: boolean): bigdecimal;
-var cur, bdbase: bigdecimal;
-  c: Char;
-  offset: Integer;
-  i: SizeInt;
-begin
-  bdbase := base;
-  result.setZero();
-  cur.setOne();
-  for i := length(n) downto 1 do begin
-    c := n[i];
-    case c of
-      '0'..'9': offset := ord(c) - ord('0');
-      'A'..'Z': offset := ord(c) - ord('A') + 10;
-      'a'..'z': offset := ord(c) - ord('a') + 10;
-      else raise EXQEvaluationException.create('pxp:INT', 'Invalid digit in '+n);
-    end;
-    if offset >= base then raise EXQEvaluationException.create('pxp:INT', 'Invalid digit in '+n);
-    result := result + offset * cur;
-    cur := cur * bdbase;
-  end;
-  if not result.isZero() then result.signed := negative;
-end;
 
 function xqfInteger(argc: SizeInt; args: PIXQValue): IXQValue;
 var
@@ -4252,9 +4229,7 @@ begin
       end;
     end;
   if s = '' then exit(xqvalue(0));
-  if (base = 16) and (length(s) < 16) then exit(xqvalue(StrToInt64(ifthen(negative, '-$', '$') + s)))
-  else if base = 10 then result := baseSchema.integer.createValue(s0)
-  else result := baseSchema.integer.createValue(BigDecimalFromBase(s, base, negative))
+  result := baseSchema.integer.createIntegerValueWithBase(s, base, negative);
 end;
 
 function BigDecimalToBase(bd: bigdecimal; const bdbase: bigdecimal): string;
