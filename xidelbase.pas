@@ -3876,6 +3876,7 @@ begin
 
 
   initOutput(mycmdline);
+  if xidelcrt.outputEncoding <> CP_ACP then globalTempSerializer.encodingForEntitying := xidelcrt.outputEncoding;
 
   baseContext.insertFictiveDatasourceIfNeeded(not isStdinTTY, cmdlineWrapper); //this allows data less evaluations, like xidel -e 1+2+3
 
