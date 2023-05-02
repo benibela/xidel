@@ -2495,6 +2495,7 @@ procedure TExtraction.prepareForOutput(const data: IData);
 begin
   if inplaceOverride then setOutputFileName(data.baseUri, mycmdline)
   else if xidelOutputFileName = '' then setOutputFileName('stdout:///', mycmdline);
+  globalTempSerializer.encodingForEntitying := strActualEncoding(GetTextCodePage(xidelOutputFile))
 end;
 
 
@@ -3876,7 +3877,6 @@ begin
 
 
   initOutput(mycmdline);
-  if xidelcrt.outputEncoding <> CP_ACP then globalTempSerializer.encodingForEntitying := xidelcrt.outputEncoding;
 
   baseContext.insertFictiveDatasourceIfNeeded(not isStdinTTY, cmdlineWrapper); //this allows data less evaluations, like xidel -e 1+2+3
 
