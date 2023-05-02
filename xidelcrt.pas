@@ -40,10 +40,11 @@ procedure werrln(const s: string);
 function strReadFromStdin: string;
 
 type TOutputFormat = (ofAdhoc, ofJsonWrapped, ofXMLWrapped, ofRawXML, ofRawHTML, ofBash, ofWindowsCmd);
+     THasOutputEncoding = (oeAbsent,oeConvert,oePassRaw);
 var //output options
     outputFormat: TOutputFormat;
     windowsCmdPercentageEscape: string;
-    hasOutputEncoding: (oeAbsent,oeConvert,oePassRaw) = oeAbsent;
+    hasOutputEncoding: THasOutputEncoding = oeAbsent;
     outputEncoding: TSystemCodePage;
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
