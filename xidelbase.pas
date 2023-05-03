@@ -2270,6 +2270,7 @@ end;
 var globalTempSerializer: TXQSerializer;
     globalTempSerializerBuffer: string;
 
+
 procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
   function cmdescape(s: string): string;
   begin
@@ -2290,6 +2291,31 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       ofBash: exit(bashStrEscape(s));
       ofWindowsCmd: exit(windowsCmdEscape(s));
       else raise EXidelException.Create('Invalid output format');
+    end;
+  end;
+
+  procedure serializeJSONToGlobalBuffer(const v: IXQValue);
+  var
+    temp: String;
+  begin
+    globalTempSerializer.clear;
+    globalTempSerializer.nodeFormat := printedNodeFormat;
+    case printedJSONFormat of
+      jisPretty: globalTempSerializer.insertWhitespace := xqsiwIndent;
+      jisDefault:
+        if outputFormat in [ofBash, ofWindowsCmd] then globalTempSerializer.insertWhitespace := xqsiwNever {see gh#71}
+        else if invariable then globalTempSerializer.insertWhitespace := xqsiwConservative
+        else globalTempSerializer.insertWhitespace := xqsiwIndent;
+      jisCompact: globalTempSerializer.insertWhitespace := xqsiwConservative;
+    end;
+    globalTempSerializer.keyOrderExtension := printedJSONKeyOrder;
+    v.jsonSerialize(globalTempSerializer);
+    globalTempSerializer.final;
+    if not isUnicodeEncoding(globalTempSerializer.encodingForEntitying) and not strIsAscii(globalTempSerializerBuffer) then begin
+      temp := globalTempSerializerBuffer;
+      globalTempSerializer.resetBuffer(@globalTempSerializerBuffer);
+      escapeUnicodeInJSONforEncoding(globalTempSerializer, temp, globalTempSerializer.encodingForEntitying);
+      globalTempSerializer.final;
     end;
   end;
 
@@ -2316,19 +2342,7 @@ procedure TExtraction.printExtractedValue(value: IXQValue; invariable: boolean);
       end;
       pvkObject, pvkArray: begin
         if (outputFormat <> ofAdhoc) and not invariable then needRawWrapper(mycmdline);
-        globalTempSerializer.clear;
-        globalTempSerializer.nodeFormat := printedNodeFormat;
-        case printedJSONFormat of
-          jisPretty: globalTempSerializer.insertWhitespace := xqsiwIndent;
-          jisDefault:
-            if outputFormat in [ofBash, ofWindowsCmd] then globalTempSerializer.insertWhitespace := xqsiwNever {see gh#71}
-            else if invariable then globalTempSerializer.insertWhitespace := xqsiwConservative
-            else globalTempSerializer.insertWhitespace := xqsiwIndent;
-          jisCompact: globalTempSerializer.insertWhitespace := xqsiwConservative;
-        end;
-        globalTempSerializer.keyOrderExtension := printedJSONKeyOrder;
-        v.jsonSerialize(globalTempSerializer);
-        globalTempSerializer.final;
+        serializeJSONToGlobalBuffer(v);
         result := escape(globalTempSerializerBuffer);
       end;
       else if not printTypeAnnotations then begin
@@ -2414,7 +2428,8 @@ begin
       end;
     end;
     ofJsonWrapped: begin
-      wcolor(value.jsonSerialize(printedNodeFormat, printedJSONFormat <> jisCompact), cJSON);
+      serializeJSONToGlobalBuffer(value);
+      wcolor(globalTempSerializerBuffer, cJSON);
     end;
     ofXMLWrapped: begin
       wcolor(value.xmlSerialize(printedNodeFormat, 'seq', 'e', 'object'), cXML);
