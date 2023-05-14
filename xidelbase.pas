@@ -326,14 +326,14 @@ type
   { TOptionReaderFromObject }
 
   TOptionReaderFromObject = class(TOptionReaderWrapper)
-    constructor create(aobj: TXQValueMapLike);
+    constructor create(aobj: TXQBoxedMapLike);
     function read(const name: string; var value: string): boolean; override;
     function read(const name: string; var value: integer): boolean; override;
     function read(const name: string; var value: boolean): boolean; override;
     function read(const name: string; var value: Extended): boolean; override;
     function read(const name: string; var value: IXQValue): boolean; override;
   private
-    obj: TXQValueMapLike;
+    obj: TXQBoxedMapLike;
   end;
 
 type
@@ -475,7 +475,7 @@ TFollowToList = class(TFpObjectList)
   function containsEqual(ft: TFollowTo): boolean;
 private
   procedure addBasicUrl(absurl: string; baseurl: string; inputFormat: TInputFormat);
-  procedure addObject(absurl: string; baseurl: string; options: TXQValueMapLike; fallBackInputFormat: TInputFormat);
+  procedure addObject(absurl: string; baseurl: string; options: TXQBoxedMapLike; fallBackInputFormat: TInputFormat);
 end;
 
 
@@ -488,7 +488,7 @@ TDataProcessing = class
 
   procedure readOptions({%H-}reader: TOptionReaderWrapper); virtual;
   procedure initFromCommandLine(cmdLine: TCommandLineReader); virtual;
-  procedure mergeWithObject(obj: TXQValueMapLike); virtual;
+  procedure mergeWithObject(obj: TXQBoxedMapLike); virtual;
 
   function clone(newparent: TProcessingContext): TDataProcessing; virtual; abstract;
 end;
@@ -610,7 +610,7 @@ TProcessingContext = class(TDataProcessing)
   procedure printStatus(header, status: string; statusInfo: TStatusInfo);
 
   procedure readOptions(reader: TOptionReaderWrapper); override;
-  procedure mergeWithObject(obj: TXQValueMapLike); override;
+  procedure mergeWithObject(obj: TXQBoxedMapLike); override;
 
   procedure addNewDataSource(source: TDataProcessing);
   procedure readNewDataSource(data: TFollowTo; options: TOptionReaderWrapper);
@@ -779,7 +779,7 @@ begin
   temp.followTo := parent.followTo;
   temp.followInputFormat := parent.followInputFormat;
   temp.nextSibling := parent.nextSibling;
-  temp.mergeWithObject(v as TXQValueMapLike);
+  temp.mergeWithObject(v.toMap);
   fl := temp.process(basedata);
   case fl.count of
     0: ;
@@ -919,49 +919,46 @@ end;
 
 { TOptionReaderFromObject }
 
-constructor TOptionReaderFromObject.create(aobj: TXQValueMapLike);
+constructor TOptionReaderFromObject.create(aobj: TXQBoxedMapLike);
 begin
   obj := aobj;
 end;
 
 function TOptionReaderFromObject.read(const name: string; var value: string): boolean;
 var
-  temp: TXQValue;
+  temp: IXQValue;
 begin
-  result := obj.hasProperty(name, @temp);
+  result := obj.hasProperty(name, temp);
   if result then value := temp.toString
 end;
 
 function TOptionReaderFromObject.read(const name: string; var value: integer): boolean;
 var
-  temp: TXQValue;
+  temp: IXQValue;
 begin
-  result := obj.hasProperty(name, @temp);
+  result := obj.hasProperty(name, temp);
   if result then value := temp.toInt64
 end;
 
 function TOptionReaderFromObject.read(const name: string; var value: boolean): boolean;
 var
-  temp: TXQValue;
+  temp: IXQValue;
 begin
-  result := obj.hasProperty(name, @temp);
+  result := obj.hasProperty(name, temp);
   if result then value := temp.toBoolean
 end;
 
 function TOptionReaderFromObject.read(const name: string; var value: Extended): boolean;
 var
-  temp: TXQValue;
+  temp: IXQValue;
 begin
-  result := obj.hasProperty(name, @temp);
-  if result then value := temp.toFloat
+  result := obj.hasProperty(name, temp);
+  if result then value := temp.toDouble
 end;
 
 function TOptionReaderFromObject.read(const name: string; var value: IXQValue): boolean;
-var
-  temp: TXQValue;
 begin
-  result := obj.hasProperty(name, @temp);
-  if result then value := temp as TXQValue;
+  result := obj.hasProperty(name, value);
 end;
 
 { TOptionReaderFromCommandLine }
@@ -1249,7 +1246,7 @@ procedure closeMultiArgs(var oldValue: string; separator: string); forward;
 
 procedure THTTPRequest.readOptions(reader: TOptionReaderWrapper);
 var temp: string = '';
-  tempxq: IXQValue = nil;
+  tempxq: IXQValue;
   h: IXQValue;
 begin
   inherited;
@@ -1258,6 +1255,7 @@ begin
   reader.read('header', header);
   if reader is TOptionReaderFromObject then begin
     variablesReplaced := true;
+    tempxq := xqvalue();
     if reader.read('headers', tempxq) then begin
       for h in tempxq  do begin
         if header <> '' then header := header + #13#10;
@@ -1491,7 +1489,7 @@ end;
 
 procedure TFollowToList.merge(dest: IXQValue; basedata: IData; parent: TProcessingContext);
 var x: IXQValue;
-    tempv: TXQValue;
+    tempv: IXQValue;
     keys: TXQHashsetStr;
     key: string;
     isPureDataSource: Boolean;
@@ -1515,10 +1513,10 @@ begin
         end;
       keys.done;
       if isPureDataSource then begin
-        if dest.hasProperty('url', @tempv) then
-          addObject( tempv.toString, basedata.baseUri, dest as TXQValueMapLike, parent.followInputFormat)
-        else if dest.hasProperty('input', @tempv) or dest.hasProperty('data', @tempv) then
-          addObject(tempv.toString, basedata.baseUri, dest as TXQValueMapLike, parent.followInputFormat );
+        if dest.hasProperty('url', tempv) then
+          addObject( tempv.toString, basedata.baseUri, dest.toMap, parent.followInputFormat)
+        else if dest.hasProperty('input', tempv) or dest.hasProperty('data', tempv) then
+          addObject(tempv.toString, basedata.baseUri, dest.toMap, parent.followInputFormat );
       end else add(TFollowToXQVObject.create(basedata, dest));
     end;
     pvkSequence: begin
@@ -1551,7 +1549,7 @@ begin
   Add(ft);
 end;
 
-procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQValueMapLike; fallBackInputFormat: TInputFormat);
+procedure TFollowToList.addObject(absurl: string; baseurl: string; options: TXQBoxedMapLike; fallBackInputFormat: TInputFormat);
 var
   followTo: TFollowTo;
   reader: TOptionReaderFromObject;
@@ -1580,7 +1578,7 @@ begin
   temp.free;
 end;
 
-procedure TDataProcessing.mergeWithObject(obj: TXQValueMapLike);
+procedure TDataProcessing.mergeWithObject(obj: TXQBoxedMapLike);
 var
   temp: TOptionReaderFromObject;
 begin
@@ -1804,10 +1802,10 @@ begin
 end;
 
 
-procedure TProcessingContext.mergeWithObject(obj: TXQValueMapLike);
+procedure TProcessingContext.mergeWithObject(obj: TXQBoxedMapLike);
 var
   tempreader: TOptionReaderFromObject;
-  temp: TXQValue;
+  temp: IXQValue;
   i: integer;
 begin
   inherited;
@@ -1831,9 +1829,9 @@ begin
     arrayAdd(urls, '<empty/>');
     arrayAdd(urlsLevel, stepLevel);
   end;            }
-  if obj.hasProperty('url', @temp) then
+  if obj.hasProperty('url', temp) then
     readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader)
-  else if obj.hasProperty('input', @temp) or obj.hasProperty('data', @temp)  then
+  else if obj.hasProperty('input', temp) or obj.hasProperty('data', temp)  then
     readNewDataSource(TFollowTo.createFromRetrievalAddress(temp.toString), tempreader);
   tempreader.free;
 end;
@@ -2394,7 +2392,7 @@ var
   i: Integer;
   x: IXQValue;
 begin
-  if  xpathparser.StaticContext.serializationOptions <> nil then begin
+  if  xpathparser.StaticContext.serializationOptions.isAssigned then begin
     printSerialized;
     exit;
   end;
@@ -2448,7 +2446,7 @@ var
   i: Integer;
   v: IXQValue;
 begin
-  if value is TXQValueSequence then begin
+  if value.getSequenceCount > 1 then begin
     for v in value do
       printCmdlineVariable(name, v);
     exit;
@@ -2929,7 +2927,7 @@ function loadAndImportModuleFromAtUrl(const at, base: string): IXQuery; forward;
 
 procedure traceCall({%H-}pseudoSelf: tobject; {%H-}sender: TXQueryEngine; value, info: IXQValue);
 begin
-  if assigned(info) and not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
+  if not info.isUndefined then write(stderr, info.toJoinedString() + ': ');
   writeln(stderr, value.toXQuery());
 end;
 
@@ -3024,7 +3022,7 @@ begin
     if lastContext.extensionContext^.RootElement <> nil then writeln(stderr, '  root node: ', lastContext.extensionContext^.ParentElement.toString());
     if lastContext.extensionContext^.ParentElement <> nil then writeln(stderr, '  parent node: ', lastContext.extensionContext^.ParentElement.toString());
   end;
-  if lastContext.SeqValue <> nil then writeln(stderr, '  context item (.): ', lastContext.SeqValue.toXQuery());
+  if lastContext.SeqValue.isAssigned then writeln(stderr, '  context item (.): ', lastContext.SeqValue.toXQuery());
   writeln(stderr, '  position()/last(): ', lastContext.SeqIndex, ' / ', lastContext.SeqLength);
   {vars := lastContext.temporaryVariables;
   if contextVariables then vars := varLog;
@@ -3601,7 +3599,7 @@ begin
   if (namespaceUrl = '') and (sender is TXQTermDefineVariable) then begin
     env := GetEnvironmentVariableUTF8(variable);
     //initialize external variables from environment, but use default value, if environment is '' or has wrong type
-    if (value <> nil) and (env = '') then exit;
+    if (value.isAssigned) and (env = '') then exit;
     envvalue := xqvalue(env);
     t := TXQTermDefineVariable(sender).getSequenceType;
     if (t <> nil) then begin
@@ -3706,6 +3704,7 @@ begin
     mycmdLine.declareString('form', 'Post request to send (multipart encoded). See --usage. Can be used multiple times like --post.');
     mycmdline.addAbbreviation('F');
     mycmdLine.declareString('method', 'HTTP method to use (e.g. GET, POST, PUT)', 'GET');
+    mycmdline.addAbbreviation('X');
     mycmdLine.declareString('header', 'Additional header to include (e.g. "Set-Cookie: a=b"). Can be used multiple times like --post.'); mycmdline.addAbbreviation('H');
     mycmdLine.declareString('load-cookies', 'Load cookies from file');
     mycmdLine.declareString('save-cookies', 'Save cookies to file');
@@ -4006,7 +4005,7 @@ var
   builder: TStrBuilder;
   Buffer:  array[1..BUF_SIZE] of byte;
   count, totalcount: LongInt;
-  inputData, tempXQV: TXQValue;
+  inputData, tempXQV: IXQValue;
   inputEncoding: TSystemCodePage = CP_UTF8;
   outputEncoding: TSystemCodePage = CP_UTF8;
 
@@ -4014,7 +4013,7 @@ var
   var cmd: string;
       shell: string = '';
       shellArg: TStringArray = nil;
-      tempXQV: TXQValue;
+      tempXQV: IXQValue;
       s: String;
   begin
     cmd := args[0].toString;
@@ -4030,8 +4029,8 @@ var
     shellArg[0] := '/C';
     {$endif}
     if argc >= 2 then begin
-      if args[1].hasProperty('shell', @tempXQV) then if tempxqv.getSequenceCount = 1 then shell := tempxqv.toString;
-      if args[1].hasProperty('shell-args', @tempXQV) then shellArg := tempxqv.toStringArray;
+      if args[1].hasProperty('shell', tempXQV) then if tempxqv.getSequenceCount = 1 then shell := tempxqv.toString;
+      if args[1].hasProperty('shell-args', tempXQV) then shellArg := tempxqv.toStringArray;
     end;
     if shell = '' then proc.CommandLine := args[0].toString
     else begin
@@ -4102,9 +4101,9 @@ begin
     proc.Options := proc.Options + [poUsePipes] - [poWaitOnExit];
     proc.Execute;
     if (argc = 2) then begin
-      if args[1].hasProperty('stdout-encoding', @tempXQV) then outputEncoding := strEncodingFromName(tempXQV.toString);
-      if args[1].hasProperty('stdin-encoding', @tempXQV) then inputEncoding := strEncodingFromName(tempXQV.toString);
-      if args[1].hasProperty('stdin', @inputData) then writeInputPipe;
+      if args[1].hasProperty('stdout-encoding', tempXQV) then outputEncoding := strEncodingFromName(tempXQV.toString);
+      if args[1].hasProperty('stdin-encoding', tempXQV) then inputEncoding := strEncodingFromName(tempXQV.toString);
+      if args[1].hasProperty('stdin', inputData) then writeInputPipe;
     end;
     proc.CloseInput;
     while proc.Running do begin
@@ -4125,7 +4124,7 @@ function xqfRead({%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
 var s: string;
 begin
   ReadLn(s);
-  result := TXQValueString.create(baseSchema.untypedAtomic, s);
+  result := xqvalue(s, xstuntypedAtomic);
 end;
 
 function xqfArgc({%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
@@ -4144,7 +4143,7 @@ var
   fakeData, data: Idata;
   fakeContext: TProcessingContext;
   list: TXQVList;
-  obj: TXQValueStringMap;
+  obj: TXQBoxedStringMap;
   pv: PIXQValue;
   oldInternetConfig: TInternetConfig;
   oldReact: TTransferReactEvent;
@@ -4167,7 +4166,7 @@ begin
     while follow.Count > 0 do begin
       data := follow.first.retrieve(fakeContext,0);
       if data <> nil then begin
-        obj := TXQValueStringMap.create();
+        obj := TXQBoxedStringMap.create();
         obj.setMutable('url', data.baseUri);
         obj.setMutable('type', data.contenttype);
         if data.headers <> nil then obj.setMutable('headers', xqvalue(data.headers));
@@ -4177,7 +4176,7 @@ begin
           ifXML, ifHTML, ifXMLStrict: obj.setMutable('doc', xqvalue(cxt.parseDoc(data.rawData,data.baseUri,data.contenttype)));
           ifAuto, ifPlainText: ;
         end;
-        list.add(obj);
+        list.add(obj.boxInIXQValue);
       end;
       follow.Delete(0);
     end;
@@ -4207,12 +4206,12 @@ function xqFunctionBlocked(const context: TXQEvaluationContext; {%H-}argc: SizeI
 begin
   ignore(context);
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
-  result := nil;
+  result.clear;
 end;
 function xqFunctionBlockedSimple({%H-}argc: SizeInt; {%H-}args: PIXQValue): IXQValue;
 begin
   raise EXQEvaluationException.create('pxp:cgi', 'function is not allowed in cgi mode');
-  result := nil;
+  result.clear;
 end;
 
 
@@ -4332,23 +4331,23 @@ var
   procedure handleLog(log: TXQVariableChangeLog);
   var
     i: SizeInt;
-    tempobj: TXQValueStringMap;
-    tempArray: TXQValueJSONArray;
+    tempobj: TXQBoxedStringMap;
+    tempArray: TXQBoxedArray;
   begin
     if name = '' then begin
       for i := 0 to log.count - 1 do begin
-        tempobj := TXQValueStringMap.create();
+        tempobj := TXQBoxedStringMap.create();
         tempobj.setMutable('name', log.getName(i));
         tempobj.setMutable('value', log.get(i));
         if log.getNamespace(i) <> '' then tempobj.setMutable('namespace', log.getNamespace(i));
-        reslist.add(tempobj);
+        reslist.add(tempobj.boxInIXQValue);
       end;
     end else begin
       for i := 0 to log.count - 1 do begin
         if log.getName(i) <> name then continue;
-        tempArray := TXQValueJSONArray.create();
+        tempArray := TXQBoxedArray.create();
         tempArray.add(log.get(i));
-        reslist.add(tempArray);
+        reslist.add(tempArray.boxInIXQValue);
       end;
     end;
     log.free;
