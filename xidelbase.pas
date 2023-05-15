@@ -4142,7 +4142,7 @@ var
   follow: TFollowToList;
   fakeData, data: Idata;
   fakeContext: TProcessingContext;
-  list: TXQVList;
+  list: TXQValueList;
   obj: TXQBoxedStringMap;
   pv: PIXQValue;
   oldInternetConfig: TInternetConfig;
@@ -4153,7 +4153,7 @@ begin
   fakeContext := TProcessingContext.Create;
   if baseContext <> nil then fakeContext.assignOptions(baseContext);
   follow := TFollowToList.Create;
-  list := TXQVList.create();
+  list := TXQValueList.create();
 
 
   oldInternetConfig := defaultInternetConfiguration;
@@ -4327,12 +4327,12 @@ end;
 function xqfGetLog(argc: SizeInt; args: PIXQValue): IXQValue;
 var
   name: String;
-  reslist: TXQVList;
+  reslist: TXQValueList;
   procedure handleLog(log: TXQVariableChangeLog);
   var
     i: SizeInt;
     tempobj: TXQBoxedStringMap;
-    tempArray: TXQBoxedArray;
+    tempArray: TXQValueList;
   begin
     if name = '' then begin
       for i := 0 to log.count - 1 do begin
@@ -4345,9 +4345,9 @@ var
     end else begin
       for i := 0 to log.count - 1 do begin
         if log.getName(i) <> name then continue;
-        tempArray := TXQBoxedArray.create();
+        tempArray := TXQValueList.create();
         tempArray.add(log.get(i));
-        reslist.add(tempArray.boxInIXQValue);
+        reslist.add(tempArray.toXQValueArray);
       end;
     end;
     log.free;
@@ -4356,7 +4356,7 @@ var
 begin
   if argc = 1 then name := args[0].toString
   else name := '';
-  reslist := TXQVList.create(htmlparser.oldVariableChangeLog.count + htmlparser.variableChangeLog.count);
+  reslist := TXQValueList.create(htmlparser.oldVariableChangeLog.count + htmlparser.variableChangeLog.count);
   handleLog(htmlparser.oldVariableChangeLog.condensed);
   handleLog(htmlparser.variableChangeLog.condensed);
   xqvalueSeqSqueezed(result, reslist);
