@@ -1495,8 +1495,9 @@ var x: IXQValue;
     isPureDataSource: Boolean;
 
 begin
-  if dest.kind <> pvkSequence then
+  if dest.getSequenceCount = 1 then begin
     dest := xpathparser.evaluateXPath('pxp:resolve-html(., $url)', dest);
+  end;
   case dest.kind of
     pvkUndefined: exit;
     pvkObject: begin
