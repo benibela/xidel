@@ -3044,7 +3044,7 @@ end;
 procedure displayError(e: Exception; printPartialMatches: boolean = false);
   procedure say(s: string; color: TConsoleColors = ccNormal);
   begin
-    if cgimode then write(s)
+    if cgimode then w(s)
     else begin
       setTerminalColor(true, color);
       write(stderr, s);
