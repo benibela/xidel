@@ -136,7 +136,9 @@ procedure TTimeoutThread.Execute;
 begin
   self.sleep(10*1000);
   w('TIMEOUT');
+  flush(xidelOutputFile);
   Halt();
+
 end;
 
 procedure startTimeoutThread;
