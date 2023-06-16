@@ -4,7 +4,8 @@ program xidelcgi;
 
 uses
   xidelbase, simplehtmltreeparser,
-  rcmdlinecgi, {utf8tools, }sysutils, strutils, math, bbutils, extendedhtmlparser, xquery.internals.common, xidelcrt
+  rcmdlinecgi, {utf8tools, }sysutils, strutils, math, bbutils, extendedhtmlparser, xquery.internals.common, xidelcrt,
+  baseunix
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
@@ -409,7 +410,57 @@ begin
   findProperty(n)^.flagvalue:=v;
 end;
 
+
+
+Function  FPC_SYSC_OPEN       (path : pChar; flags : cInt; Mode: TMode):cInt; external name 'FPC_SYSC_OPEN';
+Function  FPC_SYSC_ACCESS (pathname : pChar; aMode : cInt): cInt; external name 'FPC_SYSC_ACCESS';
+Function  FPC_SYSC_OPENDIR    (dirname : pChar): pDir;  external name 'FPC_SYSC_OPENDIR';
+Function  FPC_SYSC_MKDIR      (path : pChar; Mode: TMode):cInt;  external name 'FPC_SYSC_MKDIR';
+Function  FPC_SYSC_UNLINK     (path : pChar): cInt;  external name 'FPC_SYSC_UNLINK';
+Function  FPC_SYSC_RMDIR      (path : pChar): cInt; external name 'FPC_SYSC_RMDIR';
+Function  FPC_SYSC_RENAME     (old  : pChar; newpath: pChar): cInt;   external name 'FPC_SYSC_RENAME';
+Function  FPC_SYSC_FSTAT      (fd : cInt; var sb : stat): cInt; external name 'FPC_SYSC_FSTAT';
+Function  FPC_SYSC_STAT       (path: pChar; var buf : stat): cInt;  external name 'FPC_SYSC_STAT';
+
+function fpOpenOverride: integer;
 begin
+  fpseterrno(ESysEACCES);
+  result := -1;
+end;
+
+
+procedure lockdownFileAccess;
+  procedure patchExecutable(oldFunction, newFunction: pointer);
+  const PAGESIZE = 4096;
+  var page: pointer;
+    data: array[1..12]  of char = #$48#$b8#$77#$77#$77#$77#$77#$77#$77#$77#$ff#$e0 ; //mov rax, 7*; jmp rax
+     //#$48#$c7#$c0#$01#$00#$00#$00#$C3; mov 1, rax; ret
+  begin
+    move(newFunction, data[3], 8);
+    page := pointer(ptruint(oldFunction) and not (PAGESIZE-1));
+    Fpmprotect(page, PAGESIZE, PROT_WRITE or PROT_READ or PROT_EXEC );
+    Move(data[1], oldFunction^, sizeof(data));
+    Fpmprotect(page, PAGESIZE, PROT_EXEC or PROT_READ );
+  end;
+
+begin
+  patchExecutable(@FPC_SYSC_OPEN, @fpOpenOverride);   //this is the important one. all file reading/writing I know goes through it.
+  patchExecutable(@FPC_SYSC_ACCESS, @fpOpenOverride); //blocking this turns "permission denied" to "file not found"
+  //do not know if anything uses those functions:
+  patchExecutable(@FPC_SYSC_OPENDIR, @fpOpenOverride);
+  patchExecutable(@FPC_SYSC_MKDIR  , @fpOpenOverride);
+  patchExecutable(@FPC_SYSC_UNLINK , @fpOpenOverride);
+  patchExecutable(@FPC_SYSC_RMDIR  , @fpOpenOverride);
+  patchExecutable(@FPC_SYSC_RENAME , @fpOpenOverride);
+  patchExecutable(@FPC_SYSC_FSTAT  , @fpOpenOverride);
+  patchExecutable(@FPC_SYSC_STAT   , @fpOpenOverride);
+  patchExecutable(@FpExecv, @fpOpenOverride);
+  patchExecutable(@FpExecve, @fpOpenOverride);
+end;
+
+begin
+  lockdownFileAccess;
+
   //writeln(output,'Content-Type: text/plain');
   //writeln(output,'');
   //flush(output);
