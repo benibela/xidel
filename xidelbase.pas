@@ -1656,7 +1656,7 @@ begin
         'html': printedNodeFormat:=tnsHTML;
         else raise EInvalidArgument.create('Unknown node format option: '+tempstr);
       end;
-      if reader.read('printed-node-format', tempstr) then writeln(stderr, '--printed-node-format is deprecated, use --output-node-format');
+      if reader.read('printed-node-format', tempstr) and not cgimode then writeln(stderr, '--printed-node-format is deprecated, use --output-node-format');
     end else if reader.read('output-format', tempstr) then
       case tempstr of
         'xml': printedNodeFormat:=tnsXML;
@@ -1668,7 +1668,7 @@ begin
       'pretty': printedJSONFormat := jisPretty;
       'compact': printedJSONFormat := jisCompact;
     end;
-    if reader.read('printed-json-format', tempstr) then writeln(stderr, '--printed-json-format is deprecated, use --output-json-indent');
+    if reader.read('printed-json-format', tempstr) and not cgimode then writeln(stderr, '--printed-json-format is deprecated, use --output-json-indent');
   end;
   if reader.read('output-key-order', tempstr) then
     printedJSONKeyOrder:=XQKeyOrderFromString(tempstr);
@@ -3419,7 +3419,7 @@ begin
   end else if name = 'module-path' then begin
     arrayAdd(modulePaths, value);
   end else if (name = '') or (name = 'data') or (name = 'input') then begin
-    if name = 'data' then writeln(stderr, '--data is deprecated. use --input');
+    if not cgimode and (name = 'data') then writeln(stderr, '--data is deprecated. use --input');
     if (name = '') and (value = '[') then begin
       pushCommandLineState;
       currentContext := TProcessingContext.Create;
