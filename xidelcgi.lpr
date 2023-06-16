@@ -76,12 +76,14 @@ begin
     ekXPath2: exit('xpath2');
     ekXPath3_0: exit('xpath3');
     ekXPath3_1: exit('xpath3_1');
+    ekXPath4_0: exit('xpath4_0');
     ekPatternHTML: exit('html-pattern');
     ekPatternXML: exit('xml-pattern');
     ekCSS: exit('css');
     ekXQuery1: exit('xquery1');
     ekXQuery3_0: exit('xquery3');
     ekXQuery3_1: exit('xquery3_1');
+    ekXQuery4_0: exit('xquery4_0');
     else exit('auto');
   end;
 end;
@@ -143,10 +145,10 @@ procedure printPre(extractionKind: TExtractionKind);
     if (t = mycmdline.readString('extract-kind')) and (mycmdline.readString('extract') <> '') then
       exit(mycmdline.readString('extract'));
     case t of
-    'xpath', 'xpath2', 'xpath3', 'xpath3.0', 'xpath3.1': exit(ExampleXPath);
+    'xpath', 'xpath2', 'xpath3', 'xpath3.0', 'xpath3.1', 'xpath4.0': exit(ExampleXPath);
     'xquery1': exit(ExampleXQuery1);
     'xquery', 'xquery3', 'xquery3.0': exit(ExampleXQuery3_0);
-    'xquery3.1': exit(ExampleXQuery3_1);
+    'xquery3.1', 'xquery4.0': exit(ExampleXQuery3_1);
     'css': exit(ExampleCSS);
     {'template', 'auto':} else exit(ExampleTemplate);
     end;
@@ -249,6 +251,7 @@ begin
 
   w('</span>');
   w('<br>Old languages: ' + kind('xpath2', 'XPath 2.0')+kind('xpath3.0', 'XPath 3.0')+kind('xquery1', 'XQuery 1.0')+kind('xquery3.0', 'XQuery 3.0')+'<br>');
+  w('<br>New languages: ' + kind('xpath4.0', 'XPath 4.0')+kind('xquery4.0', 'XQuery 4.0')+'<br>');
   w('</form>');
 
  { w('<script src="../codemirror/codemirror.js"></script>');
@@ -407,6 +410,9 @@ begin
 end;
 
 begin
+  //writeln(output,'Content-Type: text/plain');
+  //writeln(output,'');
+  //flush(output);
   xidelbase.cgimode := true;
   xidelbase.allowInternetAccess := false;
   xidelcrt.allowFileAccess := false;
