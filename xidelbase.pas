@@ -3966,6 +3966,10 @@ begin
         displayError(e);
       end;
     end;
+    on e: Exception do begin
+      ExitCode:=1;
+      displayError(e);
+    end;
   end;
 //  DumpHeap(false);
 
