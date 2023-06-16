@@ -4374,6 +4374,7 @@ begin
   fn := TXQueryEngine.findNativeModule(XMLNamespaceURL_XPathFunctions);
   fn.findComplexFunction('doc', 1).func:=@xqFunctionBlocked;
   fn.findComplexFunction('doc-available', 1).func:=@xqFunctionBlocked;
+  fn.findComplexFunction('json-doc', 1).func:=@xqFunctionBlocked;
   for i := 1 to 2 do begin
     fn.findComplexFunction('unparsed-text', i).func:=@xqFunctionBlocked;
     fn.findInterpretedFunction('unparsed-text-lines', i).sourceImplementation:='"not available in cgi mode"';
