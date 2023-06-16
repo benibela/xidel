@@ -3,7 +3,7 @@ program xidelcgi;
 {$mode objfpc}{$H+}
 
 uses
-  xidelbase, simplehtmltreeparser,
+  cthreads, xidelbase, simplehtmltreeparser, classes,
   rcmdlinecgi, {utf8tools, }sysutils, strutils, math, bbutils, extendedhtmlparser, xquery.internals.common, xidelcrt,
   baseunix
   { you can add units after this };
@@ -129,6 +129,21 @@ begin
   else writeEscaped;
 end;
 
+type TTimeoutThread = class(TThread)
+  procedure Execute; override;
+end;
+procedure TTimeoutThread.Execute;
+begin
+  self.sleep(10*1000);
+  w('TIMEOUT');
+  Halt();
+end;
+
+procedure startTimeoutThread;
+begin
+  TTimeoutThread.Create(false);
+end;
+
 type
 
 { TCommandLineReaderBreaker }
@@ -195,6 +210,8 @@ begin
 
   if (mycmdline.readFlag('case-sensitive')) then
     xqueryDefaultCollation:='http://www.w3.org/2005/xpath-functions/collation/codepoint';
+
+  startTimeoutThread;
 
   if mycmdline.readFlag('raw') then begin
     case mycmdLine.readString('output-format') of
@@ -399,6 +416,7 @@ begin
   temp := strSplit(change, ';', false);
   for i := 0 to high(temp) do TCommandLineReaderBreaker(mycmdline).setString(strSplit(temp[i], '=')[0],strSplit(temp[i], '=')[1]);
 end;
+
 
 procedure TCommandLineReaderBreaker.setString(const n, v: string);
 begin
