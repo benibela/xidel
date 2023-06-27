@@ -2237,7 +2237,7 @@ end;
 procedure TProcessingContext.httpReact(sender: TInternetAccess; var transfer: TTransfer; var reaction: TInternetAccessReaction);
 begin
   stupidHTTPReactionHackFlag := 0;
-  case TInternetAccess.reactFromCodeString(errorHandling, sender.lastHTTPResultCode, reaction) of
+  case TInternetAccess.reactFromCodeString(errorHandling, transfer.HTTPResultCode, reaction) of
     'retry': Sleep(trunc(wait*1000));
     'ignore': stupidHTTPReactionHackFlag := 1;
     'skip': stupidHTTPReactionHackFlag := 2;
