@@ -30,6 +30,7 @@ program xidel;
 {$endif}
 
 uses //heaptrc,
+     {$ifdef linux}cwstring,{$endif}
      internetaccess, bbutils,
      xidelbase,
      rcmdline, //<< if you don't have this command line parser unit, you can download it from www.benibela.de
