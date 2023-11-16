@@ -46,6 +46,7 @@ var //output options
     windowsCmdPercentageEscape: string;
     hasOutputEncoding: THasOutputEncoding = oeAbsent;
     outputEncoding: TSystemCodePage;
+    inputEncoding: TSystemCodePage = CP_NONE;
     outputHeader, outputFooter, outputSeparator: string;
     //outputArraySeparator: array[toutputformat] of string = ('',  ', ', '</e><e>', '', '', '', '');
 
@@ -206,8 +207,11 @@ begin
   {$endif}
   if not (colorizing in [cNever,cAlways]) or (hasOutputEncoding = oeAbsent) then begin
     if not isStdoutTTY and (hasOutputEncoding = oeAbsent) then setOutputEncoding('utf-8');
-    if not isStdinTTY or mycmdline.existsProperty('stdin-encoding') then SetTextCodePage(input, strEncodingFromNameXidel(mycmdline.readString('stdin-encoding')));
   end;
+
+  if mycmdline.existsProperty('stdin-encoding') then inputEncoding := strEncodingFromNameXidel(mycmdline.readString('stdin-encoding'))
+  else if not isStdinTTY then inputEncoding := CP_UTF8;
+  if inputEncoding <> CP_NONE then SetTextCodePage(input, inputEncoding);
 
   case colorizing of
     cNever: begin
@@ -640,14 +644,16 @@ begin
       sb.append(s);
       sb.append(LineEnding);
     end;
+    sb.final;
   end else begin
     while not eof(Input) do begin
       nextTextRecBlock(TextRec(input), from, len);
       if len > 0 then
         sb.append(from, len);
     end;
+    sb.final;
+    if inputEncoding <> CP_NONE then result := strConvertToUtf8(result, inputEncoding);
   end;
-  sb.final;
 end;
 
 finalization
