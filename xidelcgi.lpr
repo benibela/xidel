@@ -134,8 +134,10 @@ end;
 type TTimeoutThread = class(TThread)
   procedure Execute; override;
 end;
+procedure lockdownSyscalls;forward;
 procedure TTimeoutThread.Execute;
 begin
+  lockdownSyscalls;
   self.sleep(10*1000);
   w('TIMEOUT');
   flush(xidelOutputFile);
@@ -214,8 +216,6 @@ begin
 
   if (mycmdline.readFlag('case-sensitive')) then
     xqueryDefaultCollation:='http://www.w3.org/2005/xpath-functions/collation/codepoint';
-
-  startTimeoutThread;
 
   if mycmdline.readFlag('raw') then begin
     case mycmdLine.readString('output-format') of
@@ -480,8 +480,78 @@ begin
   patchExecutable(@FpExecve, @fpOpenOverride);
 end;
 
+
+type tscmp_filter_ctx = pointer;
+const SCMP_ACT_ERRNO = $00050000;
+const SCMP_ACT_ERRNO_SYSACCESS = SCMP_ACT_ERRNO or ESysEACCES;
+const SCMP_ACT_ALLOW = $7fff0000;
+const libseccomp = 'seccomp';
+function seccomp_init(def_action: uint32): tscmp_filter_ctx; cdecl; external libseccomp;
+function seccomp_load(ctx: tscmp_filter_ctx): cint; cdecl; external libseccomp;
+function seccomp_release(ctx: tscmp_filter_ctx): cint; cdecl; external libseccomp;
+function seccomp_rule_add(ctx: tscmp_filter_ctx; action: uint32; syscall: cint; arg_cnt: cardinal): cint; cdecl; external libseccomp;
+
+{calls during test suite run
+access(        //file functions
+brk(
+close(         //test case loading
+exit_group(
+flock(         //test case loading
+fstat(         //test case loading
+futex(         //icuu dynamic loading ? only ?
+getcwd(        //test case loading
+getrandom(     //icuu dynamic loading
+gettimeofday(
+lseek(         //test case loading ? only ?
+mmap(
+mprotect(      //icuu dynamic loading ? only ?
+munmap(
+newfstatat(    //icuu dynamic loading ? only ?
+open(            //tests
+openat(          //icuu dynamic loading
+read(
+rt_sigprocmask(  //FPU exceptions
+rt_sigreturn(    //FPU exceptions
+stat(            //test case loading ? only ?
+write(
+}
+procedure lockdownSyscalls;
+const syscalls: array of dword = (
+  syscall_nr_brk,
+  syscall_nr_exit_group,
+  syscall_nr_gettimeofday,
+  syscall_nr_mmap,
+  syscall_nr_munmap,
+  syscall_nr_read,
+  syscall_nr_rt_sigprocmask,
+  syscall_nr_rt_sigreturn,
+  syscall_nr_write,
+  syscall_nr_nanosleep
+);
+procedure checkerr(e: cint);
+begin
+  if e < 0 then begin
+    writeln('seccomp error');
+    halt;
+  end;
+end;
+
+var ctx: pointer;
+  i: Integer;
+begin
+  ctx := seccomp_init(SCMP_ACT_ERRNO_SYSACCESS);
+  for i := low(syscalls) to high(syscalls) do
+    checkerr(seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscalls[i], 0));
+  checkerr(seccomp_load(ctx));
+  checkerr(seccomp_release(ctx));
+end;
+
 begin
   lockdownFileAccess;
+  startTimeoutThread;
+  LoadICU; //need to load it before file access is blocked
+  lockdownSyscalls;
+
 
   //writeln(output,'Content-Type: text/plain');
   //writeln(output,'');
