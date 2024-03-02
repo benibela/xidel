@@ -3,9 +3,11 @@ program xidelcgi;
 {$mode objfpc}{$H+}
 
 uses
-  cthreads, xidelbase, simplehtmltreeparser, classes,
-  rcmdlinecgi, {utf8tools, }sysutils, strutils, math, bbutils, extendedhtmlparser, xquery.internals.common, xidelcrt,
-  baseunix
+  cthreads,
+  dynlibs, //to load collations
+  xidelbase, simplehtmltreeparser, classes,
+  rcmdlinecgi, {utf8tools, }sysutils, strutils, math, bbutils, extendedhtmlparser, xquery.internals.common, xidelcrt, xquery_module_uca_icu,
+  baseunix,syscall
   { you can add units after this };
 
 const ExampleHTML: string = '<html><body>'#13#10+
