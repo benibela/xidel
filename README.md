@@ -38,11 +38,8 @@ Screenshots
 </p>
 
 Compilation and Installation
------------
+----------------------------
 
 You can compile it by calling `build.sh` and install it by calling `build.sh -t`. Alternatively you can compile it with the Lazarus IDE.
 
-You can call the commands from the [.travis.yml](.travis.yml) script to download dependencies.
-
-
-
+Don't forget to pull git submodules (see `.github/download-dependencies.sh` script) to download dependencies.
