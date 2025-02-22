@@ -50,12 +50,12 @@ jobs:
         rm xidel
     - run: ./manage.sh linux64 && strip --strip-all xidelpackage/xidel
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.linux64
         path: xidelpackage/*
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.linux64.deb
         path: xidel*.deb
@@ -63,12 +63,12 @@ jobs:
     - name: 'Cross compile Xidel 32-Bit'
       run: ./manage.sh linux32 && strip --strip-all xidelpackage/xidel
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.linux32
         path: xidelpackage/*
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.linux32.deb
         path: xidel*.deb
@@ -76,28 +76,28 @@ jobs:
     - name: 'Cross compile Xidel ARM'
       run: ./manage.sh linuxarm && arm-linux-gnueabi-strip --strip-all xidelpackage/xidel
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.linuxarm
         path: xidelpackage/*
     - name: 'Cross compile Xidel AARCH64' 
       run: ./manage.sh linuxarm64 && aarch64-linux-gnu-strip --strip-all xidelpackage/xidel
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.linuxarm64
         path: xidelpackage/*
     - name: 'Cross compile Xidel Win32'
       run: ./manage.sh win32 && strip --strip-all xidelpackage/xidel.exe
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.win32
         path: xidelpackage/*
     - name: 'Cross compile Xidel Win32 OpenSSL'
       run: ./manage.sh win32openssl && strip --strip-all xidelpackage/xidel.exe
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.openssl.win32
         path: xidelpackage/*
@@ -106,12 +106,12 @@ jobs:
     - run: find -name "*.o" -or -name "*.ppu" -delete
     - run: ./manage.sh linux64
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.linux64
         path: xidelpackage/*
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.linux64.deb
         path: xidel*.deb
@@ -119,12 +119,12 @@ jobs:
     - name: 'Cross compile Xidel 32-Bit Debug'
       run: ./manage.sh linux32
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.linux32
         path: xidelpackage/*
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.linux32.deb
         path: xidel*.deb
@@ -132,28 +132,28 @@ jobs:
     - name: 'Cross compile Xidel ARM Debug'
       run: ./manage.sh linuxarm
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.linuxarm
         path: xidelpackage/*
     - name: 'Cross compile Xidel AARCH64 Debug' 
       run: ./manage.sh linuxarm64
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.linuxarm64
         path: xidelpackage/*
     - name: 'Cross compile Xidel Win32 Debug'
       run: ./manage.sh win32
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.win32
         path: xidelpackage/*
     - name: 'Cross compile Xidel Win32 OpenSSL Debug'
       run: ./manage.sh win32openssl
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.openssl.win32
         path: xidelpackage/*
@@ -175,7 +175,7 @@ jobs:
 #    - name: Test Xidel 64
 #      run: bash ./tests/tests.sh
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.win64
         path: xidelpackage/*
@@ -186,7 +186,7 @@ jobs:
 #    - name: Test Xidel 64
 #      run: bash ./tests/tests.sh
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.win64
         path: xidelpackage/*
@@ -208,7 +208,7 @@ jobs:
     - run: lazbuild xidel.lpi
     - run: ./manage.sh preparepackage
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel.mac
         path: xidelpackage/*
@@ -219,7 +219,7 @@ jobs:
     - run: lazbuild xidel.lpi
     - run: ./manage.sh preparepackage
     - name: 'Upload '
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: xidel-debug.mac
         path: xidelpackage/*
