@@ -390,6 +390,7 @@ end;
 THTTPRequest = class(TFollowTo)
 private
   variablesReplaced: boolean;
+  procedure appendHeader(const h: string);
 public
   url: string;
   method: string;
@@ -1088,6 +1089,12 @@ end;
 
 { THTTPRequest }
 
+procedure THTTPRequest.appendHeader(const h: string);
+begin
+  if header <> '' then header := header + #13#10;
+  header += h;
+end;
+
 constructor THTTPRequest.create(aurl: string);
 begin
   url := aurl;
@@ -1163,7 +1170,7 @@ procedure THTTPRequest.replaceVariables;
     nvalue: String;
     temp: String;
     filename: String;
-    contenttype: String;
+    contenttype, boundary: String;
     kind: Char;
     t: Integer;
   begin
@@ -1217,8 +1224,8 @@ procedure THTTPRequest.replaceVariables;
       end;
       mime.addFormData(name, nvalue, filename, contenttype, '');
     end;
-    data := mime.compose(header);
-    header := TMIMEMultipartData.HeaderForBoundary(header);
+    data := mime.compose(boundary);
+    appendHeader(TMIMEMultipartData.HeaderForBoundary(boundary));
   end;
 begin
   if variablesReplaced then exit; //this method is still supposed to be only called once
@@ -1256,12 +1263,9 @@ begin
   if reader is TOptionReaderFromObject then begin
     variablesReplaced := true;
     tempxq := xqvalue();
-    if reader.read('headers', tempxq) then begin
-      for h in tempxq  do begin
-        if header <> '' then header := header + #13#10;
-        header += h.toString;
-      end;
-    end;
+    if reader.read('headers', tempxq) then
+      for h in tempxq  do
+        appendHeader(h.toString);
   end;
   method:='GET';
   if reader.read('post', data) then
